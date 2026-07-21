@@ -1,0 +1,31 @@
+# Architecture
+
+## Boundary
+
+The numerical engine is framework-independent TypeScript under `src/engine`. React is a consumer of snapshots and controls only.
+
+## Runtime flow
+
+`React controls → typed worker messages → Web Worker → MonodomainSolver → snapshot + pseudo-ECG → Canvas UI`
+
+## Current modules
+
+- `geometry/RectangularTissue`: conductive mask and lesions
+- `models/AlievPanfilov`: local reaction dynamics
+- `numerics/MonodomainSolver`: explicit reaction–diffusion update
+- `signals/PseudoEcg`: approximate signal projection
+- `verification/PlanarConductionVelocity`: activation interpolation and planar propagation-speed measurement
+- `core/scenarios`: deterministic scenario scheduling
+- `workers/simulation.worker`: timing and transfer boundary
+- `ui`: rendering and user interactions
+
+## Upgrade path
+
+1. numerical verification and convergence;
+2. anisotropy and regional tissue;
+3. better lead-field ECG and intracardiac electrodes;
+4. pacing protocols and refractory capture tests;
+5. atrial geometry and re-entry mechanisms;
+6. GPU/WebGPU backend;
+7. 3D mesh and catheter visualisation;
+8. server-optional cohort features.

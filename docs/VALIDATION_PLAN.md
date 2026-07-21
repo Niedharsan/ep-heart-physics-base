@@ -14,6 +14,11 @@
 - deterministic five-station/three-row planar propagation-speed measurement
 - explicit planarity, fit-quality and missing-activation gates, with
   denominator/non-finite rejection and clipping-status reporting
+- physically fixed three-level spatial and temporal propagation-speed trends
+- contraction, apparent-order and finest-pair change gates for the derived
+  propagation-speed quantity of interest
+- deterministic 32-angle radial grid-isotropy characterization with bilinear
+  nodal activation-time interpolation
 - positive stable timestep
 - resting equilibrium
 - excitation and spread after stimulus
@@ -24,10 +29,12 @@
 
 ## Required before claiming credible 2D propagation
 
-1. planar-wave fixed-grid measurement complete; measurement across at least
-   three spatial resolutions remains required;
-2. radial-wave symmetry error;
-3. convergence trend as dx and dt are refined;
+1. planar-wave fixed-grid and three-resolution sensitivity measurements are
+   complete, but clipped runs cannot verify the unconstrained equations;
+2. radial-wave symmetry is characterized for one grid; refinement of the
+   symmetry metric remains desirable;
+3. separate dx and dt quantity-of-interest trends are characterized; formal
+   order verification against an analytic/manufactured solution remains;
 4. no-flux boundary verification;
 5. refractory capture/failure protocol;
 6. obstacle re-entry initiation and persistence with deterministic setup;

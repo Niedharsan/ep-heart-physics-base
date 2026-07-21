@@ -1,10 +1,14 @@
 import { hasStateClipping, type NumericalDiagnostics } from '../core/numericalDiagnostics';
 import type { SolverConfig } from '../core/types';
-import { configureScenario } from '../core/scenarios';
 import { MonodomainSolver } from '../numerics/MonodomainSolver';
+import { interpolateUpwardCrossing } from './ActivationTime';
+import { physicalCoordinateToGridIndex } from './PhysicalCoordinates';
+
+export { interpolateUpwardCrossing } from './ActivationTime';
 
 export interface PlanarVelocityProtocol {
   readonly solverConfig: SolverConfig;
+  readonly stimulusMaximumX: number;
   readonly threshold: number;
   readonly xStations: readonly number[];
   readonly yRows: readonly number[];
@@ -56,22 +60,6 @@ export interface LinearFit {
   readonly rSquared: number;
   readonly residuals: readonly number[];
   readonly maximumAbsoluteResidual: number;
-}
-
-export function interpolateUpwardCrossing(
-  previousValue: number,
-  currentValue: number,
-  previousTime: number,
-  currentTime: number,
-  threshold: number,
-): number | null {
-  for (const [name, value] of Object.entries({ previousValue, currentValue, previousTime, currentTime, threshold })) {
-    if (!Number.isFinite(value)) throw new Error(`Activation crossing ${name} must be finite.`);
-  }
-  if (!(currentTime > previousTime)) throw new Error('Activation crossing currentTime must be greater than previousTime.');
-  if (!(previousValue < threshold && currentValue >= threshold)) return null;
-  const fraction = (threshold - previousValue) / (currentValue - previousValue);
-  return previousTime + fraction * (currentTime - previousTime);
 }
 
 export function fitActivationTimes(positions: readonly number[], activationTimes: readonly number[]): LinearFit {
@@ -175,7 +163,14 @@ export function measurePlanarConductionVelocity(protocol: PlanarVelocityProtocol
   validateProtocol(protocol);
   const protocolSnapshot = copyPlanarVelocityProtocol(protocol);
   const solver = new MonodomainSolver(protocol.solverConfig);
-  const scenario = configureScenario(solver, 'planar-wave');
+  solver.reset();
+  const stimulusMaximumIndex = physicalCoordinateToGridIndex(
+    protocol.stimulusMaximumX,
+    protocol.solverConfig.grid.dx,
+    solver.tissue.width - 1,
+    'Planar stimulus maximum x',
+  );
+  solver.applyRectangularStimulus(0, stimulusMaximumIndex, 0, solver.tissue.height - 1, 1);
   const probeIndices = protocol.xStations.map((x) => protocol.yRows.map((y) => solver.tissue.index(x, y)));
   const previousValues = probeIndices.map((station) => station.map((index) => solver.voltage[index]!));
   if (previousValues.some((station) => station.some((value) => value >= protocol.threshold))) {
@@ -185,7 +180,6 @@ export function measurePlanarConductionVelocity(protocol: PlanarVelocityProtocol
   let previousTime = solver.time;
 
   while (solver.time < protocol.maximumModelTime && activationTimes.some((station) => station.some((time) => time === null))) {
-    scenario.beforeStep(solver);
     solver.step();
     const currentTime = solver.time;
     for (let stationIndex = 0; stationIndex < probeIndices.length; stationIndex += 1) {
@@ -264,6 +258,10 @@ function validateProtocol(protocol: PlanarVelocityProtocol): void {
     throw new Error('Planar velocity maximumPlanaritySpread must be finite and non-negative.');
   }
   if (!(dx > 0) || !Number.isFinite(dx)) throw new Error('Planar velocity grid spacing must be finite and positive.');
+  const stimulusMaximumIndex = physicalCoordinateToGridIndex(
+    protocol.stimulusMaximumX, dx, width - 1, 'Planar stimulus maximum x',
+  );
+  if (stimulusMaximumIndex <= 0) throw new Error('Planar velocity stimulus must span a positive physical width.');
   if (protocol.xStations.length < 3) throw new Error('Planar velocity protocol requires at least three x stations.');
   if (protocol.yRows.length < 1) throw new Error('Planar velocity protocol requires at least one y row.');
   for (let index = 0; index < protocol.xStations.length; index += 1) {
@@ -273,6 +271,9 @@ function validateProtocol(protocol: PlanarVelocityProtocol): void {
     }
     if (index > 0 && !(x > protocol.xStations[index - 1]!)) {
       throw new Error('Planar velocity x stations must be strictly increasing.');
+    }
+    if (x <= stimulusMaximumIndex) {
+      throw new Error(`Planar velocity x station ${x} must lie beyond the initialized stimulus.`);
     }
   }
   for (const y of protocol.yRows) {
@@ -296,6 +297,7 @@ function copyPlanarVelocityProtocol(protocol: PlanarVelocityProtocol): PlanarVel
   return Object.freeze({
     scenario: 'planar-wave',
     solverConfig,
+    stimulusMaximumX: protocol.stimulusMaximumX,
     threshold: protocol.threshold,
     xStations: Object.freeze([...protocol.xStations]),
     yRows: Object.freeze([...protocol.yRows]),

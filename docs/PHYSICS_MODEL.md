@@ -60,6 +60,60 @@ does not mean generally or scientifically validated. A clipped value
 characterizes only the safeguard-modified implementation; it is not evidence
 about the unconstrained equation or physiological conduction.
 
+## Spatial and temporal refinement trends
+
+PR 3 holds the normalized physical domain, stimulus, probes, diffusion,
+parameters and activation threshold fixed while varying one discretization
+axis at a time. A physical nodal coordinate must satisfy
+
+\[
+i = x / \Delta x
+\]
+
+as an integer grid index, and a grid with `N` nodes has extent
+`(N - 1) × dx`. The planar stimulus is therefore specified as the physical
+strip `x ∈ [0,2]`, rather than as a fixed number of cells.
+
+For a three-level scalar sequence `q₀, q₁, q₂` with refinement ratio `r = 2`,
+the reported quantities are
+
+\[
+\rho=\frac{|q_2-q_1|}{|q_1-q_0|},\qquad
+p_{app}=\frac{\log(|q_1-q_0|/|q_2-q_1|)}{\log r},
+\]
+
+and the descriptive Richardson estimate
+
+\[
+q_R=q_2+\frac{q_2-q_1}{r^{p_{app}}-1}.
+\]
+
+These are observed quantity-of-interest refinement trends for propagation
+speed. They are not formal verification of the solver's theoretical order:
+there is no analytic or manufactured reference solution, and the planar runs
+activate recovery clipping.
+
+The contraction, apparent-order, finest-pair-change, radial-deviation and
+activation-spread thresholds are project-defined regression/characterization
+gates for these protocols. They are not literature-derived physiological
+tolerances or validation criteria.
+
+## Radial grid-isotropy measurement
+
+The radial protocol initializes a centered physical circle and records nodal
+first-crossing activation times. At 32 equal polar angles, activation time at
+each continuous sample position is bilinearly interpolated from its four nodal
+activation times. Directional apparent speed between radii `r₁` and `r₂` is
+
+\[
+c_\theta=\frac{r_2-r_1}{T(r_2,\theta)-T(r_1,\theta)}.
+\]
+
+The maximum relative deviation from the angular mean characterizes directional
+grid bias. The current radial protocol completes without safeguard activation,
+but that fact alone does not establish equation verification, physiological
+calibration or general scientific validity.
+
 ## Variant and provenance
 
 Aliev and Panfilov introduced the two-variable lineage in 1996:

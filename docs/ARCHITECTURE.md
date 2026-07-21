@@ -14,7 +14,12 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
 - `models/AlievPanfilov`: local reaction dynamics
 - `numerics/MonodomainSolver`: explicit reaction–diffusion update
 - `signals/PseudoEcg`: approximate signal projection
-- `verification/PlanarConductionVelocity`: activation interpolation and planar propagation-speed measurement
+- `verification/ActivationTime`: shared first-rising threshold interpolation
+- `verification/PhysicalCoordinates`: exact normalized-coordinate/grid mapping
+- `verification/PlanarConductionVelocity`: planar propagation-speed measurement and fit gates
+- `verification/ConvergenceTrend`: pure three-level quantity-of-interest trend analysis
+- `verification/PlanarRefinementStudy`: physically fixed spatial and temporal planar studies
+- `verification/RadialSymmetry`: equal-angle radial activation and grid-isotropy measurement
 - `core/scenarios`: deterministic scenario scheduling
 - `workers/simulation.worker`: timing and transfer boundary
 - `ui`: rendering and user interactions

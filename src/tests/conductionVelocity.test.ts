@@ -20,6 +20,7 @@ const referenceProtocol: PlanarVelocityProtocol = {
     stepsPerFrame: 1,
     model: defaultAlievPanfilovParameters,
   },
+  stimulusMaximumX: 2,
   threshold: 0.5,
   xStations: [24, 36, 48, 60, 72],
   yRows: [6, 12, 18],
@@ -99,7 +100,7 @@ describe('planar conduction velocity verification', () => {
 
   it('rejects probes that start active or never activate', () => {
     expect(() => measurePlanarConductionVelocity({ ...referenceProtocol, xStations: [2, 24, 48] }))
-      .toThrow(/begin below the activation threshold/);
+      .toThrow(/beyond the initialized stimulus/);
     expect(() => measurePlanarConductionVelocity({ ...referenceProtocol, threshold: 0 }))
       .toThrow(/begin below the activation threshold/);
     expect(() => measurePlanarConductionVelocity({ ...referenceProtocol, maximumModelTime: 1 }))

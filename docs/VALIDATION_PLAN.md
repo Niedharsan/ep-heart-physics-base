@@ -21,6 +21,9 @@
   nodal activation-time interpolation
 - deterministic S1–S2 failure/capture transition bracket using nine
   downstream probes, timestep-indexed bisection and explicit safeguard status
+- deterministic cross-field obstacle-circulation protocol with bilinear
+  circumferential probes, repeated-circuit persistence gates and a terminating
+  nearby-timing control
 - positive stable timestep
 - resting equilibrium
 - excitation and spread after stimulus
@@ -40,7 +43,9 @@
 4. no-flux boundary verification;
 5. paired-stimulus capture/failure is characterized for one clipped fixed-grid
    protocol; stimulus-strength, dx/dt and threshold sensitivity remain;
-6. obstacle re-entry initiation and persistence with deterministic setup;
+6. obstacle circulation initiation and two-circuit persistence are
+   characterized for one clipped fixed-grid protocol and distinguished from a
+   terminating nearby-timing control; geometry and dx/dt sensitivity remain;
 7. lesion-complete versus lesion-gap conduction tests;
 8. energy/state bounds over long runs;
 9. comparison with a trusted reference implementation or published benchmark;

@@ -21,6 +21,7 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
 - `verification/PlanarRefinementStudy`: physically fixed spatial and temporal planar studies
 - `verification/RadialSymmetry`: equal-angle radial activation and grid-isotropy measurement
 - `verification/RefractoryCapture`: framework-independent S1–S2 propagated-capture characterization
+- `verification/ObstacleReentry`: cross-field obstacle-circulation initiation and persistence measurement
 - `core/scenarios`: deterministic scenario scheduling
 - `workers/simulation.worker`: timing and transfer boundary
 - `ui`: rendering and user interactions

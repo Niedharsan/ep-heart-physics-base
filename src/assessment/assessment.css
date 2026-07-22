@@ -153,3 +153,55 @@ textarea { min-height: 130px; width: 100%; resize: vertical; margin: 12px 0; }
 
 .instructor-answer-key strong { color: #f0edff; }
 .instructor-answer-key span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+
+.assessment-task-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.assessment-task-nav a {
+  color: #9db0b1;
+  text-decoration: none;
+  border: 1px solid #28414a;
+  border-radius: 999px;
+  padding: 9px 13px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.assessment-task-nav a.active { color: #72efbb; border-color: #2b6b53; background: #092419; }
+.task-one-scorebar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+.task-one-scorebar > div { display: flex; justify-content: space-between; gap: 10px; border: 1px solid #1d343d; background: #071119; border-radius: 13px; padding: 12px; color: #91a5a6; }
+.task-one-scorebar strong { color: #eff9f5; }
+.task-one-scorebar .task-one-total { border-color: #2d6c54; background: #092218; }
+.task-one-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.task-one-card { display: grid; align-content: start; gap: 13px; }
+.catheter-chip-row, .measurement-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.catheter-chip-row button.active, .measurement-tabs button.active { color: #77efbd; border-color: #2d6c54; background: #092419; }
+.heart-placement-map { position: relative; min-height: 410px; overflow: hidden; border: 1px solid #213943; border-radius: 16px; background: radial-gradient(circle at 50% 45%, #0b2027, #041016 68%); }
+.heart-outline { position: absolute; inset: 32px 12% 30px; }
+.heart-outline span { position: absolute; display: block; border: 2px solid rgba(99, 218, 177, 0.35); background: rgba(33, 102, 85, 0.12); }
+.ra-shape { left: 10%; top: 6%; width: 34%; height: 42%; border-radius: 45% 35% 44% 50%; }
+.rv-shape { left: 20%; top: 43%; width: 37%; height: 48%; border-radius: 40% 34% 55% 50%; }
+.la-shape { right: 8%; top: 12%; width: 33%; height: 35%; border-radius: 38% 48% 46% 38%; }
+.lv-shape { right: 12%; top: 42%; width: 38%; height: 52%; border-radius: 35% 44% 55% 45%; }
+.septum-line { left: 49%; top: 22%; width: 2px; height: 60%; background: rgba(255,255,255,0.16) !important; border: 0 !important; }
+.cs-track { left: 47%; top: 44%; width: 38%; height: 8%; border-radius: 999px !important; border-color: rgba(255, 190, 105, 0.5) !important; background: rgba(255, 183, 94, 0.08) !important; }
+.heart-target { position: absolute; transform: translate(-50%, -50%); z-index: 2; max-width: 135px; padding: 7px 9px; font-size: 0.68rem; border-style: dashed; background: rgba(5, 17, 23, 0.9); }
+.placed-catheter { position: absolute; transform: translate(-50%, 22px); z-index: 3; border-radius: 999px; padding: 5px 8px; background: #4fe1a8; color: #03130d; font-size: 0.7rem; font-weight: 950; pointer-events: none; }
+.placement-select-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.placement-select-grid label, .task-one-card > label, .task-one-activation > label { display: grid; gap: 6px; color: #9db0b2; font-size: 0.82rem; }
+.cs-electrode-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.cs-electrode-strip span { text-align: center; border: 1px solid #2f4b54; border-radius: 999px; padding: 9px 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #d6ebe3; background: #091820; }
+.task-one-measurements, .task-one-activation, .task-one-final { margin-top: 16px; }
+.measurement-tabs button { display: flex; gap: 9px; align-items: center; }
+.measurement-tabs span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.task-one-final { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; }
+.task-one-final h2 { font-size: 2rem; }
+
+@media (max-width: 900px) {
+  .task-one-grid, .task-one-scorebar { grid-template-columns: 1fr; }
+  .placement-select-grid { grid-template-columns: 1fr; }
+  .task-one-final { grid-template-columns: 1fr; }
+}

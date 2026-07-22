@@ -5,6 +5,8 @@ import { clearAttempts, loadAttempts, saveAttempt } from './attemptStore';
 import { EgmCaliperCanvas } from './EgmCaliperCanvas';
 import { markIntervalMeasurement } from './marking';
 import { resolveAssessmentView } from './assessmentView';
+import type { AssessmentView } from './assessmentView';
+import { TaskOneAssessment } from './task1/TaskOneAssessment';
 import {
   createIntervalMeasurementQuestion,
   toStudentAssessmentQuestion,
@@ -54,6 +56,16 @@ function allowedChannelLabels(
 
 export function AssessmentApp() {
   const assessmentView = resolveAssessmentView(window.location.search);
+  const selectedTask = new URLSearchParams(window.location.search).get('task');
+  if (selectedTask === '1') return <TaskOneAssessment assessmentView={assessmentView} />;
+  return <IntervalAssessmentApp assessmentView={assessmentView} />;
+}
+
+interface IntervalAssessmentAppProps {
+  readonly assessmentView: AssessmentView;
+}
+
+function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
   const instructorView = assessmentView === 'instructor';
   const [scenarioMode, setScenarioMode] = useState<ScenarioMode>('sinus');
   const [cycleLengthMs, setCycleLengthMs] = useState(700);
@@ -254,6 +266,11 @@ export function AssessmentApp() {
           <span className="active" aria-current="page">Student preview</span>
         )}
       </div>
+
+      <nav className="assessment-task-nav" aria-label="Assessment sections">
+        <a className="active" href={instructorView ? '/?mode=assessment&view=instructor' : '/?mode=assessment'}>Interval trainer</a>
+        <a href={instructorView ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
+      </nav>
 
       <div className="prototype-warning">
         Synthetic educational traces only. Not validated for patient care, diagnosis or device programming.

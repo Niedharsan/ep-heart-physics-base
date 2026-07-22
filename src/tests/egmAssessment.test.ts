@@ -23,6 +23,9 @@ describe('deterministic EGM assessment', () => {
     expect(beat.hisOnsetMs! - beat.atrialHisMs!).toBe(80);
     expect(beat.ventricularOnsetMs - beat.hisOnsetMs!).toBe(45);
     expect(beat.ventricularOnsetMs - beat.pOnsetMs!).toBe(180);
+    const pa = first.intervals.find((interval) => interval.id === 'PA')!;
+    expect(pa.expectedValueMs).toBe(55);
+    expect(pa.normalRange).toMatchObject({ minimumMs: 25, maximumMs: 55 });
   });
 
   it('awards two marks only when channels, timing, measurement and classification are correct', () => {

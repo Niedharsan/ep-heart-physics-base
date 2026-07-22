@@ -65,6 +65,12 @@ const channels = Object.freeze([
   { id: 'cs-distal', label: 'CS 1-2', kind: 'intracardiac' },
 ] satisfies readonly EgmChannelDefinition[]);
 
+const paNormalRange: NormalRange = Object.freeze({
+  minimumMs: 25,
+  maximumMs: 55,
+  sourceLabel: 'Kupo 2022, Electrophysiology Study, section 2.4.1',
+});
+
 const ahNormalRange: NormalRange = Object.freeze({
   minimumMs: 55,
   maximumMs: 125,
@@ -123,6 +129,24 @@ function sinusBeats(parameters: SinusScenarioParameters, durationMs: number): re
 
 function sinusIntervals(parameters: SinusScenarioParameters): readonly IntervalDefinition[] {
   return Object.freeze([
+    Object.freeze({
+      id: 'PA',
+      title: 'PA interval',
+      startReference: Object.freeze({
+        landmark: 'p-onset',
+        allowedChannelIds: Object.freeze(['surface-ii']),
+      }),
+      endReference: Object.freeze({
+        landmark: 'atrial-his',
+        allowedChannelIds: Object.freeze(['hbe']),
+      }),
+      expectedValueMs: parameters.prMs - parameters.ahMs - parameters.hvMs,
+      measurementToleranceMs: parameters.measurementToleranceMs,
+      landmarkToleranceMs: 12,
+      normalRange: paNormalRange,
+      studentPrompt: 'Place the start handle at surface P-wave onset and the end handle at the atrial electrogram on the His channel.',
+      referencePrompt: 'PA is measured from earliest atrial activation, usually surface P-wave onset, to atrial activation at the AV-node/His region.',
+    }),
     Object.freeze({
       id: 'AH',
       title: 'AH interval',

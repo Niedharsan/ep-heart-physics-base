@@ -1,4 +1,4 @@
-export type IntervalId = 'AH' | 'HV' | 'PR' | 'RR' | 'VA';
+export type IntervalId = 'PA' | 'AH' | 'HV' | 'PR' | 'RR' | 'VA';
 
 export type LandmarkKind =
   | 'p-onset'

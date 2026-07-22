@@ -31,13 +31,13 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
   }),
   Object.freeze({
     id: 'assessment',
-    title: 'Running EGM interval trainer',
-    summary: 'Freeze synthetic intracardiac traces, place calipers and receive landmark-aware interval marking without an account.',
+    title: 'EP assessment workspace',
+    summary: 'Review channel-aware EGM measurements and the complete 15-mark basic EP study Task 1 without an account.',
     href: '/?mode=assessment',
     status: 'Available',
     capabilities: Object.freeze([
-      'AH, HV, PR, RR/cycle-length and VA exercises',
-      'Anatomical landmark validation',
+      'Channel-aware PA, AH, HV, PR, RR and VA measurements',
+      'Task 1 catheter placement, CS labelling and activation interpretation',
       'Local attempt history and client feedback package',
     ]),
     limitation: 'Synthetic traces; only approved normal ranges are scored.',
@@ -45,7 +45,6 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
 ]);
 
 export const plannedClientCapabilities = Object.freeze([
-  'Catheter placement and coronary-sinus labelling assessment',
   'Arrhythmia and ECG pattern-recognition scenarios',
   'SNRT, refractory-period and pacing-manoeuvre exercises',
   'Weekly quizzes, instructor publishing and shared result review',

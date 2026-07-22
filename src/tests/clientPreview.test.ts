@@ -28,8 +28,9 @@ describe('client preview integration', () => {
   });
 
   it('labels unfinished requirements as planned instead of implemented', () => {
-    expect(plannedClientCapabilities.length).toBeGreaterThanOrEqual(4);
-    expect(plannedClientCapabilities.join(' ')).toContain('Catheter placement');
+    expect(plannedClientCapabilities.length).toBeGreaterThanOrEqual(3);
+    expect(clientModules.find((module) => module.id === 'assessment')?.capabilities.join(' ')).toContain('Task 1');
+    expect(plannedClientCapabilities.join(' ')).not.toContain('Catheter placement');
     expect(plannedClientCapabilities.join(' ')).toContain('Weekly quizzes');
   });
 });

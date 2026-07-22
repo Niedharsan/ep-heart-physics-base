@@ -114,6 +114,32 @@ grid bias. The current radial protocol completes without safeguard activation,
 but that fact alone does not establish equation verification, physiological
 calibration or general scientific validity.
 
+## Paired-stimulus propagated-capture characterization
+
+PR 4 applies S1 at model time zero and S2 after a selected coupling interval.
+Both use the existing instantaneous assignment operator, which sets
+`u = max(u, 1)` over the full-height physical strip `x ∈ [0,2]`. This is not a
+current stimulus with calibrated strength or duration. Local voltage inside
+the strip is therefore not evidence of capture.
+
+The verification protocol instead observes the rising `u=0.5` crossing at
+nine unforced probes: physical stations `x=[6,12,18]` and transverse rows
+`y=[3,6,9]`. Each probe must first record its S1 rising crossing and subsequent
+falling crossing. An S2 activation is only the next rising crossing after both
+S2 and that falling crossing. A trial is classified as propagated capture only
+when all nine S2 crossings exist, each station's transverse spread is no more
+than one timestep, and station-mean activation times are strictly ordered
+downstream. This guards against confusing forced local excitation, partial
+propagation, or a residual S1 wave with S2 capture.
+
+For the fixed `dx=0.5`, `dt=0.02` protocol, timestep-indexed bisection brackets
+the deterministic transition between the longest failing coupling interval
+and shortest captured interval. All times and distances remain normalized
+model units. This is an implementation characterization, not an effective
+refractory period in physiological units. The current result activates the
+recovery upper clip and therefore describes only the safeguard-modified
+implementation.
+
 ## Variant and provenance
 
 Aliev and Panfilov introduced the two-variable lineage in 1996:

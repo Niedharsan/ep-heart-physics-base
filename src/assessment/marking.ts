@@ -1,10 +1,12 @@
 import type {
+  CaliperEndpoint,
   EgmBeatLandmarks,
   IntervalClassification,
   IntervalDefinition,
   IntervalMarkingInput,
   IntervalMarkingResult,
   LandmarkKind,
+  LandmarkReference,
 } from './types';
 
 function finite(value: number, label: string): number {
@@ -47,8 +49,8 @@ function candidatePairs(
   const pairs: CandidatePair[] = [];
   beats.forEach((beat, index) => {
     const nextBeat = beats[index + 1];
-    const startMs = landmarkTime(beat, definition.startLandmark);
-    let endMs = landmarkTime(beat, definition.endLandmark);
+    const startMs = landmarkTime(beat, definition.startReference.landmark);
+    let endMs = landmarkTime(beat, definition.endReference.landmark);
 
     if (definition.id === 'RR') {
       endMs = nextBeat?.ventricularOnsetMs;
@@ -59,6 +61,17 @@ function candidatePairs(
     }
   });
   return pairs;
+}
+
+function orderedEndpoints(
+  start: CaliperEndpoint,
+  end: CaliperEndpoint,
+): readonly [CaliperEndpoint, CaliperEndpoint] {
+  return start.timeMs <= end.timeMs ? [start, end] : [end, start];
+}
+
+function channelAllowed(endpoint: CaliperEndpoint, reference: LandmarkReference): boolean {
+  return reference.allowedChannelIds.includes(endpoint.channelId);
 }
 
 export function classifyInterval(
@@ -73,28 +86,49 @@ export function classifyInterval(
 }
 
 export function markIntervalMeasurement(input: IntervalMarkingInput): IntervalMarkingResult {
-  const startMs = finite(input.calipers.startMs, 'Caliper start');
-  const endMs = finite(input.calipers.endMs, 'Caliper end');
+  const rawStart: CaliperEndpoint = {
+    timeMs: finite(input.calipers.start.timeMs, 'Caliper start'),
+    channelId: input.calipers.start.channelId,
+  };
+  const rawEnd: CaliperEndpoint = {
+    timeMs: finite(input.calipers.end.timeMs, 'Caliper end'),
+    channelId: input.calipers.end.channelId,
+  };
+  if (rawStart.channelId.trim().length === 0 || rawEnd.channelId.trim().length === 0) {
+    throw new Error('Caliper channels must not be empty.');
+  }
+
   const reportedValueMs = finite(input.reportedValueMs, 'Reported interval');
-  const measuredValueMs = Math.abs(endMs - startMs);
-  const orderedStartMs = Math.min(startMs, endMs);
-  const orderedEndMs = Math.max(startMs, endMs);
+  const [orderedStart, orderedEnd] = orderedEndpoints(rawStart, rawEnd);
+  const measuredValueMs = orderedEnd.timeMs - orderedStart.timeMs;
   const definition = input.definition;
 
-  const match = candidatePairs(definition, input.beats).find((pair) => (
-    Math.abs(orderedStartMs - pair.startMs) <= definition.landmarkToleranceMs
-    && Math.abs(orderedEndMs - pair.endMs) <= definition.landmarkToleranceMs
+  const timingMatch = candidatePairs(definition, input.beats).find((pair) => (
+    Math.abs(orderedStart.timeMs - pair.startMs) <= definition.landmarkToleranceMs
+    && Math.abs(orderedEnd.timeMs - pair.endMs) <= definition.landmarkToleranceMs
   ));
+  const timingSelectionCorrect = timingMatch !== undefined;
+  const channelSelectionCorrect = (
+    channelAllowed(orderedStart, definition.startReference)
+    && channelAllowed(orderedEnd, definition.endReference)
+  );
 
   const classificationAssessed = definition.normalRange !== undefined;
   const maximumScore = classificationAssessed ? 2 : 1;
   const feedback: string[] = [];
 
-  if (!match) {
-    feedback.push('The calipers were not placed on the required anatomical landmarks.');
-    feedback.push('An incorrect landmark gives zero marks for the complete interval item.');
+  if (!timingSelectionCorrect || !channelSelectionCorrect) {
+    if (!timingSelectionCorrect) {
+      feedback.push('One or both calipers are outside the accepted landmark timing window.');
+    }
+    if (!channelSelectionCorrect) {
+      feedback.push('One or both calipers are on the wrong EGM channel for this interval.');
+    }
+    feedback.push('An incorrect anatomical landmark or channel gives zero marks for the complete interval item.');
     return Object.freeze({
       landmarkStatus: 'incorrect',
+      channelSelectionCorrect,
+      timingSelectionCorrect,
       measuredValueMs,
       reportedValueMs,
       expectedValueMs: definition.expectedValueMs,
@@ -118,7 +152,7 @@ export function markIntervalMeasurement(input: IntervalMarkingInput): IntervalMa
   const measurementCorrect = caliperWithinTolerance && reportedWithinTolerance;
 
   if (measurementCorrect) {
-    feedback.push(`Measurement accepted within ±${definition.measurementToleranceMs} ms.`);
+    feedback.push('Measurement accepted within the configured tolerance.');
   } else if (!caliperWithinTolerance) {
     feedback.push('The caliper-derived interval is outside the accepted tolerance.');
   } else {
@@ -140,7 +174,9 @@ export function markIntervalMeasurement(input: IntervalMarkingInput): IntervalMa
 
   return Object.freeze({
     landmarkStatus: 'correct',
-    matchedBeatIndex: match.beatIndex,
+    channelSelectionCorrect,
+    timingSelectionCorrect,
+    matchedBeatIndex: timingMatch.beatIndex,
     measuredValueMs,
     reportedValueMs,
     expectedValueMs: definition.expectedValueMs,

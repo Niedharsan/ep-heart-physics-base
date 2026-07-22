@@ -4,10 +4,15 @@ import { ClientModuleNav } from '../clientPreview/ClientModuleNav';
 import { clearAttempts, loadAttempts, saveAttempt } from './attemptStore';
 import { EgmCaliperCanvas } from './EgmCaliperCanvas';
 import { markIntervalMeasurement } from './marking';
+import {
+  createIntervalMeasurementQuestion,
+  toStudentAssessmentQuestion,
+} from './questionSchema';
 import type {
   CaliperPlacement,
   EgmScenario,
   IntervalClassification,
+  IntervalDefinition,
   IntervalId,
   StoredAttempt,
 } from './types';
@@ -18,15 +23,44 @@ import {
 import './assessment.css';
 
 type ScenarioMode = 'sinus' | 'retrograde';
+export type AssessmentView = 'student' | 'instructor';
 
-const initialCalipers: CaliperPlacement = Object.freeze({ startMs: 320, endMs: 520 });
+const initialCalipers: CaliperPlacement = Object.freeze({
+  start: Object.freeze({ timeMs: 300, channelId: 'surface-ii' }),
+  end: Object.freeze({ timeMs: 520, channelId: 'surface-ii' }),
+});
+
+export function resolveAssessmentView(search: string): AssessmentView {
+  return new URLSearchParams(search).get('view') === 'instructor'
+    ? 'instructor'
+    : 'student';
+}
 
 function attemptIdentifier(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function channelLabel(scenario: EgmScenario, channelId: string): string {
+  return scenario.channels.find((channel) => channel.id === channelId)?.label ?? channelId;
+}
+
+function allowedChannelLabels(
+  scenario: EgmScenario,
+  definition: IntervalDefinition,
+  endpoint: 'start' | 'end',
+): string {
+  const reference = endpoint === 'start'
+    ? definition.startReference
+    : definition.endReference;
+  return reference.allowedChannelIds
+    .map((channelId) => channelLabel(scenario, channelId))
+    .join(', ');
+}
+
 export function AssessmentApp() {
+  const assessmentView = resolveAssessmentView(window.location.search);
+  const instructorView = assessmentView === 'instructor';
   const [scenarioMode, setScenarioMode] = useState<ScenarioMode>('sinus');
   const [cycleLengthMs, setCycleLengthMs] = useState(700);
   const [ahMs, setAhMs] = useState(80);
@@ -67,6 +101,13 @@ export function AssessmentApp() {
     scenario.intervals.find((interval) => interval.id === selectedIntervalId)
     ?? scenario.intervals[0]
   ), [scenario, selectedIntervalId]);
+
+  const studentQuestion = useMemo(() => {
+    if (!selectedInterval) return undefined;
+    return toStudentAssessmentQuestion(
+      createIntervalMeasurementQuestion(scenario.id, selectedInterval),
+    );
+  }, [scenario.id, selectedInterval]);
 
   function resetCurrentItem(): void {
     setLatestAttempt(null);
@@ -111,7 +152,7 @@ export function AssessmentApp() {
     return () => cancelAnimationFrame(frame);
   }, [running, scenario.durationMs]);
 
-  const measuredMs = Math.abs(calipers.endMs - calipers.startMs);
+  const measuredMs = Math.abs(calipers.end.timeMs - calipers.start.timeMs);
 
   function markCurrentAttempt(): void {
     if (!selectedInterval) return;
@@ -132,7 +173,10 @@ export function AssessmentApp() {
       createdAtIso: new Date().toISOString(),
       scenarioId: scenario.id,
       intervalId: selectedInterval.id,
-      calipers: Object.freeze({ ...calipers }),
+      calipers: Object.freeze({
+        start: Object.freeze({ ...calipers.start }),
+        end: Object.freeze({ ...calipers.end }),
+      }),
       reportedValueMs: parsedReportedValue,
       classification: classification || undefined,
       result,
@@ -143,16 +187,41 @@ export function AssessmentApp() {
   }
 
   async function copyFeedbackPackage(): Promise<void> {
+    const feedbackAttempt = latestAttempt && !instructorView
+      ? {
+        id: latestAttempt.id,
+        createdAtIso: latestAttempt.createdAtIso,
+        scenarioId: latestAttempt.scenarioId,
+        intervalId: latestAttempt.intervalId,
+        calipers: latestAttempt.calipers,
+        reportedValueMs: latestAttempt.reportedValueMs,
+        classification: latestAttempt.classification,
+        result: {
+          landmarkStatus: latestAttempt.result.landmarkStatus,
+          channelSelectionCorrect: latestAttempt.result.channelSelectionCorrect,
+          timingSelectionCorrect: latestAttempt.result.timingSelectionCorrect,
+          measuredValueMs: latestAttempt.result.measuredValueMs,
+          measurementCorrect: latestAttempt.result.measurementCorrect,
+          classificationAssessed: latestAttempt.result.classificationAssessed,
+          classificationCorrect: latestAttempt.result.classificationCorrect,
+          score: latestAttempt.result.score,
+          maximumScore: latestAttempt.result.maximumScore,
+          feedback: latestAttempt.result.feedback,
+        },
+      }
+      : latestAttempt;
     const packageData = {
-      preview: 'EP Heart assessment phase 1',
+      preview: 'EP Heart channel-aware assessment foundation',
+      assessmentView,
       createdAtIso: new Date().toISOString(),
       scenario: {
         id: scenario.id,
         title: scenario.title,
-        cycleLengthMs: scenario.cycleLengthMs,
+        cycleLengthMs: instructorView ? scenario.cycleLengthMs : undefined,
       },
+      selectedQuestionId: studentQuestion?.questionId,
       selectedInterval: selectedInterval?.id,
-      latestAttempt,
+      latestAttempt: feedbackAttempt,
       notes: feedbackNotes,
       browser: navigator.userAgent,
       disclaimer: 'Synthetic educational prototype; not for clinical decision-making.',
@@ -174,16 +243,34 @@ export function AssessmentApp() {
           <p className="assessment-eyebrow">EP HEART · LOGIN-FREE ASSESSMENT PREVIEW</p>
           <h1>Running EGM interval trainer</h1>
           <p>
-            Place both calipers on the correct anatomical landmarks, enter the measured
-            interval and classify it where an approved range is available.
+            Freeze the trace, place each caliper handle on the correct channel and anatomical
+            landmark, enter the measured interval and classify it where an approved range exists.
           </p>
         </div>
         <a className="return-link" href="/">All modules</a>
       </header>
 
+      <div className="assessment-view-switch" aria-label="Assessment preview view">
+        {instructorView ? (
+          <>
+            <a href="/?mode=assessment">Return to student preview</a>
+            <span className="active" aria-current="page">Instructor preview</span>
+          </>
+        ) : (
+          <span className="active" aria-current="page">Student preview</span>
+        )}
+      </div>
+
       <div className="prototype-warning">
         Synthetic educational traces only. Not validated for patient care, diagnosis or device programming.
       </div>
+
+      {instructorView && (
+        <div className="instructor-warning">
+          Instructor preview exposes scenario values and answer configuration. This login-free static
+          site is not a secure examination platform and does not keep browser-delivered answer data secret.
+        </div>
+      )}
 
       <section className="assessment-controls" aria-label="Scenario controls">
         <label>
@@ -193,42 +280,46 @@ export function AssessmentApp() {
             <option value="retrograde">Retrograde VA study</option>
           </select>
         </label>
-        <label>
-          Cycle length
-          <span>{cycleLengthMs} ms</span>
-          <input type="range" min="500" max="1200" step="10" value={cycleLengthMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setCycleLengthMs, Number(event.target.value))} />
-        </label>
-        {scenarioMode === 'sinus' && (
+        {instructorView && (
           <>
             <label>
-              AH
-              <span>{ahMs} ms</span>
-              <input type="range" min="40" max="160" step="1" value={ahMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setAhMs, Number(event.target.value))} />
+              Cycle length
+              <span>{cycleLengthMs} ms</span>
+              <input type="range" min="500" max="1200" step="10" value={cycleLengthMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setCycleLengthMs, Number(event.target.value))} />
             </label>
+            {scenarioMode === 'sinus' && (
+              <>
+                <label>
+                  AH
+                  <span>{ahMs} ms</span>
+                  <input type="range" min="40" max="160" step="1" value={ahMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setAhMs, Number(event.target.value))} />
+                </label>
+                <label>
+                  HV
+                  <span>{hvMs} ms</span>
+                  <input type="range" min="25" max="90" step="1" value={hvMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setHvMs, Number(event.target.value))} />
+                </label>
+                <label>
+                  PR
+                  <span>{prMs} ms</span>
+                  <input type="range" min={ahMs + hvMs + 20} max="320" step="1" value={Math.max(prMs, ahMs + hvMs + 20)} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setPrMs, Number(event.target.value))} />
+                </label>
+              </>
+            )}
+            {scenarioMode === 'retrograde' && (
+              <label>
+                VA
+                <span>{vaMs} ms</span>
+                <input type="range" min="40" max="220" step="1" value={vaMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setVaMs, Number(event.target.value))} />
+              </label>
+            )}
             <label>
-              HV
-              <span>{hvMs} ms</span>
-              <input type="range" min="25" max="90" step="1" value={hvMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setHvMs, Number(event.target.value))} />
-            </label>
-            <label>
-              PR
-              <span>{prMs} ms</span>
-              <input type="range" min={ahMs + hvMs + 20} max="320" step="1" value={Math.max(prMs, ahMs + hvMs + 20)} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setPrMs, Number(event.target.value))} />
+              Marking tolerance
+              <span>±{toleranceMs} ms</span>
+              <input type="range" min="2" max="15" step="1" value={toleranceMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setToleranceMs, Number(event.target.value))} />
             </label>
           </>
         )}
-        {scenarioMode === 'retrograde' && (
-          <label>
-            VA
-            <span>{vaMs} ms</span>
-            <input type="range" min="40" max="220" step="1" value={vaMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setVaMs, Number(event.target.value))} />
-          </label>
-        )}
-        <label>
-          Marking tolerance
-          <span>±{toleranceMs} ms</span>
-          <input type="range" min="2" max="15" step="1" value={toleranceMs} onChange={(event: ChangeEvent<HTMLInputElement>) => updateNumericScenario(setToleranceMs, Number(event.target.value))} />
-        </label>
         <button className="assessment-primary" onClick={() => setRunning((value) => !value)}>
           {running ? 'Freeze to measure' : 'Resume running'}
         </button>
@@ -238,10 +329,10 @@ export function AssessmentApp() {
         <article className="assessment-panel trace-panel">
           <div className="assessment-panel-heading">
             <div>
-              <span>{scenario.mechanismLabel}</span>
+              <span>{instructorView ? scenario.mechanismLabel : 'SYNTHETIC EGM SCENARIO'}</span>
               <h2>{scenario.title}</h2>
             </div>
-            <p>{running ? 'Running display — freeze before placing calipers.' : 'Frozen — drag either caliper line.'}</p>
+            <p>{running ? 'Running display — freeze before placing calipers.' : 'Frozen — drag each handle in time and between channels.'}</p>
           </div>
           <EgmCaliperCanvas
             scenario={scenario}
@@ -250,9 +341,9 @@ export function AssessmentApp() {
             playheadMs={playheadMs}
             onCalipersChange={setCalipers}
           />
-          <div className="caliper-readout">
-            <span>Start: {Math.round(calipers.startMs)} ms</span>
-            <span>End: {Math.round(calipers.endMs)} ms</span>
+          <div className="caliper-readout channel-aware-readout">
+            <span>Start: {channelLabel(scenario, calipers.start.channelId)} @ {Math.round(calipers.start.timeMs)} ms</span>
+            <span>End: {channelLabel(scenario, calipers.end.channelId)} @ {Math.round(calipers.end.timeMs)} ms</span>
             <strong>Caliper interval: {Math.round(measuredMs)} ms</strong>
           </div>
         </article>
@@ -267,7 +358,19 @@ export function AssessmentApp() {
               ))}
             </select>
           </label>
-          <p className="prompt-copy">{selectedInterval?.explanatoryPrompt}</p>
+          <p className="prompt-copy">{studentQuestion?.prompt}</p>
+
+          {instructorView && selectedInterval && (
+            <div className="instructor-answer-key">
+              <strong>Instructor answer configuration</strong>
+              <span>Expected: {selectedInterval.expectedValueMs} ms · tolerance ±{selectedInterval.measurementToleranceMs} ms</span>
+              <span>Start channel: {allowedChannelLabels(scenario, selectedInterval, 'start')}</span>
+              <span>End channel: {allowedChannelLabels(scenario, selectedInterval, 'end')}</span>
+              <span>Landmark window: ±{selectedInterval.landmarkToleranceMs} ms</span>
+              <span>Reference: {selectedInterval.referencePrompt}</span>
+            </div>
+          )}
+
           <label>
             Your recorded value (ms)
             <input type="number" inputMode="decimal" value={reportedValue} onChange={(event: ChangeEvent<HTMLInputElement>) => setReportedValue(event.target.value)} />
@@ -286,7 +389,8 @@ export function AssessmentApp() {
           {latestAttempt && (
             <div className={`marking-result ${latestAttempt.result.score === latestAttempt.result.maximumScore ? 'pass' : 'review'}`}>
               <strong>{latestAttempt.result.score}/{latestAttempt.result.maximumScore} marks</strong>
-              <span>Landmarks: {latestAttempt.result.landmarkStatus}</span>
+              <span>Landmark timing: {latestAttempt.result.timingSelectionCorrect ? 'correct' : 'incorrect'}</span>
+              <span>Landmark channels: {latestAttempt.result.channelSelectionCorrect ? 'correct' : 'incorrect'}</span>
               <span>Measured: {Math.round(latestAttempt.result.measuredValueMs)} ms</span>
               {latestAttempt.result.feedback.map((line) => <p key={line}>{line}</p>)}
             </div>
@@ -325,11 +429,18 @@ export function AssessmentApp() {
       </section>
 
       <footer className="assessment-footer">
-        <p>
-          Source-derived defaults in this phase: AH normal 55–125 ms and HV normal 35–55 ms.
-          Other normal ranges remain deliberately unset until approved.
-        </p>
-        <a href="/?mode=assessment">Shareable assessment URL format</a>
+        {instructorView ? (
+          <p>
+            Source-derived defaults: AH normal 55–125 ms and HV normal 35–55 ms.
+            Other normal ranges remain deliberately unset until approved.
+          </p>
+        ) : (
+          <p>
+            Approved ranges are applied automatically where configured. Scenario answer values and
+            tolerance controls are hidden from the normal student preview.
+          </p>
+        )}
+        <a href="/?mode=assessment">Student assessment URL</a>
       </footer>
     </main>
   );

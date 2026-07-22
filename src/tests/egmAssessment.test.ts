@@ -25,36 +25,45 @@ describe('deterministic EGM assessment', () => {
     expect(beat.ventricularOnsetMs - beat.pOnsetMs!).toBe(180);
   });
 
-  it('awards two marks only when landmarks, measurement and classification are correct', () => {
+  it('awards two marks only when channels, timing, measurement and classification are correct', () => {
     const scenario = sinusScenario();
     const definition = scenario.intervals.find((interval) => interval.id === 'AH')!;
     const beat = scenario.beats[0]!;
     const result = markIntervalMeasurement({
       definition,
       beats: scenario.beats,
-      calipers: { startMs: beat.atrialHisMs! + 2, endMs: beat.hisOnsetMs! - 1 },
+      calipers: {
+        start: { timeMs: beat.atrialHisMs! + 2, channelId: 'hbe' },
+        end: { timeMs: beat.hisOnsetMs! - 1, channelId: 'hbe' },
+      },
       reportedValueMs: 79,
       classification: 'normal',
     });
     expect(result.landmarkStatus).toBe('correct');
+    expect(result.channelSelectionCorrect).toBe(true);
+    expect(result.timingSelectionCorrect).toBe(true);
     expect(result.measurementCorrect).toBe(true);
     expect(result.classificationCorrect).toBe(true);
     expect(result.score).toBe(2);
     expect(result.maximumScore).toBe(2);
   });
 
-  it('gives zero for the whole item when the anatomical landmarks are wrong', () => {
+  it('gives zero for the whole item when anatomical timing is wrong', () => {
     const scenario = sinusScenario();
     const definition = scenario.intervals.find((interval) => interval.id === 'AH')!;
     const beat = scenario.beats[0]!;
     const result = markIntervalMeasurement({
       definition,
       beats: scenario.beats,
-      calipers: { startMs: beat.atrialHisMs!, endMs: beat.ventricularOnsetMs },
+      calipers: {
+        start: { timeMs: beat.atrialHisMs!, channelId: 'hbe' },
+        end: { timeMs: beat.ventricularOnsetMs, channelId: 'hbe' },
+      },
       reportedValueMs: 80,
       classification: 'normal',
     });
     expect(result.landmarkStatus).toBe('incorrect');
+    expect(result.timingSelectionCorrect).toBe(false);
     expect(result.score).toBe(0);
   });
 
@@ -72,7 +81,7 @@ describe('deterministic EGM assessment', () => {
     expect(rr.normalRange).toBeUndefined();
   });
 
-  it('supports retrograde VA landmark marking but leaves classification unscored', () => {
+  it('supports retrograde VA channel-aware landmark marking but leaves classification unscored', () => {
     const scenario = createRetrogradeEgmScenario({
       cycleLengthMs: 650,
       vaMs: 90,
@@ -83,7 +92,10 @@ describe('deterministic EGM assessment', () => {
     const result = markIntervalMeasurement({
       definition,
       beats: scenario.beats,
-      calipers: { startMs: beat.ventricularOnsetMs, endMs: beat.retrogradeAtrialOnsetMs! },
+      calipers: {
+        start: { timeMs: beat.ventricularOnsetMs, channelId: 'rva' },
+        end: { timeMs: beat.retrogradeAtrialOnsetMs!, channelId: 'hbe' },
+      },
       reportedValueMs: 90,
     });
     expect(result.landmarkStatus).toBe('correct');

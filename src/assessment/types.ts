@@ -15,16 +15,22 @@ export interface NormalRange {
   readonly sourceLabel: string;
 }
 
+export interface LandmarkReference {
+  readonly landmark: LandmarkKind;
+  readonly allowedChannelIds: readonly string[];
+}
+
 export interface IntervalDefinition {
   readonly id: IntervalId;
   readonly title: string;
-  readonly startLandmark: LandmarkKind;
-  readonly endLandmark: LandmarkKind;
+  readonly startReference: LandmarkReference;
+  readonly endReference: LandmarkReference;
   readonly expectedValueMs: number;
   readonly measurementToleranceMs: number;
   readonly landmarkToleranceMs: number;
   readonly normalRange?: NormalRange;
-  readonly explanatoryPrompt: string;
+  readonly studentPrompt: string;
+  readonly referencePrompt: string;
 }
 
 export interface EgmBeatLandmarks {
@@ -55,9 +61,14 @@ export interface EgmScenario {
   readonly waveformByChannel: Readonly<Record<string, Float64Array>>;
 }
 
+export interface CaliperEndpoint {
+  readonly timeMs: number;
+  readonly channelId: string;
+}
+
 export interface CaliperPlacement {
-  readonly startMs: number;
-  readonly endMs: number;
+  readonly start: CaliperEndpoint;
+  readonly end: CaliperEndpoint;
 }
 
 export type LandmarkStatus = 'correct' | 'incorrect';
@@ -72,6 +83,8 @@ export interface IntervalMarkingInput {
 
 export interface IntervalMarkingResult {
   readonly landmarkStatus: LandmarkStatus;
+  readonly channelSelectionCorrect: boolean;
+  readonly timingSelectionCorrect: boolean;
   readonly matchedBeatIndex?: number;
   readonly measuredValueMs: number;
   readonly reportedValueMs: number;

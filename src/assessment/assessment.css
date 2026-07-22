@@ -96,3 +96,60 @@ textarea { min-height: 130px; width: 100%; resize: vertical; margin: 12px 0; }
   .assessment-panel-heading, .assessment-footer { display: grid; }
   .caliper-readout strong { margin-left: 0; }
 }
+
+.assessment-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.assessment-view-switch a,
+.assessment-view-switch span {
+  color: #9eb2b3;
+  text-decoration: none;
+  border: 1px solid #28414a;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.assessment-view-switch a.active,
+.assessment-view-switch span.active {
+  color: #75efbd;
+  border-color: #2d6e55;
+  background: #092419;
+}
+
+.instructor-warning {
+  margin-bottom: 16px;
+  border: 1px solid #4d466f;
+  background: #171329;
+  color: #d9d1ff;
+  border-radius: 12px;
+  padding: 11px 14px;
+  line-height: 1.45;
+}
+
+.channel-aware-readout span {
+  border: 1px solid #203942;
+  background: #08151d;
+  border-radius: 9px;
+  padding: 7px 9px;
+}
+
+.instructor-answer-key {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #514a73;
+  background: #151226;
+  color: #dcd7ff;
+  border-radius: 12px;
+  padding: 11px 12px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.instructor-answer-key strong { color: #f0edff; }
+.instructor-answer-key span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

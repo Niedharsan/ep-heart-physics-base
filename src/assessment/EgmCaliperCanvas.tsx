@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import type { CaliperPlacement, EgmScenario } from './types';
+import type {
+  CaliperEndpoint,
+  CaliperPlacement,
+  EgmScenario,
+} from './types';
 import { waveformSampleIntervalMs } from './waveform';
 
 interface EgmCaliperCanvasProps {
@@ -37,6 +41,11 @@ function resizeCanvas(canvas: HTMLCanvasElement): CanvasRenderingContext2D | nul
   return context;
 }
 
+function channelIndex(scenario: EgmScenario, channelId: string): number {
+  const index = scenario.channels.findIndex((channel) => channel.id === channelId);
+  return index >= 0 ? index : 0;
+}
+
 export function EgmCaliperCanvas({
   scenario,
   calipers,
@@ -63,6 +72,9 @@ export function EgmCaliperCanvas({
       const xForTime = (timeMs: number): number => (
         LEFT_MARGIN + (timeMs / scenario.durationMs) * plotWidth
       );
+      const yForChannel = (channelId: string): number => (
+        TOP_MARGIN + rowHeight * (channelIndex(scenario, channelId) + 0.5)
+      );
 
       context.clearRect(0, 0, width, height);
       context.fillStyle = '#061016';
@@ -82,8 +94,8 @@ export function EgmCaliperCanvas({
         context.fillText(`${timeMs} ms`, x + 3, height - 12);
       }
 
-      scenario.channels.forEach((channel, channelIndex) => {
-        const centerY = TOP_MARGIN + rowHeight * (channelIndex + 0.5);
+      scenario.channels.forEach((channel, channelPosition) => {
+        const centerY = TOP_MARGIN + rowHeight * (channelPosition + 0.5);
         context.strokeStyle = 'rgba(159, 185, 194, 0.14)';
         context.beginPath();
         context.moveTo(LEFT_MARGIN, centerY);
@@ -112,21 +124,43 @@ export function EgmCaliperCanvas({
         context.stroke();
       });
 
-      const drawCaliper = (timeMs: number, label: string, colour: string): void => {
-        const x = xForTime(timeMs);
-        context.strokeStyle = colour;
-        context.lineWidth = 2;
+      const drawEndpoint = (
+        endpoint: CaliperEndpoint,
+        label: string,
+        colour: string,
+      ): void => {
+        const x = xForTime(endpoint.timeMs);
+        const y = yForChannel(endpoint.channelId);
+        const halfSegment = Math.max(18, rowHeight * 0.34);
+
+        context.strokeStyle = `${colour}55`;
+        context.lineWidth = 1;
         context.beginPath();
         context.moveTo(x, TOP_MARGIN);
         context.lineTo(x, height - BOTTOM_MARGIN);
         context.stroke();
+
+        context.strokeStyle = colour;
+        context.lineWidth = 2.4;
+        context.beginPath();
+        context.moveTo(x, y - halfSegment);
+        context.lineTo(x, y + halfSegment);
+        context.stroke();
+        context.beginPath();
+        context.moveTo(x - 9, y);
+        context.lineTo(x + 9, y);
+        context.stroke();
+
         context.fillStyle = colour;
+        context.beginPath();
+        context.arc(x, y, 5, 0, Math.PI * 2);
+        context.fill();
         context.font = '800 11px ui-monospace, SFMono-Regular, Menlo, monospace';
-        context.fillText(label, x + 4, TOP_MARGIN + 12);
+        context.fillText(label, x + 7, y - 9);
       };
 
-      drawCaliper(calipers.startMs, 'START', '#4fe5ad');
-      drawCaliper(calipers.endMs, 'END', '#ffb76b');
+      drawEndpoint(calipers.start, 'START', '#4fe5ad');
+      drawEndpoint(calipers.end, 'END', '#ffb76b');
 
       if (running) {
         const x = xForTime(playheadMs);
@@ -145,33 +179,54 @@ export function EgmCaliperCanvas({
     return () => observer.disconnect();
   }, [calipers, playheadMs, running, scenario]);
 
-  function timeFromPointer(event: ReactPointerEvent<HTMLCanvasElement>): number {
+  function endpointFromPointer(event: ReactPointerEvent<HTMLCanvasElement>): CaliperEndpoint {
     const canvas = event.currentTarget;
     const rectangle = canvas.getBoundingClientRect();
     const plotWidth = Math.max(1, rectangle.width - LEFT_MARGIN - RIGHT_MARGIN);
+    const plotHeight = Math.max(1, rectangle.height - TOP_MARGIN - BOTTOM_MARGIN);
     const localX = clamp(event.clientX - rectangle.left - LEFT_MARGIN, 0, plotWidth);
-    return Math.round((localX / plotWidth) * scenario.durationMs);
+    const localY = clamp(event.clientY - rectangle.top - TOP_MARGIN, 0, plotHeight - 0.001);
+    const channelPosition = Math.floor((localY / plotHeight) * scenario.channels.length);
+    const channel = scenario.channels[channelPosition] ?? scenario.channels[0];
+    if (!channel) throw new Error('EGM scenario requires at least one channel.');
+    return Object.freeze({
+      timeMs: Math.round((localX / plotWidth) * scenario.durationMs),
+      channelId: channel.id,
+    });
+  }
+
+  function screenPoint(endpoint: CaliperEndpoint, canvas: HTMLCanvasElement): readonly [number, number] {
+    const rectangle = canvas.getBoundingClientRect();
+    const plotWidth = Math.max(1, rectangle.width - LEFT_MARGIN - RIGHT_MARGIN);
+    const plotHeight = Math.max(1, rectangle.height - TOP_MARGIN - BOTTOM_MARGIN);
+    const rowHeight = plotHeight / scenario.channels.length;
+    return [
+      rectangle.left + LEFT_MARGIN + (endpoint.timeMs / scenario.durationMs) * plotWidth,
+      rectangle.top + TOP_MARGIN + rowHeight * (channelIndex(scenario, endpoint.channelId) + 0.5),
+    ];
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLCanvasElement>): void {
     if (running) return;
-    const timeMs = timeFromPointer(event);
-    const startDistance = Math.abs(timeMs - calipers.startMs);
-    const endDistance = Math.abs(timeMs - calipers.endMs);
+    const [startX, startY] = screenPoint(calipers.start, event.currentTarget);
+    const [endX, endY] = screenPoint(calipers.end, event.currentTarget);
+    const startDistance = Math.hypot(event.clientX - startX, event.clientY - startY);
+    const endDistance = Math.hypot(event.clientX - endX, event.clientY - endY);
     const nextHandle: Exclude<DragHandle, null> = startDistance <= endDistance ? 'start' : 'end';
     setDragHandle(nextHandle);
     event.currentTarget.setPointerCapture(event.pointerId);
+    const endpoint = endpointFromPointer(event);
     onCalipersChange(nextHandle === 'start'
-      ? { ...calipers, startMs: timeMs }
-      : { ...calipers, endMs: timeMs });
+      ? { ...calipers, start: endpoint }
+      : { ...calipers, end: endpoint });
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLCanvasElement>): void {
     if (running || dragHandle === null) return;
-    const timeMs = timeFromPointer(event);
+    const endpoint = endpointFromPointer(event);
     onCalipersChange(dragHandle === 'start'
-      ? { ...calipers, startMs: timeMs }
-      : { ...calipers, endMs: timeMs });
+      ? { ...calipers, start: endpoint }
+      : { ...calipers, end: endpoint });
   }
 
   function handlePointerUp(event: ReactPointerEvent<HTMLCanvasElement>): void {
@@ -185,7 +240,7 @@ export function EgmCaliperCanvas({
     <canvas
       ref={canvasRef}
       className="egm-canvas"
-      aria-label="Synthetic electrogram with draggable start and end calipers"
+      aria-label="Synthetic electrogram with channel-aware draggable start and end calipers"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

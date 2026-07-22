@@ -1,7 +1,13 @@
-import type { StoredAttempt } from './types';
+import type { CaliperEndpoint, StoredAttempt } from './types';
 
-const STORAGE_KEY = 'ep-heart-assessment-attempts-v1';
+const STORAGE_KEY = 'ep-heart-assessment-attempts-v2';
 const MAX_ATTEMPTS = 50;
+
+function isCaliperEndpoint(value: unknown): value is CaliperEndpoint {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<CaliperEndpoint>;
+  return Number.isFinite(candidate.timeMs) && typeof candidate.channelId === 'string';
+}
 
 function isStoredAttempt(value: unknown): value is StoredAttempt {
   if (!value || typeof value !== 'object') return false;
@@ -12,6 +18,8 @@ function isStoredAttempt(value: unknown): value is StoredAttempt {
     && typeof candidate.scenarioId === 'string'
     && typeof candidate.intervalId === 'string'
     && candidate.calipers !== undefined
+    && isCaliperEndpoint(candidate.calipers.start)
+    && isCaliperEndpoint(candidate.calipers.end)
     && typeof candidate.reportedValueMs === 'number'
     && candidate.result !== undefined
   );

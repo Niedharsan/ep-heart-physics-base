@@ -4,6 +4,7 @@ import { ClientModuleNav } from '../clientPreview/ClientModuleNav';
 import { clearAttempts, loadAttempts, saveAttempt } from './attemptStore';
 import { EgmCaliperCanvas } from './EgmCaliperCanvas';
 import { markIntervalMeasurement } from './marking';
+import { resolveAssessmentView } from './assessmentView';
 import {
   createIntervalMeasurementQuestion,
   toStudentAssessmentQuestion,
@@ -23,18 +24,11 @@ import {
 import './assessment.css';
 
 type ScenarioMode = 'sinus' | 'retrograde';
-export type AssessmentView = 'student' | 'instructor';
 
 const initialCalipers: CaliperPlacement = Object.freeze({
   start: Object.freeze({ timeMs: 300, channelId: 'surface-ii' }),
   end: Object.freeze({ timeMs: 520, channelId: 'surface-ii' }),
 });
-
-export function resolveAssessmentView(search: string): AssessmentView {
-  return new URLSearchParams(search).get('view') === 'instructor'
-    ? 'instructor'
-    : 'student';
-}
 
 function attemptIdentifier(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();

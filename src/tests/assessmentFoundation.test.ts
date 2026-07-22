@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAssessmentView } from '../assessment/AssessmentApp';
+import { resolveAssessmentView } from '../assessment/assessmentView';
 import { markIntervalMeasurement } from '../assessment/marking';
 import {
   createIntervalMeasurementQuestion,

@@ -5,10 +5,11 @@
 - independently calculated reaction derivatives across resting, excited,
   boundary and custom-parameter states
 - model parameter-domain and immutable-snapshot validation
+- immutable source-named 1996-classic and 2009-generalized presets
 - resting equilibrium and subthreshold reaction direction
 - unclipped model-only finite short trajectory
 - denominator-guard activation and Float32 boundary reachability
-- typed/resettable guard, clip and non-finite diagnostics
+- typed/resettable guard, clip, proposed-state-extrema and non-finite diagnostics
 - deterministic default-scenario safeguard characterization
 - rising-threshold activation interpolation and linear-fit unit tests
 - deterministic five-station/three-row planar propagation-speed measurement
@@ -21,6 +22,8 @@
   nodal activation-time interpolation
 - deterministic S1–S2 failure/capture transition bracket using nine
   downstream probes, timestep-indexed bisection and explicit safeguard status
+- zero clip counts, denominator guards and non-finite states in every PR2–PR4
+  scientific integration protocol, with observed state extrema reported
 - positive stable timestep
 - resting equilibrium
 - excitation and spread after stimulus
@@ -32,13 +35,13 @@
 ## Required before claiming credible 2D propagation
 
 1. planar-wave fixed-grid and three-resolution sensitivity measurements are
-   complete, but clipped runs cannot verify the unconstrained equations;
+   rebaselined with zero clipping; manufactured-solution verification remains;
 2. radial-wave symmetry is characterized for one grid; refinement of the
    symmetry metric remains desirable;
 3. separate dx and dt quantity-of-interest trends are characterized; formal
    order verification against an analytic/manufactured solution remains;
 4. no-flux boundary verification;
-5. paired-stimulus capture/failure is characterized for one clipped fixed-grid
+5. paired-stimulus capture/failure is characterized for one unclipped fixed-grid
    protocol; stimulus-strength, dx/dt and threshold sensitivity remain;
 6. obstacle re-entry initiation and persistence with deterministic setup;
 7. lesion-complete versus lesion-gap conduction tests;

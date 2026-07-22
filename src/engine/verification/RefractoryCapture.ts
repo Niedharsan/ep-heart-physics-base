@@ -4,9 +4,10 @@ import {
   hasStateClipping,
   type MutableNumericalDiagnostics,
   type NumericalDiagnostics,
+  type NumericalStateExtrema,
 } from '../core/numericalDiagnostics';
 import type { ModelParameters, SolverConfig } from '../core/types';
-import { defaultAlievPanfilovParameters } from '../models/AlievPanfilov';
+import { alievPanfilovPresets } from '../models/AlievPanfilov';
 import { MonodomainSolver } from '../numerics/MonodomainSolver';
 import { interpolateUpwardCrossing } from './ActivationTime';
 import { gridNodeCountForExtent, physicalCoordinateToGridIndex } from './PhysicalCoordinates';
@@ -70,6 +71,7 @@ export interface RefractoryCaptureTrialResult extends CaptureAnalysis {
   readonly crossingsByStation: readonly (readonly ProbeCrossings[])[];
   readonly preS2State: PreS2StateEvidence;
   readonly diagnostics: NumericalDiagnostics;
+  readonly stateExtrema: NumericalStateExtrema;
 }
 
 export interface RefractoryCaptureStudyResult {
@@ -84,6 +86,7 @@ export interface RefractoryCaptureStudyResult {
     | 'implementation-characterization'
     | 'implementation-characterization-compromised-by-clipping';
   readonly diagnostics: NumericalDiagnostics;
+  readonly stateExtrema: NumericalStateExtrema;
 }
 
 export const defaultRefractoryCaptureProtocol: RefractoryCaptureProtocol = Object.freeze({
@@ -92,7 +95,7 @@ export const defaultRefractoryCaptureProtocol: RefractoryCaptureProtocol = Objec
   dx: 0.5,
   dt: 0.02,
   diffusion: 0.8,
-  model: defaultAlievPanfilovParameters,
+  model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   stimulusMaximumX: 2,
   stimulusSampleX: 1,
   stimulusAmplitude: 1,
@@ -101,8 +104,8 @@ export const defaultRefractoryCaptureProtocol: RefractoryCaptureProtocol = Objec
   rowY: Object.freeze([3, 6, 9]),
   observationTimeAfterS2: 20,
   maximumPlanaritySpread: 0.02,
-  coarseCouplingIntervals: Object.freeze([22, 26]),
-  transitionScan: Object.freeze({ minimum: 24, maximum: 25, resolution: 0.02 }),
+  coarseCouplingIntervals: Object.freeze([30, 33]),
+  transitionScan: Object.freeze({ minimum: 31, maximum: 32, resolution: 0.02 }),
 });
 
 export function analyzeCaptureCrossings(
@@ -233,6 +236,7 @@ export function runRefractoryCaptureStudy(
   const longestFailingInterval = failures.at(-1)!.couplingInterval;
   const shortestCapturedInterval = trials[firstCaptureIndex]!.couplingInterval;
   const diagnostics = sumDiagnostics(trials.map((trial) => trial.diagnostics));
+  const stateExtrema = combineStateExtrema(trials.map((trial) => trial.stateExtrema));
   const safeguardStatus = hasStateClipping(diagnostics) ? 'clipped' : 'unclipped';
   return Object.freeze({
     protocol: copyProtocol(protocol),
@@ -246,6 +250,7 @@ export function runRefractoryCaptureStudy(
       ? 'implementation-characterization-compromised-by-clipping'
       : 'implementation-characterization',
     diagnostics,
+    stateExtrema,
   });
 }
 
@@ -342,6 +347,7 @@ function runTrial(
     crossingsByStation: crossings,
     preS2State,
     diagnostics,
+    stateExtrema: solver.stateExtrema,
   });
 }
 
@@ -434,6 +440,15 @@ function sumDiagnostics(values: readonly NumericalDiagnostics[]): NumericalDiagn
     for (const key of Object.keys(sum) as Array<keyof NumericalDiagnostics>) sum[key] += value[key];
   }
   return copyNumericalDiagnostics(sum);
+}
+
+function combineStateExtrema(values: readonly NumericalStateExtrema[]): NumericalStateExtrema {
+  return Object.freeze({
+    voltageMinimum: Math.min(...values.map((value) => value.voltageMinimum)),
+    voltageMaximum: Math.max(...values.map((value) => value.voltageMaximum)),
+    recoveryMinimum: Math.min(...values.map((value) => value.recoveryMinimum)),
+    recoveryMaximum: Math.max(...values.map((value) => value.recoveryMaximum)),
+  });
 }
 
 function copyProtocol(protocol: RefractoryCaptureProtocol): RefractoryCaptureProtocol {

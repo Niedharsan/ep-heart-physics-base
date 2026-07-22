@@ -10,8 +10,9 @@ parameters, diffusion, safeguards, worker, UI, pseudo-ECG or scenarios.
 
 The planar results are an observed self-convergence trend for a derived
 quantity of interest. They are not formal method-order verification because no
-analytic/manufactured solution is used and every planar run activates recovery
-upper clipping. No value is converted to physiological units.
+analytic/manufactured solution is used. The corrective rebaseline uses the
+source-named generalized preset and all runs have zero clipping. No value is
+converted to physiological units.
 
 The contraction, apparent-order, finest-pair-change, radial-deviation and
 activation-spread thresholds are project-defined regression/characterization
@@ -36,7 +37,7 @@ References supporting this bounded approach:
 ## Physically fixed planar protocol
 
 Both studies use a `48 × 12` model-length-unit nodal domain, `D = 0.8`
-model-length-unit²/model-time-unit, the unchanged project model parameters, a
+model-length-unit²/model-time-unit, the sourced generalized preset, a
 full-height physical stimulus strip `x ∈ [0,2]`, first rising `u=0.5`
 activation, stations `x=[12,18,24,30,36]`, rows `y=[3,6,9]`, and model-time
 timeout 30. Physical coordinates must map exactly to grid nodes.
@@ -45,17 +46,17 @@ Spatial refinement holds `dt=0.005` fixed:
 
 | `dx` | Grid | Apparent speed | Recovery-high clips |
 |---:|---:|---:|---:|
-| 1 | 49 × 13 | 1.5129636619815445 | 62,101 |
-| 0.5 | 97 × 25 | 1.5714429706761952 | 196,975 |
-| 0.25 | 193 × 49 | 1.5887566942642680 | 718,291 |
+| 1 | 49 × 13 | 1.5209197267468286 | 0 |
+| 0.5 | 97 × 25 | 1.5786931942039200 | 0 |
+| 0.25 | 193 × 49 | 1.5959101810581984 | 0 |
 
 Temporal refinement holds `dx=0.25` fixed:
 
 | `dt` | Apparent speed | Recovery-high clips |
 |---:|---:|---:|
-| 0.01 | 1.5824828175616377 | 366,520 |
-| 0.005 | 1.5887566942642680 | 718,291 |
-| 0.0025 | 1.5919186076950880 | 1,424,185 |
+| 0.01 | 1.5895046105537185 | 0 |
+| 0.005 | 1.5959101810581984 | 0 |
+| 0.0025 | 1.5991389791351234 | 0 |
 
 The shared `dx=0.25, dt=0.005` result is evaluated once per study, so the two
 series require five unique runs. Requested and effective timesteps must match;
@@ -63,14 +64,13 @@ a stability-capped protocol is rejected.
 
 | Metric | Spatial trend | Temporal trend | Gate |
 |---|---:|---:|---:|
-| Change contraction | 0.29606580471866034 | 0.5039808049613839 | ≤ 0.75 |
-| Apparent order | 1.7560102244721185 | 0.9885593078176788 | ≥ 0.5 |
-| Finest-pair relative change | 1.0897655789951185% | 0.1986228074435378% | ≤ 2% |
-| Descriptive Richardson estimate | 1.5960386270658566 | 1.5951312730355065 | reported only |
+| Change contraction | 0.29800854288459605 | 0.5040609692246568 | ≤ 0.75 |
+| Apparent order | 1.7465744064798407 | 0.9883298479117784 | ≥ 0.5 |
+| Finest-pair relative change | 1.0788192881169771% | 0.2019085344709225% | ≤ 2% |
+| Descriptive Richardson estimate | 1.6032191149680070 | 1.6024206548797024 | reported only |
 
-All planar runs have zero denominator guards, voltage clips, recovery-low
-clips and non-finite states. Their aggregate safeguard status is `clipped`
-because recovery-high clipping modifies every trajectory.
+All planar runs have zero denominator guards, clips and non-finite states.
+The prior clipped trends are superseded.
 
 ## Radial grid-isotropy protocol
 
@@ -81,10 +81,10 @@ sample activation times are bilinearly interpolated from nodal activation
 times. The outer ring retains 10 model-length units of boundary clearance.
 
 ```text
-mean directional speed              1.489038111956763 model-length-unit/model-time-unit
-maximum relative speed deviation    0.26502819257280853%
-inner activation-time spread        0.0130640638784012 model-time unit
-outer activation-time spread        0.033174906589387376 model-time unit
+mean directional speed              1.4962693390258603 model-length-unit/model-time-unit
+maximum relative speed deviation    0.2619278922195735%
+inner activation-time spread        0.012571544072587315 model-time unit
+outer activation-time spread        0.03233894737290122 model-time unit
 safeguard status                     unclipped
 all numerical diagnostics           0
 ```
@@ -106,7 +106,6 @@ performance target.
 - refinement of the radial symmetry metric;
 - activation-threshold sensitivity;
 - no-flux boundary verification;
-- investigation or removal of recovery clipping before interpreting planar
-  propagation scientifically;
+- Float64 comparison and analytic/manufactured-solution verification;
 - physiological calibration, anisotropic diffusion, 3D, ECG, re-entry and
   lesion verification.

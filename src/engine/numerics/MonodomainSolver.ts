@@ -4,9 +4,12 @@ import { AlievPanfilovModel } from '../models/AlievPanfilov';
 import { PseudoEcg } from '../signals/PseudoEcg';
 import {
   copyNumericalDiagnostics,
+  copyNumericalStateExtrema,
   createNumericalDiagnostics,
+  createNumericalStateExtrema,
   numericalSafeguards,
   type NumericalDiagnostics,
+  type NumericalStateExtrema,
 } from '../core/numericalDiagnostics';
 
 export class MonodomainSolver {
@@ -23,6 +26,7 @@ export class MonodomainSolver {
   private readonly ecg: PseudoEcg;
   private readonly diffusion: number;
   private readonly diagnosticCounts = createNumericalDiagnostics();
+  private readonly observedStateExtrema = createNumericalStateExtrema();
 
   constructor(readonly config: SolverConfig) {
     if (!(config.diffusion > 0) || !Number.isFinite(config.diffusion)) {
@@ -56,6 +60,10 @@ export class MonodomainSolver {
     });
   }
 
+  get stateExtrema(): NumericalStateExtrema {
+    return copyNumericalStateExtrema(this.observedStateExtrema);
+  }
+
   reset(): void {
     this.voltage.fill(0);
     this.recovery.fill(0);
@@ -66,6 +74,7 @@ export class MonodomainSolver {
     this.time = 0;
     this.ecg.reset();
     Object.assign(this.diagnosticCounts, createNumericalDiagnostics());
+    Object.assign(this.observedStateExtrema, createNumericalStateExtrema());
     this.model.resetDiagnostics();
   }
 
@@ -85,6 +94,7 @@ export class MonodomainSolver {
         const index = this.tissue.index(x, y);
         if (this.tissue.mask[index] === 1) {
           this.voltage[index] = Math.max(this.voltage[index] ?? 0, amplitude);
+          this.recordStateExtrema(this.voltage[index]!, this.recovery[index]!);
         }
       }
     }
@@ -104,6 +114,7 @@ export class MonodomainSolver {
         const index = this.tissue.index(x, y);
         if (dx * dx + dy * dy <= radiusSquared && this.tissue.mask[index] === 1) {
           this.voltage[index] = Math.max(this.voltage[index] ?? 0, stimulus.amplitude);
+          this.recordStateExtrema(this.voltage[index]!, this.recovery[index]!);
         }
       }
     }
@@ -175,16 +186,12 @@ export class MonodomainSolver {
 
         if (nextU < numericalSafeguards.voltageMinimum) this.diagnosticCounts.voltageClipLowCount += 1;
         if (nextU > numericalSafeguards.voltageMaximum) this.diagnosticCounts.voltageClipHighCount += 1;
-        if (nextV < numericalSafeguards.recoveryMinimum) this.diagnosticCounts.recoveryClipLowCount += 1;
-        if (nextV > numericalSafeguards.recoveryMaximum) this.diagnosticCounts.recoveryClipHighCount += 1;
+        this.recordStateExtrema(nextU, nextV);
         this.nextVoltage[index] = Math.min(
           numericalSafeguards.voltageMaximum,
           Math.max(numericalSafeguards.voltageMinimum, nextU),
         );
-        this.nextRecovery[index] = Math.min(
-          numericalSafeguards.recoveryMaximum,
-          Math.max(numericalSafeguards.recoveryMinimum, nextV),
-        );
+        this.nextRecovery[index] = nextV;
       }
     }
 
@@ -192,5 +199,12 @@ export class MonodomainSolver {
     this.recovery.set(this.nextRecovery);
     this.time += dt;
     return this.ecg.sample(this.voltage, this.tissue.mask);
+  }
+
+  private recordStateExtrema(voltage: number, recovery: number): void {
+    this.observedStateExtrema.voltageMinimum = Math.min(this.observedStateExtrema.voltageMinimum, voltage);
+    this.observedStateExtrema.voltageMaximum = Math.max(this.observedStateExtrema.voltageMaximum, voltage);
+    this.observedStateExtrema.recoveryMinimum = Math.min(this.observedStateExtrema.recoveryMinimum, recovery);
+    this.observedStateExtrema.recoveryMaximum = Math.max(this.observedStateExtrema.recoveryMaximum, recovery);
   }
 }

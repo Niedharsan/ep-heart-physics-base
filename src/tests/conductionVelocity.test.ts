@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultAlievPanfilovParameters } from '../engine/models/AlievPanfilov';
+import { alievPanfilovPresets } from '../engine/models/AlievPanfilov';
 import {
   analyzePlanarActivationTimes,
   fitActivationTimes,
@@ -9,7 +9,7 @@ import {
 } from '../engine/verification/PlanarConductionVelocity';
 import { hasStateClipping } from '../engine/core/numericalDiagnostics';
 
-const referenceSpeed = 1.42511135536906;
+const referenceSpeed = 1.4314066762683364;
 const maximumRelativeSpeedError = 0.02;
 
 const referenceProtocol: PlanarVelocityProtocol = {
@@ -18,7 +18,7 @@ const referenceProtocol: PlanarVelocityProtocol = {
     diffusion: 0.8,
     requestedDt: 0.08,
     stepsPerFrame: 1,
-    model: defaultAlievPanfilovParameters,
+    model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   },
   stimulusMaximumX: 2,
   threshold: 0.5,
@@ -78,15 +78,15 @@ describe('planar conduction velocity verification', () => {
     })).toThrow(/strictly later/);
   });
 
-  it('measures a deterministic planar reference wave and exposes safeguard contamination', () => {
+  it('measures a deterministic planar reference wave with zero clipping', () => {
     const first = measurePlanarConductionVelocity(referenceProtocol);
     const second = measurePlanarConductionVelocity(referenceProtocol);
     expect(second).toEqual(first);
     expect(Math.abs(first.speed - referenceSpeed) / Math.abs(referenceSpeed))
       .toBeLessThanOrEqual(maximumRelativeSpeedError);
     expect(first.units).toBe('model-length-unit/model-time-unit');
-    expect(first.safeguardStatus).toBe('clipped');
-    expect(hasStateClipping(first.diagnostics)).toBe(true);
+    expect(first.safeguardStatus).toBe('unclipped');
+    expect(hasStateClipping(first.diagnostics)).toBe(false);
     expect(first.positions).toHaveLength(5);
     expect(first.activationTimesByStation.every((station) => station.length === 3)).toBe(true);
     expect(first.rSquared).toBeGreaterThanOrEqual(0.999);
@@ -95,7 +95,9 @@ describe('planar conduction velocity verification', () => {
     expect(first.segmentSpeeds.every((speed) => speed > 0 && Number.isFinite(speed))).toBe(true);
     expect(first.diagnostics.denominatorGuardCount).toBe(0);
     expect(first.diagnostics.nonFiniteStateCount).toBe(0);
-    expect(first.diagnostics.recoveryClipHighCount).toBeGreaterThan(0);
+    expect(first.diagnostics.recoveryClipHighCount).toBe(0);
+    expect(first.stateExtrema.recoveryMaximum).toBeGreaterThan(2);
+    expect(first.stateExtrema.recoveryMaximum).toBeLessThan(2.645);
   });
 
   it('rejects probes that start active or never activate', () => {
@@ -121,7 +123,7 @@ describe('planar conduction velocity verification', () => {
 
   it('returns a deep immutable protocol snapshot independent of caller mutation', () => {
     const mutableStations = [24, 36, 48, 60, 72];
-    const mutableModel = { ...defaultAlievPanfilovParameters };
+    const mutableModel = { ...alievPanfilovPresets.goktepeKuhl2009Figure4Generalized };
     const result = measurePlanarConductionVelocity({
       ...referenceProtocol,
       solverConfig: { ...referenceProtocol.solverConfig, model: mutableModel },
@@ -131,7 +133,7 @@ describe('planar conduction velocity verification', () => {
     mutableModel.a = 0.1;
     expect(result.protocol.scenario).toBe('planar-wave');
     expect(result.protocol.xStations[0]).toBe(24);
-    expect(result.protocol.solverConfig.model.a).toBe(defaultAlievPanfilovParameters.a);
+    expect(result.protocol.solverConfig.model.a).toBe(alievPanfilovPresets.goktepeKuhl2009Figure4Generalized.a);
     expect(Object.isFrozen(result.protocol)).toBe(true);
     expect(Object.isFrozen(result.protocol.solverConfig)).toBe(true);
     expect(Object.isFrozen(result.protocol.solverConfig.grid)).toBe(true);

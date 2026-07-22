@@ -45,42 +45,44 @@ describe('refractory capture analysis', () => {
 
   it('builds a sorted, deduplicated dt-resolved interval set', () => {
     const intervals = buildCouplingIntervals(defaultRefractoryCaptureProtocol);
-    expect(intervals[0]).toBe(22);
-    expect(intervals.at(-1)).toBe(26);
-    expect(intervals).toContain(24);
-    expect(intervals).toContain(25);
+    expect(intervals[0]).toBe(30);
+    expect(intervals.at(-1)).toBe(33);
+    expect(intervals).toContain(31);
+    expect(intervals).toContain(32);
     expect(new Set(intervals).size).toBe(intervals.length);
   });
 });
 
 describe('deterministic paired-stimulus capture study', () => {
-  it('reproduces a monotone failure-to-capture transition with explicit clipping status', () => {
+  it('reproduces a monotone failure-to-capture transition with zero clipping', () => {
     const first = runRefractoryCaptureStudy();
     const second = runRefractoryCaptureStudy();
     expect(second).toEqual(first);
-    expect(first.longestFailingInterval).toBe(24.3);
-    expect(first.shortestCapturedInterval).toBe(24.32);
+    expect(first.longestFailingInterval).toBe(31.58);
+    expect(first.shortestCapturedInterval).toBe(31.6);
     expect(first.transitionResolution).toBe(0.02);
     expect(first.units).toBe('model-time-unit');
-    expect(first.safeguardStatus).toBe('clipped');
-    expect(first.scientificStatus).toBe('implementation-characterization-compromised-by-clipping');
-    expect(first.diagnostics.recoveryClipHighCount).toBeGreaterThan(0);
+    expect(first.safeguardStatus).toBe('unclipped');
+    expect(first.scientificStatus).toBe('implementation-characterization');
+    expect(first.diagnostics.recoveryClipHighCount).toBe(0);
     expect(first.diagnostics.denominatorGuardCount).toBe(0);
     expect(first.diagnostics.nonFiniteStateCount).toBe(0);
 
-    const failure = first.trials.find((trial) => trial.couplingInterval === 24.3)!;
-    const capture = first.trials.find((trial) => trial.couplingInterval === 24.32)!;
+    const failure = first.trials.find((trial) => trial.couplingInterval === 31.58)!;
+    const capture = first.trials.find((trial) => trial.couplingInterval === 31.6)!;
     expect(failure.outcome).toBe('failure');
     expect(capture.outcome).toBe('capture');
     expect(capture.crossingsByStation.flat().every((crossings) => crossings.s2Rising !== null)).toBe(true);
     expect(capture.stationMeanS2ActivationTimes).toEqual([...capture.stationMeanS2ActivationTimes].sort((a, b) => a! - b!));
     expect(capture.transverseSpreads.every((spread) => spread !== null && spread <= 0.02)).toBe(true);
     const s2Latencies = capture.stationMeanS2ActivationTimes.map((time) => time! - capture.s2ApplicationTime);
-    [6.08255, 11.06825, 15.61577].forEach((expected, index) => {
+    [5.64225, 11.04835, 15.62037].forEach((expected, index) => {
       expect(s2Latencies[index]).toBeCloseTo(expected, 2);
     });
     expect(capture.preS2State.voltage.values).toHaveLength(3);
     expect(capture.preS2State.recovery.values).toHaveLength(3);
+    expect(first.stateExtrema.recoveryMaximum).toBeGreaterThan(2);
+    expect(first.stateExtrema.recoveryMaximum).toBeLessThan(2.645);
     expect(Object.isFrozen(first.protocol)).toBe(true);
     expect(Object.isFrozen(first.protocol.model)).toBe(true);
     expect(Object.isFrozen(first.trials)).toBe(true);

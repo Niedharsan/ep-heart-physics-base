@@ -55,26 +55,27 @@ trial. A timestep silently capped by the diffusion limit is rejected.
 
 ## Transition search and result
 
-Known failure/capture endpoints at `24` and `25` model-time units are narrowed
-by deterministic integer-timestep bisection. Additional anchors at `22` and
-`26` check the expected sides of the transition. This avoids an exhaustive,
+Known failure/capture endpoints at `31` and `32` model-time units are narrowed
+by deterministic integer-timestep bisection. Additional anchors at `30` and
+`33` check the expected sides of the transition. This avoids an exhaustive,
 redundant restart at every timestep while returning the same resolution.
 
 The current regression bracket is:
 
-- longest failing interval: `24.30` model-time units;
-- shortest captured interval: `24.32` model-time units;
+- longest failing interval: `31.58` model-time units;
+- shortest captured interval: `31.60` model-time units;
 - resolution: `0.02` model-time unit.
 
-At `24.32`, the mean S2 latencies at `x=[6,12,18]` are approximately
-`[6.083,11.068,15.616]` model-time units and are strictly ordered downstream.
+At `31.60`, the mean S2 latencies at `x=[6,12,18]` are approximately
+`[5.642,11.048,15.620]` model-time units and are strictly ordered downstream.
 Exact repeated studies return identical structured results.
 
 ## Limitations and deferred work
 
-Recovery-upper clipping occurs extensively, so the result is explicitly marked
-`implementation-characterization-compromised-by-clipping`. It does not verify
-the unconstrained equations.
+The source-named preset rebaseline records recovery range
+`[0,2.3355346439117577]` with zero clipping, denominator guards and non-finite
+states. The previous clipped `24.30/24.32` bracket is superseded. This remains
+an implementation characterization, not verification of physiological ERP.
 
 This single S1–S2 protocol does not include a conditioning train, restitution
 over multiple basic cycle lengths, a current stimulus with duration, diastolic

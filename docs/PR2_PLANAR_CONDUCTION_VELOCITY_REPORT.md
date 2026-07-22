@@ -36,7 +36,7 @@ prescribe this exact five-station OLS protocol. References:
 | `dx` | 1 model-length unit |
 | Diffusion `D` | 0.8 model-length-unit²/model-time-unit |
 | Requested/effective `dt` | 0.08 model-time unit |
-| Model | unchanged project Aliev–Panfilov configuration |
+| Model | `goktepeKuhl2009Figure4Generalized` |
 | Stimulus | existing full-height `x=0..2` planar-wave stimulus |
 | Activation | first rising `u=0.5` crossing |
 | Stations | `x = 24, 36, 48, 60, 72` |
@@ -53,14 +53,15 @@ loss of planarity without constructing a full activation map.
 ## Observed deterministic result
 
 ```text
-speed                       1.42511135536906 model-length-unit/model-time-unit
-mean activation times       15.4916529103, 23.9125140928, 32.3328556315,
-                            40.7529518356, 49.1734071752
-R-squared                    0.9999999997763296
-maximum absolute residual   0.00023416427884725977 model-time unit
+speed                       1.4314066762683364 model-length-unit/model-time-unit
+mean activation times       15.4260398144, 23.8090092013, 32.1922757350,
+                            40.5757901926, 48.9594581438
+R-squared                    0.9999999997219826
+maximum absolute residual   0.0002487270341031689 model-time unit
 maximum transverse spread   0
-safeguard status             clipped
-recoveryClipHighCount       33,192
+safeguard status             unclipped
+observed recovery range      [0, 2.310099013947633]
+recoveryClipHighCount       0
 all other diagnostics       0
 ```
 
@@ -72,12 +73,11 @@ target.
 
 ## Scientific limitation
 
-Recovery upper clipping begins before the front finishes crossing the probe
-region. The result therefore characterizes the current safeguard-modified
-solver and has safeguard status `clipped`. An `unclipped` status would only
-describe safeguard activation, not general scientific usability. This result
-does not verify the unconstrained
-PDE/ODE and must not be converted to cm/s or m/s.
+The previous clipped result at speed `1.42511135536906` is superseded. The
+source-named preset and removal of the unsourced recovery clamp produce zero
+clips, guards and non-finite states. `Unclipped` only describes safeguard
+activation; it does not verify the PDE/ODE or justify conversion to cm/s or
+m/s.
 
 Independent exploratory review also found material timestep sensitivity at
 fixed `dx`: approximately 1.42512 at `dt=0.08`, 1.47041 at `dt=0.04`, and

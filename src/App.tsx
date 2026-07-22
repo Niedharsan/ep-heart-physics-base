@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineSnapshot, ScenarioId, WorkerCommand, WorkerEvent } from './engine/core/types';
-import { defaultAlievPanfilovParameters } from './engine/models/AlievPanfilov';
+import { alievPanfilovPresets } from './engine/models/AlievPanfilov';
 import { EcgCanvas } from './ui/EcgCanvas';
 import { VoltageCanvas } from './ui/VoltageCanvas';
 import './styles.css';
@@ -12,7 +12,7 @@ const baseConfig = {
   diffusion: 0.8,
   requestedDt: 0.08,
   stepsPerFrame: 8,
-  model: defaultAlievPanfilovParameters,
+  model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
 } as const;
 
 export default function App() {

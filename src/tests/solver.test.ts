@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultAlievPanfilovParameters } from '../engine/models/AlievPanfilov';
+import { alievPanfilovPresets } from '../engine/models/AlievPanfilov';
 import { MonodomainSolver } from '../engine/numerics/MonodomainSolver';
 import { configureScenario } from '../engine/core/scenarios';
 
@@ -9,7 +9,7 @@ function createSolver(): MonodomainSolver {
     diffusion: 0.8,
     requestedDt: 0.08,
     stepsPerFrame: 4,
-    model: defaultAlievPanfilovParameters,
+    model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   });
 }
 
@@ -19,7 +19,7 @@ function createDiagnosticSolver(requestedDt = 1): MonodomainSolver {
     diffusion: 0.001,
     requestedDt,
     stepsPerFrame: 1,
-    model: defaultAlievPanfilovParameters,
+    model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   });
 }
 
@@ -67,7 +67,7 @@ describe('MonodomainSolver', () => {
     expect(Array.from(first.voltage)).toEqual(Array.from(second.voltage));
   });
 
-  it('keeps a short default run finite while exposing safeguard activation', () => {
+  it('keeps a short sourced-preset run finite without state clipping', () => {
     const solver = createSolver();
     solver.applyStimulus({ x: 8, y: 16, radius: 3, amplitude: 1 });
     for (let index = 0; index < 500; index += 1) solver.step();
@@ -77,12 +77,12 @@ describe('MonodomainSolver', () => {
     expect(solver.diagnostics.voltageClipLowCount).toBe(0);
     expect(solver.diagnostics.voltageClipHighCount).toBe(0);
     expect(solver.diagnostics.recoveryClipLowCount).toBe(0);
-    // This is a bounded-output regression check, not evidence that the
-    // unconstrained PDE/ODE is stable: the diagnostic makes clipping explicit.
-    expect(solver.diagnostics.recoveryClipHighCount).toBeGreaterThan(0);
+    expect(solver.diagnostics.recoveryClipHighCount).toBe(0);
+    expect(solver.stateExtrema.recoveryMaximum).toBeGreaterThan(2);
+    expect(Object.isFrozen(solver.stateExtrema)).toBe(true);
   });
 
-  it('reports each unchanged state-clipping safeguard separately', () => {
+  it('retains voltage clipping while allowing recovery to evolve without an arbitrary cap', () => {
     const voltageHigh = createDiagnosticSolver();
     voltageHigh.voltage.fill(0.7);
     voltageHigh.step();
@@ -93,12 +93,15 @@ describe('MonodomainSolver', () => {
     voltageAndRecoveryLow.recovery.fill(2);
     voltageAndRecoveryLow.step();
     expect(voltageAndRecoveryLow.diagnostics.voltageClipLowCount).toBeGreaterThan(0);
-    expect(voltageAndRecoveryLow.diagnostics.recoveryClipLowCount).toBeGreaterThan(0);
+    expect(voltageAndRecoveryLow.diagnostics.recoveryClipLowCount).toBe(0);
+    expect(voltageAndRecoveryLow.stateExtrema.recoveryMinimum).toBeLessThan(0);
 
     const recoveryHigh = createDiagnosticSolver(100);
     recoveryHigh.voltage.fill(0.8);
+    recoveryHigh.recovery.fill(1);
     recoveryHigh.step();
-    expect(recoveryHigh.diagnostics.recoveryClipHighCount).toBeGreaterThan(0);
+    expect(recoveryHigh.diagnostics.recoveryClipHighCount).toBe(0);
+    expect(recoveryHigh.stateExtrema.recoveryMaximum).toBeGreaterThan(2);
   });
 
   it('counts non-finite state before throwing and resets all diagnostics', () => {
@@ -119,30 +122,36 @@ describe('MonodomainSolver', () => {
       recoveryClipHighCount: 0,
       nonFiniteStateCount: 0,
     });
+    expect(solver.stateExtrema).toEqual({
+      voltageMinimum: 0,
+      voltageMaximum: 0,
+      recoveryMinimum: 0,
+      recoveryMaximum: 0,
+    });
   });
 
-  it('reports safeguard use in the application default focal scenario', () => {
+  it('keeps the application default focal scenario unclipped and records its range', () => {
     const solver = new MonodomainSolver({
       grid: { width: 160, height: 104, dx: 1 },
       diffusion: 0.8,
       requestedDt: 0.08,
       stepsPerFrame: 8,
-      model: defaultAlievPanfilovParameters,
+      model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });
     const scenario = configureScenario(solver, 'focal-rhythm');
     for (let step = 0; step < 500; step += 1) {
       scenario.beforeStep(solver);
       solver.step();
     }
-    // Characterization sentinel for unchanged PR1 behavior, not a scientific
-    // validation target. Later calibration work is expected to revisit it.
     expect(solver.diagnostics).toEqual({
       denominatorGuardCount: 0,
       voltageClipLowCount: 0,
       voltageClipHighCount: 0,
       recoveryClipLowCount: 0,
-      recoveryClipHighCount: 99_714,
+      recoveryClipHighCount: 0,
       nonFiniteStateCount: 0,
     });
+    expect(solver.stateExtrema.recoveryMaximum).toBeGreaterThan(2);
+    expect(solver.stateExtrema.recoveryMaximum).toBeLessThan(2.645);
   });
 });

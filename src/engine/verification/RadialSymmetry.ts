@@ -1,6 +1,10 @@
-import { hasStateClipping, type NumericalDiagnostics } from '../core/numericalDiagnostics';
+import {
+  hasStateClipping,
+  type NumericalDiagnostics,
+  type NumericalStateExtrema,
+} from '../core/numericalDiagnostics';
 import type { SolverConfig } from '../core/types';
-import { defaultAlievPanfilovParameters } from '../models/AlievPanfilov';
+import { alievPanfilovPresets } from '../models/AlievPanfilov';
 import { MonodomainSolver } from '../numerics/MonodomainSolver';
 import { interpolateUpwardCrossing } from './ActivationTime';
 import { physicalCoordinateToGridIndex, snapGridCoordinate } from './PhysicalCoordinates';
@@ -51,6 +55,7 @@ export interface RadialSymmetryResult extends RadialSymmetryAnalysis {
   readonly activationTimesByRadius: readonly [readonly number[], readonly number[]];
   readonly safeguardStatus: 'unclipped' | 'clipped';
   readonly diagnostics: NumericalDiagnostics;
+  readonly stateExtrema: NumericalStateExtrema;
 }
 
 export const defaultRadialSymmetryProtocol: RadialSymmetryProtocol = Object.freeze({
@@ -59,7 +64,7 @@ export const defaultRadialSymmetryProtocol: RadialSymmetryProtocol = Object.free
     diffusion: 0.8,
     requestedDt: 0.02,
     stepsPerFrame: 1,
-    model: defaultAlievPanfilovParameters,
+    model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   }),
   centerX: 24,
   centerY: 24,
@@ -262,6 +267,7 @@ export function measureRadialSymmetry(
     ) as readonly [readonly number[], readonly number[]],
     safeguardStatus: hasStateClipping(diagnostics) ? 'clipped' : 'unclipped',
     diagnostics,
+    stateExtrema: solver.stateExtrema,
   });
 }
 

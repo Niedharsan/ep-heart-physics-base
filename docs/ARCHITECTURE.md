@@ -11,8 +11,8 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
 ## Current modules
 
 - `geometry/RectangularTissue`: conductive mask and lesions
-- `models/AlievPanfilov`: local reaction dynamics
-- `numerics/MonodomainSolver`: explicit reaction–diffusion update
+- `models/AlievPanfilov`: local reaction dynamics and immutable source-named presets
+- `numerics/MonodomainSolver`: explicit reaction–diffusion update and proposed-state extrema
 - `signals/PseudoEcg`: approximate signal projection
 - `verification/ActivationTime`: shared first-rising threshold interpolation
 - `verification/PhysicalCoordinates`: exact normalized-coordinate/grid mapping

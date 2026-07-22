@@ -4,8 +4,8 @@
 
 Use the generalized dimensionless six-parameter `a`/`b` Aliev–Panfilov model
 documented in `docs/PHYSICS_MODEL.md` for the initial excitable-wave
-implementation. Preserve the current project defaults while their physiological
-and numerical calibration remains unestablished.
+implementation. The initial default decision was later corrected by ADR 0004,
+which selects a complete source-named generalized preset.
 
 ## Reason
 
@@ -15,8 +15,6 @@ It is small enough for transparent browser prototyping while supporting excitati
 
 It must not be represented as a quantitatively calibrated human-cell ionic model. Detailed atrial/ventricular models remain future work.
 
-The implementation is not an exact transcription or preset of the original
-1996 formulation: it uses separate `a` and `b` roles, and the complete default
-tuple has no verified single published source. The denominator floor and state
-clipping are numerical safeguards rather than terms in the published equation;
-their activation must remain observable through engine diagnostics.
+The generalized implementation is not an exact transcription of the original
+1996 single-threshold formulation. ADR 0004 records the subsequent preset and
+recovery-state-policy correction.

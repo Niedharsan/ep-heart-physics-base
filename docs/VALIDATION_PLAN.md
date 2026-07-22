@@ -19,6 +19,8 @@
   propagation-speed quantity of interest
 - deterministic 32-angle radial grid-isotropy characterization with bilinear
   nodal activation-time interpolation
+- deterministic S1–S2 failure/capture transition bracket using nine
+  downstream probes, timestep-indexed bisection and explicit safeguard status
 - positive stable timestep
 - resting equilibrium
 - excitation and spread after stimulus
@@ -36,7 +38,8 @@
 3. separate dx and dt quantity-of-interest trends are characterized; formal
    order verification against an analytic/manufactured solution remains;
 4. no-flux boundary verification;
-5. refractory capture/failure protocol;
+5. paired-stimulus capture/failure is characterized for one clipped fixed-grid
+   protocol; stimulus-strength, dx/dt and threshold sensitivity remain;
 6. obstacle re-entry initiation and persistence with deterministic setup;
 7. lesion-complete versus lesion-gap conduction tests;
 8. energy/state bounds over long runs;

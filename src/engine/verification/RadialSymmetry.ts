@@ -7,7 +7,8 @@ import type { SolverConfig } from '../core/types';
 import { alievPanfilovPresets } from '../models/AlievPanfilov';
 import { MonodomainSolver } from '../numerics/MonodomainSolver';
 import { interpolateUpwardCrossing } from './ActivationTime';
-import { physicalCoordinateToGridIndex, snapGridCoordinate } from './PhysicalCoordinates';
+import { snapGridCoordinate } from './PhysicalCoordinates';
+import { evaluateRadialSymmetry, type VerificationAcceptance } from './VerificationAcceptance';
 
 export interface RadialSymmetryProtocol {
   readonly solverConfig: SolverConfig;
@@ -35,14 +36,17 @@ export interface BilinearSample {
 export interface RadialSymmetryAnalysisInput {
   readonly sampleRadii: readonly [number, number];
   readonly activationTimesByRadius: readonly [readonly number[], readonly number[]];
-  readonly maximumDirectionalSpeedDeviation: number;
-  readonly maximumOuterActivationSpread: number;
 }
 
 export interface RadialSymmetryAnalysis {
   readonly directionalSpeeds: readonly number[];
   readonly meanDirectionalSpeed: number;
+  readonly relativeSpeedErrorsByAngle: readonly number[];
+  readonly rmsRelativeSpeedDeviation: number;
   readonly maximumRelativeSpeedDeviation: number;
+  readonly meanActivationTimes: readonly [number, number];
+  readonly activationTimeErrorsByRadius: readonly [readonly number[], readonly number[]];
+  readonly rmsActivationTimeErrors: readonly [number, number];
   readonly activationSpreads: readonly [number, number];
 }
 
@@ -56,6 +60,7 @@ export interface RadialSymmetryResult extends RadialSymmetryAnalysis {
   readonly safeguardStatus: 'unclipped' | 'clipped';
   readonly diagnostics: NumericalDiagnostics;
   readonly stateExtrema: NumericalStateExtrema;
+  readonly acceptance: VerificationAcceptance;
 }
 
 export const defaultRadialSymmetryProtocol: RadialSymmetryProtocol = Object.freeze({
@@ -135,9 +140,7 @@ export function createBilinearSample(
 export function analyzeRadialSymmetry(input: RadialSymmetryAnalysisInput): RadialSymmetryAnalysis {
   const [innerRadius, outerRadius] = input.sampleRadii;
   const [innerTimes, outerTimes] = input.activationTimesByRadius;
-  validateRadialDefinition(
-    input.sampleRadii, input.maximumDirectionalSpeedDeviation, input.maximumOuterActivationSpread,
-  );
+  validateRadii(input.sampleRadii);
   if (innerTimes.length !== outerTimes.length || innerTimes.length < 4) {
     throw new Error('Radial analysis requires equal activation-time arrays with at least four angles.');
   }
@@ -154,27 +157,30 @@ export function analyzeRadialSymmetry(input: RadialSymmetryAnalysisInput): Radia
   });
   const meanDirectionalSpeed = directionalSpeeds.reduce((sum, speed) => sum + speed, 0)
     / directionalSpeeds.length;
-  const maximumRelativeSpeedDeviation = Math.max(
-    ...directionalSpeeds.map((speed) => Math.abs(speed - meanDirectionalSpeed) / meanDirectionalSpeed),
+  const relativeSpeedErrorsByAngle = directionalSpeeds.map(
+    (speed) => (speed - meanDirectionalSpeed) / meanDirectionalSpeed,
   );
-  if (maximumRelativeSpeedDeviation > input.maximumDirectionalSpeedDeviation) {
-    throw new Error(
-      `Radial directional-speed deviation ${maximumRelativeSpeedDeviation} exceeds ${input.maximumDirectionalSpeedDeviation}.`,
-    );
-  }
+  const rmsRelativeSpeedDeviation = rootMeanSquare(relativeSpeedErrorsByAngle);
+  const maximumRelativeSpeedDeviation = Math.max(...relativeSpeedErrorsByAngle.map(Math.abs));
+  const meanActivationTimes = activationMeanPair(input.activationTimesByRadius);
+  const activationTimeErrorsByRadius = input.activationTimesByRadius.map((times, radiusIndex) =>
+    times.map((time) => time - meanActivationTimes[radiusIndex]!)) as [number[], number[]];
+  const rmsActivationTimeErrors = activationTimeErrorsByRadius.map(rootMeanSquare) as [number, number];
   const activationSpreads = Object.freeze([
     Math.max(...innerTimes) - Math.min(...innerTimes),
     Math.max(...outerTimes) - Math.min(...outerTimes),
   ]) as readonly [number, number];
-  if (activationSpreads[1] > input.maximumOuterActivationSpread) {
-    throw new Error(
-      `Radial outer activation spread ${activationSpreads[1]} exceeds ${input.maximumOuterActivationSpread}.`,
-    );
-  }
   return Object.freeze({
     directionalSpeeds: Object.freeze(directionalSpeeds),
     meanDirectionalSpeed,
+    relativeSpeedErrorsByAngle: Object.freeze(relativeSpeedErrorsByAngle),
+    rmsRelativeSpeedDeviation,
     maximumRelativeSpeedDeviation,
+    meanActivationTimes: Object.freeze(meanActivationTimes) as readonly [number, number],
+    activationTimeErrorsByRadius: Object.freeze(
+      activationTimeErrorsByRadius.map((errors) => Object.freeze(errors)),
+    ) as unknown as readonly [readonly number[], readonly number[]],
+    rmsActivationTimeErrors: Object.freeze(rmsActivationTimeErrors) as readonly [number, number],
     activationSpreads,
   });
 }
@@ -188,12 +194,8 @@ export function measureRadialSymmetry(
     throw new Error(`Radial symmetry requested dt ${protocol.solverConfig.requestedDt} was capped to ${solver.stableDt}.`);
   }
   solver.reset();
-  const centerGridX = physicalCoordinateToGridIndex(
-    protocol.centerX, solver.tissue.dx, solver.tissue.width - 1, 'Radial center x',
-  );
-  const centerGridY = physicalCoordinateToGridIndex(
-    protocol.centerY, solver.tissue.dx, solver.tissue.height - 1, 'Radial center y',
-  );
+  const centerGridX = snapGridCoordinate(protocol.centerX / solver.tissue.dx);
+  const centerGridY = snapGridCoordinate(protocol.centerY / solver.tissue.dx);
   solver.applyStimulus({
     x: centerGridX,
     y: centerGridY,
@@ -252,8 +254,6 @@ export function measureRadialSymmetry(
   const analysis = analyzeRadialSymmetry({
     sampleRadii: protocol.sampleRadii,
     activationTimesByRadius,
-    maximumDirectionalSpeedDeviation: protocol.maximumDirectionalSpeedDeviation,
-    maximumOuterActivationSpread: protocol.maximumOuterActivationSpread,
   });
   const diagnostics = solver.diagnostics;
   return Object.freeze({
@@ -269,6 +269,7 @@ export function measureRadialSymmetry(
     safeguardStatus: hasStateClipping(diagnostics) ? 'clipped' : 'unclipped',
     diagnostics,
     stateExtrema: solver.stateExtrema,
+    acceptance: evaluateRadialSymmetry(analysis, protocol),
   });
 }
 
@@ -306,15 +307,29 @@ function validateRadialDefinition(
   maximumDirectionalSpeedDeviation: number,
   maximumOuterActivationSpread: number,
 ): void {
+  validateRadii(sampleRadii);
+  if (!(maximumDirectionalSpeedDeviation >= 0) || !Number.isFinite(maximumDirectionalSpeedDeviation)
+    || !(maximumOuterActivationSpread >= 0) || !Number.isFinite(maximumOuterActivationSpread)) {
+    throw new Error('Radial symmetry gates must be finite and non-negative.');
+  }
+}
+
+function validateRadii(sampleRadii: readonly [number, number]): void {
   const [innerRadius, outerRadius] = sampleRadii;
   if (!(innerRadius > 0 && outerRadius > innerRadius)
     || !Number.isFinite(innerRadius) || !Number.isFinite(outerRadius)) {
     throw new Error('Radial sample radii must be finite, positive and strictly increasing.');
   }
-  if (!(maximumDirectionalSpeedDeviation >= 0) || !Number.isFinite(maximumDirectionalSpeedDeviation)
-    || !(maximumOuterActivationSpread >= 0) || !Number.isFinite(maximumOuterActivationSpread)) {
-    throw new Error('Radial symmetry gates must be finite and non-negative.');
-  }
+}
+
+function rootMeanSquare(values: readonly number[]): number {
+  return Math.sqrt(values.reduce((sum, value) => sum + value * value, 0) / values.length);
+}
+
+function activationMeanPair(
+  timesByRadius: readonly [readonly number[], readonly number[]],
+): [number, number] {
+  return timesByRadius.map((times) => times.reduce((sum, time) => sum + time, 0) / times.length) as [number, number];
 }
 
 function copyProtocol(

@@ -113,10 +113,25 @@ activation times. Directional apparent speed between radii `r₁` and `r₂` is
 c_\theta=\frac{r_2-r_1}{T(r_2,\theta)-T(r_1,\theta)}.
 \]
 
-The maximum relative deviation from the angular mean characterizes directional
-grid bias. The current radial protocol completes without safeguard activation,
-but that fact alone does not establish equation verification, physiological
-calibration or general scientific validity.
+The signed relative speed error at angle `θ` is `(cθ-c̄)/c̄`. The implementation
+reports the complete angle-indexed errors, their RMS and their maximum absolute
+value. It likewise reports centred activation-time errors, RMS error and range
+at both radii. “Angular error” here means deviation from the sampled angular
+mean, not error against a known physical truth.
+
+The strengthened radial study repeats this measurement at
+`dx=[1,0.5,0.25]` with fixed `dt=0.005`, using both a node-centred stimulus and
+a diagonally half-cell-shifted stimulus for each grid. Fractional stimulus
+centres are valid because the circular stimulus operator evaluates geometric
+distance to each grid node. The coarse cases exceed the retained outer-spread
+characterization gate; their results remain reportable. All six cases complete
+without safeguard activation, but that fact alone does not establish equation
+verification, physiological calibration or general scientific validity.
+
+Planar activation-threshold sensitivity is measured separately at dimensionless
+thresholds `[0.3,0.5,0.7]` on the finest reference discretization. These values
+probe the numerical measurement definition and are not physiological voltage
+thresholds.
 
 ## Paired-stimulus propagated-capture characterization
 

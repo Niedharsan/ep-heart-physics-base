@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeRefinementTrend } from '../engine/verification/ConvergenceTrend';
 import {
+  evaluateRadialSymmetry,
+  evaluateRefinementTrend,
+} from '../engine/verification/VerificationAcceptance';
+import {
   defaultPlanarRefinementProtocol,
   runPlanarRefinementStudy,
 } from '../engine/verification/PlanarRefinementStudy';
@@ -16,11 +20,24 @@ import {
   interpolateBilinearActivationTime,
   measureRadialSymmetry,
 } from '../engine/verification/RadialSymmetry';
+import {
+  defaultRadialSensitivityProtocol,
+  runRadialSensitivityStudy,
+} from '../engine/verification/RadialSensitivityStudy';
 
 const regressionRelativeTolerance = 0.002;
 const spatialSpeedBaseline = [1.5209197267468286, 1.57869319420392, 1.5959101810581984];
 const temporalSpeedBaseline = [1.5895046105537185, 1.5959101810581984, 1.5991389791351234];
+const thresholdSpeedBaseline = [1.5959105017070088, 1.5959101810581984, 1.5959101893172305];
 const radialMeanSpeedBaseline = 1.4962693390258603;
+const radialSensitivitySpeedBaseline = [
+  1.4653777402674317,
+  1.4645844919192605,
+  1.513801899835566,
+  1.5143245610822662,
+  1.527389613045027,
+  1.5273811114433564,
+];
 
 function expectRelative(actual: number, expected: number, tolerance = regressionRelativeTolerance): void {
   expect(Math.abs(actual - expected) / Math.abs(expected)).toBeLessThanOrEqual(tolerance);
@@ -51,36 +68,40 @@ describe('PR3 physical coordinates and analysis', () => {
       parameterUnits: 'model-length-unit' as const,
       quantityUnits: 'model-length-unit/model-time-unit' as const,
       parameterValues: [1, 0.5, 0.25],
-      gates: {
-        refinementRatio: 2,
-        maximumContraction: 0.75,
-        minimumApparentOrder: 0.5,
-        maximumFinestPairRelativeChange: 0.02,
-      },
+      refinementRatio: 2,
+    };
+    const gates = {
+      refinementRatio: 2,
+      maximumContraction: 0.75,
+      minimumApparentOrder: 0.5,
+      maximumFinestPairRelativeChange: 0.02,
     };
     const result = analyzeRefinementTrend({ ...base, quantities: [1.5, 1.57, 1.59] });
-    expect(result.contraction).toBeCloseTo(2 / 7, 14);
-    expect(result.apparentOrder).toBeGreaterThan(1);
+    expect(result.trend).toBe('monotone-contracting');
+    expect(result.contraction!).toBeCloseTo(2 / 7, 14);
+    expect(result.apparentOrder!).toBeGreaterThan(1);
+    expect(evaluateRefinementTrend(result, gates).passed).toBe(true);
     const decreasing = analyzeRefinementTrend({ ...base, quantities: [1.04, 1.01, 1.0025] });
-    expect(decreasing.apparentOrder).toBeCloseTo(2, 12);
-    expect(decreasing.richardsonEstimate).toBeCloseTo(1, 12);
+    expect(decreasing.apparentOrder!).toBeCloseTo(2, 12);
+    expect(decreasing.richardsonEstimate!).toBeCloseTo(1, 12);
     const increasing = analyzeRefinementTrend({ ...base, quantities: [0.96, 0.99, 0.9975] });
-    expect(increasing.apparentOrder).toBeCloseTo(2, 12);
-    expect(increasing.richardsonEstimate).toBeCloseTo(1, 12);
+    expect(increasing.apparentOrder!).toBeCloseTo(2, 12);
+    expect(increasing.richardsonEstimate!).toBeCloseTo(1, 12);
     expect(() => analyzeRefinementTrend({ ...base, parameterValues: [1, 0.6, 0.25], quantities: [1, 2, 3] }))
       .toThrow(/ratio/);
-    expect(() => analyzeRefinementTrend({ ...base, quantities: [1.5, 1.6, 1.55] })).toThrow(/monotonically/);
-    expect(() => analyzeRefinementTrend({ ...base, quantities: [1.5, 1.55, 1.6] })).toThrow(/contract/);
-    expect(() => analyzeRefinementTrend({ ...base, quantities: [1.5, 1.57, 1.603] }))
-      .toThrow(/relative change/);
+    const oscillatory = analyzeRefinementTrend({ ...base, quantities: [1.5, 1.6, 1.55] });
+    expect(oscillatory.trend).toBe('oscillatory');
+    expect(oscillatory.richardsonEstimate).toBeNull();
+    expect(evaluateRefinementTrend(oscillatory, gates).passed).toBe(false);
+    const noncontracting = analyzeRefinementTrend({ ...base, quantities: [1.5, 1.55, 1.61] });
+    expect(noncontracting.trend).toBe('monotone-noncontracting');
+    expect(evaluateRefinementTrend(noncontracting, gates).failures).not.toEqual([]);
     expect(() => analyzeRefinementTrend({ ...base, quantities: [1.5, Number.NaN, 1.6] })).toThrow(/finite/);
   });
 
-  it('analyzes radial directionality and enforces ordering and symmetry gates', () => {
+  it('reports radial angular errors separately from acceptance gates', () => {
     const base = {
       sampleRadii: [2, 4] as const,
-      maximumDirectionalSpeedDeviation: 0.05,
-      maximumOuterActivationSpread: 0.2,
     };
     const result = analyzeRadialSymmetry({
       ...base,
@@ -88,20 +109,25 @@ describe('PR3 physical coordinates and analysis', () => {
     });
     expect(result.meanDirectionalSpeed).toBe(1);
     expect(result.maximumRelativeSpeedDeviation).toBe(0);
+    expect(result.rmsRelativeSpeedDeviation).toBe(0);
+    expect(result.relativeSpeedErrorsByAngle).toEqual([0, 0, 0, 0]);
+    expect(result.rmsActivationTimeErrors).toEqual([0, 0]);
+    expect(evaluateRadialSymmetry(result, {
+      maximumDirectionalSpeedDeviation: 0.05,
+      maximumOuterActivationSpread: 0.2,
+    }).passed).toBe(true);
     expect(() => analyzeRadialSymmetry({
       ...base,
       activationTimesByRadius: [[1, 1, 1, 1], [3, 0.5, 3, 3]],
     })).toThrow(/after inner/);
-    expect(() => analyzeRadialSymmetry({
+    const asymmetric = analyzeRadialSymmetry({
       ...base,
-      maximumDirectionalSpeedDeviation: 0.01,
       activationTimesByRadius: [[1, 1, 1, 1], [3, 3.2, 3, 3.2]],
-    })).toThrow(/directional-speed deviation/);
-    expect(() => analyzeRadialSymmetry({
-      ...base,
+    });
+    expect(evaluateRadialSymmetry(asymmetric, {
+      maximumDirectionalSpeedDeviation: 0.01,
       maximumOuterActivationSpread: 0.01,
-      activationTimesByRadius: [[1, 1, 1, 1], [3, 3.05, 3, 3.05]],
-    })).toThrow(/outer activation spread/);
+    }).passed).toBe(false);
   });
 });
 
@@ -110,8 +136,11 @@ describe('PR3 deterministic integration protocols', () => {
     const first = runPlanarRefinementStudy();
     const second = runPlanarRefinementStudy();
     expect(second).toEqual(first);
-    expect(first.uniqueRunCount).toBe(5);
+    expect(first.uniqueRunCount).toBe(7);
     expect(first.safeguardStatus).toBe('unclipped');
+    expect(first.scientificAcceptance.passed).toBe(true);
+    expect(first.spatialAcceptance.passed).toBe(true);
+    expect(first.temporalAcceptance.passed).toBe(true);
     first.spatialRuns.forEach((run, index) => {
       expectRelative(run.speed, spatialSpeedBaseline[index]!);
       expect(run.stableDt).toBe(defaultPlanarRefinementProtocol.spatialDt);
@@ -140,14 +169,46 @@ describe('PR3 deterministic integration protocols', () => {
         nonFiniteStateCount: 0,
       });
     });
-    expect(first.spatialTrend.contraction).toBeLessThanOrEqual(0.75);
-    expect(first.spatialTrend.apparentOrder).toBeGreaterThanOrEqual(0.5);
+    expect(first.spatialTrend.contraction!).toBeLessThanOrEqual(0.75);
+    expect(first.spatialTrend.apparentOrder!).toBeGreaterThanOrEqual(0.5);
     expect(first.spatialTrend.finestPairRelativeChange).toBeLessThanOrEqual(0.02);
-    expect(first.temporalTrend.contraction).toBeLessThanOrEqual(0.75);
-    expect(first.temporalTrend.apparentOrder).toBeGreaterThanOrEqual(0.5);
+    expect(first.temporalTrend.contraction!).toBeLessThanOrEqual(0.75);
+    expect(first.temporalTrend.apparentOrder!).toBeGreaterThanOrEqual(0.5);
     expect(first.temporalTrend.finestPairRelativeChange).toBeLessThanOrEqual(0.02);
+    expect(first.thresholdSensitivity.thresholds).toEqual([0.3, 0.5, 0.7]);
+    expect(first.thresholdRuns).toHaveLength(3);
+    first.thresholdRuns.forEach((run, index) => expectRelative(run.speed, thresholdSpeedBaseline[index]!));
+    expect(Number.isFinite(first.thresholdSensitivity.relativeSpan)).toBe(true);
     expect(Object.isFrozen(first.protocol)).toBe(true);
     expect(Object.isFrozen(first.protocol.model)).toBe(true);
+  }, 120_000);
+
+  it('characterizes radial symmetry over dx and sub-cell stimulus-centre phase', () => {
+    const first = runRadialSensitivityStudy();
+    const second = runRadialSensitivityStudy();
+    expect(second).toEqual(first);
+    expect(first.cases).toHaveLength(6);
+    expect(first.scientificAcceptance.passed).toBe(true);
+    expect(first.phaseTrends).toHaveLength(2);
+    expect(first.shiftedCenterRelativeDifferences).toHaveLength(3);
+    first.cases.forEach((entry, index) => {
+      expectRelative(entry.result.meanDirectionalSpeed, radialSensitivitySpeedBaseline[index]!);
+      expect(entry.result.safeguardStatus).toBe('unclipped');
+      expect(entry.result.relativeSpeedErrorsByAngle).toHaveLength(defaultRadialSensitivityProtocol.angleCount);
+      expect(entry.result.rmsRelativeSpeedDeviation).toBeGreaterThanOrEqual(0);
+      expect(entry.result.rmsActivationTimeErrors).toHaveLength(2);
+      expect(Math.abs(entry.result.relativeSpeedErrorsByAngle.reduce((sum, error) => sum + error, 0)))
+        .toBeLessThan(1e-12);
+      if (entry.phase === 'half-cell-shifted') {
+        expect(entry.centerX).toBe(defaultRadialSensitivityProtocol.baseCenterX + entry.dx / 2);
+      }
+    });
+    expect(first.cases.filter((entry) => entry.dx === 1).every((entry) => !entry.result.acceptance.passed)).toBe(true);
+    expect(first.cases.filter((entry) => entry.dx < 1).every((entry) => entry.result.acceptance.passed)).toBe(true);
+    expect(first.phaseTrends.every((entry) => entry.acceptance.passed)).toBe(true);
+    expect(first.shiftedCenterRelativeDifferences[2]).toBeLessThan(first.shiftedCenterRelativeDifferences[0]!);
+    expect(Object.isFrozen(first.protocol)).toBe(true);
+    expect(Object.isFrozen(first.cases)).toBe(true);
   }, 120_000);
 
   it('measures deterministic radial grid-isotropy at equal polar angles', () => {
@@ -170,6 +231,7 @@ describe('PR3 deterministic integration protocols', () => {
       nonFiniteStateCount: 0,
     });
     expect(first.stateExtrema.recoveryMaximum).toBeGreaterThan(0);
+    expect(first.acceptance.passed).toBe(true);
     expect(Object.isFrozen(first.protocol)).toBe(true);
     expect(Object.isFrozen(first.samplesByRadius[0])).toBe(true);
   }, 60_000);

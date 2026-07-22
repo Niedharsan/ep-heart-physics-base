@@ -117,8 +117,8 @@ context.onmessage = (message: MessageEvent<WorkerCommand>): void => {
         emitSnapshot();
         break;
       case 'stimulate':
-        if (!solver) throw new Error('Initialize the engine before stimulating tissue.');
-        solver.applyStimulus(command.stimulus);
+        if (!runtime) throw new Error('Initialize the engine before stimulating tissue.');
+        runtime.scheduleCurrentStimulus(command.stimulus);
         emitSnapshot();
         break;
       case 'ablate':

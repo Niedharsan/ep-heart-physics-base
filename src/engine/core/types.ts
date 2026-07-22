@@ -1,4 +1,4 @@
-export type ScenarioId = 'planar-wave' | 'focal-rhythm' | 'obstacle-reentry';
+export type ScenarioId = 'manual-pacing' | 'planar-wave' | 'focal-rhythm' | 'obstacle-reentry';
 export type StatePrecision = 'float32' | 'float64';
 
 export interface GridConfig {
@@ -35,6 +35,14 @@ export interface Stimulus {
   readonly y: number;
   readonly radius: number;
   readonly amplitude: number;
+}
+
+export interface CurrentStimulus {
+  readonly x: number;
+  readonly y: number;
+  readonly radius: number;
+  readonly amplitude: number;
+  readonly durationModelTime: number;
 }
 
 export interface Lesion {
@@ -75,7 +83,7 @@ export type WorkerCommand =
   | { readonly type: 'start' }
   | { readonly type: 'pause' }
   | { readonly type: 'reset'; readonly scenario: ScenarioId }
-  | { readonly type: 'stimulate'; readonly stimulus: Stimulus }
+  | { readonly type: 'stimulate'; readonly stimulus: CurrentStimulus }
   | { readonly type: 'ablate'; readonly lesion: Omit<Lesion, 'id' | 'createdAt'> }
   | { readonly type: 'set-solver-steps-per-batch'; readonly solverStepsPerBatch: number };
 
@@ -84,4 +92,5 @@ export type WorkerEvent =
   | { readonly type: 'snapshot'; readonly snapshot: EngineSnapshot }
   | { readonly type: 'signal-samples'; readonly samples: readonly SignalSample[] }
   | { readonly type: 'error'; readonly message: string };
+
 import type { NumericalDiagnostics } from './numericalDiagnostics';

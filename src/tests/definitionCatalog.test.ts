@@ -9,7 +9,7 @@ import { lessonDefinitionCatalog } from '../learning/catalog';
 describe('versioned learning definitions', () => {
   it('provides frozen JSON-safe scenario, electrode, measurement and lesson catalogs', () => {
     expect(engineDefinitionCatalog.scenarios.map((definition) => definition.id)).toEqual([
-      'focal-rhythm', 'planar-wave', 'obstacle-reentry',
+      'manual-pacing', 'focal-rhythm', 'planar-wave', 'obstacle-reentry',
     ]);
     expect(engineDefinitionCatalog.measurements[0]?.electrode.id)
       .toBe(engineDefinitionCatalog.electrodes[0]?.id);

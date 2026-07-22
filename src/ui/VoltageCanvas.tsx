@@ -1,32 +1,57 @@
 import { useEffect, useRef } from 'react';
 import type { EngineSnapshot } from '../engine/core/types';
 import { mapPointerToNodalGrid, physicalGridAspectRatio } from './CanvasGeometry';
+import {
+  mapVoltageToRgba,
+  type VoltageDisplayMode,
+} from './VoltageVisualization';
+
+interface PacingSiteMarker {
+  readonly x: number;
+  readonly y: number;
+}
 
 interface VoltageCanvasProps {
   readonly snapshot: EngineSnapshot | null;
   readonly interactionMode: 'stimulate' | 'ablate';
+  readonly displayMode: VoltageDisplayMode;
+  readonly showGrid: boolean;
+  readonly brightness: number;
+  readonly frontWidth: number;
+  readonly pacingSites: readonly PacingSiteMarker[];
   readonly onPoint: (x: number, y: number) => void;
 }
 
-function voltageToRgb(value: number): readonly [number, number, number] {
-  const normalized = Math.max(0, Math.min(1, value));
-  const red = Math.round(30 + normalized * 225);
-  const green = Math.round(10 + Math.pow(normalized, 2) * 170);
-  const blue = Math.round(45 + (1 - normalized) * 70);
-  return [red, green, blue];
-}
-
-export function VoltageCanvas({ snapshot, interactionMode, onPoint }: VoltageCanvasProps) {
+export function VoltageCanvas({
+  snapshot,
+  interactionMode,
+  displayMode,
+  showGrid,
+  brightness,
+  frontWidth,
+  pacingSites,
+  onPoint,
+}: VoltageCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const aspectRatio = snapshot
     ? physicalGridAspectRatio(snapshot.width, snapshot.height, snapshot.dx)
     : physicalGridAspectRatio(160, 104, 1);
-  const backingWidth = 960;
-  const backingHeight = Math.round(backingWidth / aspectRatio);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !snapshot) return;
+
+    const cssWidth = Math.max(1, canvas.clientWidth);
+    const cssHeight = Math.max(1, canvas.clientHeight);
+    const devicePixelRatio = Math.max(1, window.devicePixelRatio || 1);
+    const targetWidth = Math.round(cssWidth * devicePixelRatio);
+    const targetHeight = Math.round(cssHeight * devicePixelRatio);
+
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+    }
+
     const context = canvas.getContext('2d');
     if (!context) return;
 
@@ -34,17 +59,21 @@ export function VoltageCanvas({ snapshot, interactionMode, onPoint }: VoltageCan
     for (let index = 0; index < snapshot.voltage.length; index += 1) {
       const pixelIndex = index * 4;
       if (snapshot.tissueMask[index] === 0) {
-        image.data[pixelIndex] = 6;
-        image.data[pixelIndex + 1] = 8;
-        image.data[pixelIndex + 2] = 13;
+        image.data[pixelIndex] = 3;
+        image.data[pixelIndex + 1] = 7;
+        image.data[pixelIndex + 2] = 12;
         image.data[pixelIndex + 3] = 255;
         continue;
       }
-      const [red, green, blue] = voltageToRgb(snapshot.voltage[index] ?? 0);
+
+      const [red, green, blue, alpha] = mapVoltageToRgba(
+        snapshot.voltage[index] ?? 0,
+        { mode: displayMode, brightness, frontWidth },
+      );
       image.data[pixelIndex] = red;
       image.data[pixelIndex + 1] = green;
       image.data[pixelIndex + 2] = blue;
-      image.data[pixelIndex + 3] = 255;
+      image.data[pixelIndex + 3] = alpha;
     }
 
     const buffer = document.createElement('canvas');
@@ -54,38 +83,67 @@ export function VoltageCanvas({ snapshot, interactionMode, onPoint }: VoltageCan
     if (!bufferContext) return;
     bufferContext.putImageData(image, 0, 0);
 
-    context.imageSmoothingEnabled = false;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
     context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#03070d';
+    context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(buffer, 0, 0, canvas.width, canvas.height);
 
-    context.strokeStyle = 'rgba(255,255,255,0.12)';
-    context.lineWidth = 1;
-    for (let x = 0; x <= canvas.width; x += canvas.width / 8) {
-      context.beginPath();
-      context.moveTo(x, 0);
-      context.lineTo(x, canvas.height);
-      context.stroke();
+    if (showGrid) {
+      context.strokeStyle = 'rgba(255,255,255,0.08)';
+      context.lineWidth = devicePixelRatio;
+      for (let x = 0; x <= canvas.width; x += canvas.width / 8) {
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x, canvas.height);
+        context.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += canvas.height / 6) {
+        context.beginPath();
+        context.moveTo(0, y);
+        context.lineTo(canvas.width, y);
+        context.stroke();
+      }
     }
-    for (let y = 0; y <= canvas.height; y += canvas.height / 6) {
+
+    pacingSites.forEach((site, index) => {
+      const markerX = (site.x / Math.max(snapshot.width - 1, 1)) * canvas.width;
+      const markerY = (site.y / Math.max(snapshot.height - 1, 1)) * canvas.height;
+      const markerRadius = 8 * devicePixelRatio;
+
       context.beginPath();
-      context.moveTo(0, y);
-      context.lineTo(canvas.width, y);
+      context.arc(markerX, markerY, markerRadius, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(2, 8, 13, 0.82)';
+      context.fill();
+      context.strokeStyle = '#55edb1';
+      context.lineWidth = 2 * devicePixelRatio;
       context.stroke();
-    }
-  }, [snapshot]);
+
+      context.fillStyle = '#dffff2';
+      context.font = `700 ${10 * devicePixelRatio}px ui-sans-serif, system-ui`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(String(index + 1), markerX, markerY);
+    });
+  }, [snapshot, displayMode, showGrid, brightness, frontWidth, pacingSites]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={backingWidth}
-      height={backingHeight}
+      width={960}
+      height={622}
       style={{ aspectRatio }}
       className={`voltage-canvas mode-${interactionMode}`}
       onPointerDown={(event) => {
         if (!snapshot) return;
         const bounds = event.currentTarget.getBoundingClientRect();
         const point = mapPointerToNodalGrid(
-          event.clientX, event.clientY, bounds, snapshot.width, snapshot.height,
+          event.clientX,
+          event.clientY,
+          bounds,
+          snapshot.width,
+          snapshot.height,
         );
         onPoint(point.x, point.y);
       }}

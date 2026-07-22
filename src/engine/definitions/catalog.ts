@@ -8,6 +8,15 @@ import { validateEngineDefinitionCatalog } from './validation';
 const scenarios = [
   {
     schemaVersion: 1,
+    id: 'manual-pacing',
+    definitionVersion: 1,
+    title: 'Manual pacing',
+    description: 'No automatic source. User-defined pacing sites receive simultaneous finite-duration current pulses.',
+    setup: [],
+    schedule: [],
+  },
+  {
+    schemaVersion: 1,
     id: 'focal-rhythm',
     definitionVersion: 1,
     title: 'Focal rhythm',

@@ -140,6 +140,32 @@ refractory period in physiological units. The current result activates the
 recovery upper clip and therefore describes only the safeguard-modified
 implementation.
 
+## Obstacle-circulation initiation and persistence
+
+PR 5 uses a cross-field S1–S2 construction around the existing circular
+non-conductive mask. S1 assigns `u=1` over the lower half of the domain. After
+the S1 wave and refractory tail develop, a partial upper-left S2 assignment
+leaves a free wave end that curls around the no-flux obstacle. The solver,
+reaction equations and obstacle boundary treatment are unchanged.
+
+Eight equal-angle probes at a fixed radius outside the obstacle bilinearly
+sample voltage from conductive grid nodes. Rising `u=0.5` crossings must follow
+one consistent cyclic order around the obstacle. A completed circuit begins
+and ends at the west anchor probe and includes one crossing at every other
+probe in between. Persistent circulation requires at least two completed
+circuits, circuit-period relative spread no greater than the declared project
+gate, ongoing active tissue at the observation endpoint, and a recent final
+completed circuit. These conditions distinguish repeated circulation from a
+single split wave or an early transient.
+
+This protocol uses normalized model coordinates and an instantaneous voltage
+assignment rather than a calibrated current stimulus. Its period, S2 timing
+and activity counts are not physiological measurements. The positive result
+activates recovery-upper clipping and therefore characterizes only the
+safeguard-modified implementation. A nearby S2 timing that terminates is a
+deterministic discrimination control, not a clinical vulnerability-window
+measurement.
+
 ## Variant and provenance
 
 Aliev and Panfilov introduced the two-variable lineage in 1996:

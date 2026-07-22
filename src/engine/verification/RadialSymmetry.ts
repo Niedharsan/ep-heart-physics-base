@@ -77,10 +77,19 @@ export function interpolateBilinearActivationTime(
   xFraction: number,
   yFraction: number,
 ): number {
-  if (!corners.every(Number.isFinite)) throw new Error('Bilinear activation-time corners must be finite.');
+  return interpolateBilinearValues(corners, xFraction, yFraction, 'Bilinear activation-time');
+}
+
+export function interpolateBilinearValues(
+  corners: readonly [number, number, number, number],
+  xFraction: number,
+  yFraction: number,
+  label = 'Bilinear values',
+): number {
+  if (!corners.every(Number.isFinite)) throw new Error(`${label} corners must be finite.`);
   if (!(xFraction >= 0 && xFraction <= 1) || !Number.isFinite(xFraction)
     || !(yFraction >= 0 && yFraction <= 1) || !Number.isFinite(yFraction)) {
-    throw new Error('Bilinear activation-time fractions must be finite and between zero and one.');
+    throw new Error(`${label} fractions must be finite and between zero and one.`);
   }
   const [topLeft, topRight, bottomLeft, bottomRight] = corners;
   const top = topLeft * (1 - xFraction) + topRight * xFraction;

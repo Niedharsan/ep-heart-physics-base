@@ -5,13 +5,19 @@ export interface RefinementTrendGates {
   readonly maximumFinestPairRelativeChange: number;
 }
 
+export type RefinementTrendKind =
+  | 'monotone-contracting'
+  | 'monotone-noncontracting'
+  | 'oscillatory'
+  | 'stationary';
+
 export interface RefinementTrendInput {
   readonly parameterName: 'dx' | 'dt';
   readonly parameterUnits: 'model-length-unit' | 'model-time-unit';
   readonly quantityUnits: 'model-length-unit/model-time-unit';
   readonly parameterValues: readonly number[];
   readonly quantities: readonly number[];
-  readonly gates: RefinementTrendGates;
+  readonly refinementRatio: number;
 }
 
 export interface RefinementTrendResult {
@@ -23,18 +29,19 @@ export interface RefinementTrendResult {
   readonly signedDifferences: readonly [number, number];
   readonly absoluteDifferences: readonly [number, number];
   readonly refinementRatio: number;
-  readonly contraction: number;
-  readonly apparentOrder: number;
+  readonly trend: RefinementTrendKind;
+  readonly contraction: number | null;
+  readonly apparentOrder: number | null;
   readonly finestPairRelativeChange: number;
-  readonly richardsonEstimate: number;
-  readonly gates: RefinementTrendGates;
+  readonly richardsonEstimate: number | null;
+  readonly notes: readonly string[];
 }
 
 const ratioTolerance = 1e-10;
 
 export function analyzeRefinementTrend(input: RefinementTrendInput): RefinementTrendResult {
-  const { parameterValues, quantities, gates } = input;
-  validateRefinementDefinition(parameterValues, gates);
+  const { parameterValues, quantities, refinementRatio } = input;
+  validateRefinementDefinition(parameterValues, refinementRatio);
   if (quantities.length !== 3) {
     throw new Error('Refinement trend analysis requires exactly three parameter values and quantities.');
   }
@@ -44,32 +51,31 @@ export function analyzeRefinementTrend(input: RefinementTrendInput): RefinementT
 
   const coarseDifference = quantities[1]! - quantities[0]!;
   const fineDifference = quantities[2]! - quantities[1]!;
-  if (coarseDifference * fineDifference <= 0) {
-    throw new Error('Refinement quantities must change monotonically with non-zero same-sign differences.');
-  }
   const coarseAbsoluteDifference = Math.abs(coarseDifference);
   const fineAbsoluteDifference = Math.abs(fineDifference);
-  const contraction = fineAbsoluteDifference / coarseAbsoluteDifference;
-  if (!(contraction < 1)) throw new Error('Refinement differences must contract from coarse to fine.');
-  if (contraction > gates.maximumContraction) {
-    throw new Error(`Refinement contraction ${contraction} exceeds ${gates.maximumContraction}.`);
+  const notes: string[] = [];
+  let trend: RefinementTrendKind;
+  if (coarseDifference === 0 && fineDifference === 0) trend = 'stationary';
+  else if (coarseDifference * fineDifference < 0) trend = 'oscillatory';
+  else if (coarseAbsoluteDifference > 0 && fineAbsoluteDifference < coarseAbsoluteDifference) {
+    trend = 'monotone-contracting';
+  } else trend = 'monotone-noncontracting';
+
+  const contraction = coarseAbsoluteDifference === 0 ? null : fineAbsoluteDifference / coarseAbsoluteDifference;
+  const apparentOrder = contraction === null || contraction === 0
+    ? null
+    : Math.log(1 / contraction) / Math.log(refinementRatio);
+  let richardsonEstimate: number | null = null;
+  if (trend === 'monotone-contracting' && apparentOrder !== null) {
+    const denominator = refinementRatio ** apparentOrder - 1;
+    if (denominator !== 0 && Number.isFinite(denominator)) {
+      richardsonEstimate = quantities[2]! + fineDifference / denominator;
+    }
   }
-  const apparentOrder = Math.log(coarseAbsoluteDifference / fineAbsoluteDifference)
-    / Math.log(gates.refinementRatio);
-  if (!Number.isFinite(apparentOrder) || apparentOrder < gates.minimumApparentOrder) {
-    throw new Error(`Refinement apparent order ${apparentOrder} is below ${gates.minimumApparentOrder}.`);
-  }
-  const finestPairRelativeChange = fineAbsoluteDifference / Math.abs(quantities[2]!);
-  if (finestPairRelativeChange > gates.maximumFinestPairRelativeChange) {
-    throw new Error(
-      `Refinement finest-pair relative change ${finestPairRelativeChange} exceeds ${gates.maximumFinestPairRelativeChange}.`,
-    );
-  }
-  const richardsonDenominator = gates.refinementRatio ** apparentOrder - 1;
-  if (!(richardsonDenominator > 0) || !Number.isFinite(richardsonDenominator)) {
-    throw new Error('Refinement Richardson denominator must be finite and positive.');
-  }
-  const richardsonEstimate = quantities[2]! + fineDifference / richardsonDenominator;
+  if (trend !== 'monotone-contracting') notes.push(`quantity sequence is ${trend}`);
+  if (contraction === null) notes.push('coarse-pair difference is zero, so contraction and order are undefined');
+  else if (apparentOrder === null) notes.push('fine-pair difference is zero, so logarithmic order is undefined');
+  if (richardsonEstimate === null) notes.push('Richardson estimate is not supported for this sequence');
 
   return Object.freeze({
     parameterName: input.parameterName,
@@ -79,18 +85,19 @@ export function analyzeRefinementTrend(input: RefinementTrendInput): RefinementT
     quantities: Object.freeze([...quantities]),
     signedDifferences: Object.freeze([coarseDifference, fineDifference]) as readonly [number, number],
     absoluteDifferences: Object.freeze([coarseAbsoluteDifference, fineAbsoluteDifference]) as readonly [number, number],
-    refinementRatio: gates.refinementRatio,
+    refinementRatio,
+    trend,
     contraction,
     apparentOrder,
-    finestPairRelativeChange,
+    finestPairRelativeChange: fineAbsoluteDifference / quantities[2]!,
     richardsonEstimate,
-    gates: Object.freeze({ ...gates }),
+    notes: Object.freeze(notes),
   });
 }
 
 export function validateRefinementDefinition(
   parameterValues: readonly number[],
-  gates: RefinementTrendGates,
+  refinementRatio: number,
 ): void {
   if (parameterValues.length !== 3) {
     throw new Error('Refinement definition requires exactly three parameter values.');
@@ -98,25 +105,13 @@ export function validateRefinementDefinition(
   if (!parameterValues.every((value) => Number.isFinite(value) && value > 0)) {
     throw new Error('Refinement parameters must be finite and positive.');
   }
-  if (!(gates.refinementRatio > 1) || !Number.isFinite(gates.refinementRatio)) {
+  if (!(refinementRatio > 1) || !Number.isFinite(refinementRatio)) {
     throw new Error('Refinement ratio must be finite and greater than one.');
   }
-  if (!(gates.maximumContraction > 0) || !Number.isFinite(gates.maximumContraction)) {
-    throw new Error('Maximum contraction must be finite and positive.');
-  }
-  if (!(gates.minimumApparentOrder >= 0) || !Number.isFinite(gates.minimumApparentOrder)) {
-    throw new Error('Minimum apparent order must be finite and non-negative.');
-  }
-  if (!(gates.maximumFinestPairRelativeChange >= 0)
-    || !Number.isFinite(gates.maximumFinestPairRelativeChange)) {
-    throw new Error('Maximum finest-pair relative change must be finite and non-negative.');
-  }
-
   const firstRatio = parameterValues[0]! / parameterValues[1]!;
   const secondRatio = parameterValues[1]! / parameterValues[2]!;
-  if (Math.abs(firstRatio - gates.refinementRatio) > ratioTolerance
-    || Math.abs(secondRatio - gates.refinementRatio) > ratioTolerance) {
-    throw new Error(`Refinement parameters must decrease by ratio ${gates.refinementRatio}.`);
+  if (Math.abs(firstRatio - refinementRatio) > ratioTolerance
+    || Math.abs(secondRatio - refinementRatio) > ratioTolerance) {
+    throw new Error(`Refinement parameters must decrease by ratio ${refinementRatio}.`);
   }
-
 }

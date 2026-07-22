@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { ClientModuleNav } from '../clientPreview/ClientModuleNav';
 import { clearAttempts, loadAttempts, saveAttempt } from './attemptStore';
 import { EgmCaliperCanvas } from './EgmCaliperCanvas';
 import { markIntervalMeasurement } from './marking';
@@ -166,6 +167,8 @@ export function AssessmentApp() {
 
   return (
     <main className="assessment-shell">
+      <ClientModuleNav current="assessment" />
+
       <header className="assessment-header">
         <div>
           <p className="assessment-eyebrow">EP HEART · LOGIN-FREE ASSESSMENT PREVIEW</p>
@@ -175,7 +178,7 @@ export function AssessmentApp() {
             interval and classify it where an approved range is available.
           </p>
         </div>
-        <a className="return-link" href="/">Return to tissue simulator</a>
+        <a className="return-link" href="/">All modules</a>
       </header>
 
       <div className="prototype-warning">
@@ -312,7 +315,7 @@ export function AssessmentApp() {
           )}
         </article>
 
-        <aside className="assessment-panel">
+        <aside id="feedback" className="assessment-panel">
           <span className="assessment-panel-kicker">CLIENT FEEDBACK</span>
           <h2>What should change?</h2>
           <textarea value={feedbackNotes} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setFeedbackNotes(event.target.value)} placeholder="Describe incorrect morphology, labels, workflow, marking or visual changes." />

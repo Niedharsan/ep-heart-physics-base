@@ -6,6 +6,7 @@ import type {
   WorkerCommand,
   WorkerEvent,
 } from './engine/core/types';
+import { ClientModuleNav } from './clientPreview/ClientModuleNav';
 import { alievPanfilovPresets } from './engine/models/AlievPanfilov';
 import { EcgCanvas } from './ui/EcgCanvas';
 import { VoltageCanvas } from './ui/VoltageCanvas';
@@ -156,6 +157,8 @@ export default function App() {
 
   return (
     <main className="app-shell">
+      <ClientModuleNav current="simulator" />
+
       <header className="topbar">
         <div>
           <p className="eyebrow">EP HEART PHYSICS BASE · EDUCATION / RESEARCH PROTOTYPE</p>

@@ -1,0 +1,96 @@
+.client-module-nav {
+  width: min(1680px, calc(100% - 32px));
+  margin: 0 auto 18px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #1d3741;
+  border-radius: 16px;
+  background: rgba(5, 14, 20, 0.90);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.22);
+}
+
+.client-preview-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #effaf6;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.client-preview-brand span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #2de39f, #08724c);
+  color: #02120c;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+}
+
+.client-preview-brand strong { font-size: 0.9rem; }
+.client-module-links { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.client-module-links a {
+  color: #9eb1b3;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 11px;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+.client-module-links a:hover { color: #e9f8f2; border-color: #31504d; }
+.client-module-links a.active { color: #74efbd; border-color: #28634d; background: #092419; }
+
+.client-preview-shell {
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 44px;
+  color: #edf7f3;
+}
+
+.client-preview-shell .client-module-nav { width: 100%; }
+.client-preview-hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; padding: 44px 8px 28px; }
+.client-preview-hero h1 { max-width: 920px; margin: 0; font-size: clamp(2.5rem, 6vw, 5.8rem); line-height: 0.96; letter-spacing: -0.065em; }
+.client-preview-eyebrow { margin: 0 0 12px; color: #51e2aa; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.17em; }
+.client-preview-lead { max-width: 810px; margin: 20px 0 0; color: #9db0b1; font-size: 1.05rem; line-height: 1.65; }
+.client-preview-status { display: flex; align-items: center; gap: 9px; border: 1px solid #285241; border-radius: 999px; padding: 10px 13px; color: #7aefbd; font-size: 0.76rem; font-weight: 850; white-space: nowrap; }
+.client-preview-status span { width: 8px; height: 8px; border-radius: 50%; background: #45e9a5; box-shadow: 0 0 14px #45e9a5; }
+.client-preview-warning { border: 1px solid #6f5330; background: #251a0d; color: #ffd59c; border-radius: 14px; padding: 12px 15px; margin-bottom: 18px; }
+
+.client-module-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.client-module-card, .client-preview-roadmap, .client-preview-review-guide { border: 1px solid #1d343d; border-radius: 20px; background: linear-gradient(180deg, rgba(8, 20, 28, 0.98), rgba(4, 11, 16, 0.99)); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22); }
+.client-module-card { padding: 24px; display: grid; align-content: start; gap: 15px; }
+.client-module-card-heading span { color: #5be8b1; font-size: 0.7rem; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; }
+.client-module-card h2 { margin: 7px 0 0; font-size: 1.7rem; }
+.client-module-card p { margin: 0; color: #9badb0; line-height: 1.55; }
+.client-module-card ul, .client-preview-roadmap ul, .client-preview-review-guide ol { margin: 0; padding-left: 20px; color: #dce9e4; line-height: 1.7; }
+.client-module-card .client-module-limitation { color: #d4b17e; font-size: 0.84rem; }
+.client-module-open, .client-preview-review-guide > a { justify-self: start; color: #03120c; background: linear-gradient(180deg, #4debb1, #17a970); border: 1px solid #72f2c1; border-radius: 11px; padding: 11px 15px; text-decoration: none; font-weight: 900; }
+
+.client-preview-roadmap, .client-preview-review-guide { margin-top: 18px; padding: 24px; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 28px; align-items: start; }
+.client-preview-roadmap h2, .client-preview-review-guide h2 { margin: 0; font-size: 1.55rem; }
+.client-preview-roadmap p, .client-preview-review-guide p { color: #91a5a7; line-height: 1.55; }
+.client-preview-review-guide { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) auto; align-items: center; }
+.client-preview-footer { display: flex; justify-content: space-between; gap: 20px; padding: 22px 4px 0; color: #778c8f; font-size: 0.8rem; }
+
+@media (max-width: 850px) {
+  .client-module-nav, .client-preview-hero, .client-preview-footer { align-items: stretch; flex-direction: column; }
+  .client-module-links { align-items: stretch; }
+  .client-module-links a { text-align: center; }
+  .client-module-grid, .client-preview-roadmap, .client-preview-review-guide { grid-template-columns: 1fr; }
+  .client-preview-review-guide > a { justify-self: start; }
+}
+
+@media (max-width: 560px) {
+  .client-module-nav, .client-preview-shell { width: min(100% - 18px, 1680px); }
+  .client-module-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .client-preview-hero { padding-top: 24px; }
+}

@@ -7,6 +7,7 @@ import { markIntervalMeasurement } from './marking';
 import { resolveAssessmentView } from './assessmentView';
 import type { AssessmentView } from './assessmentView';
 import { TaskOneAssessment } from './task1/TaskOneAssessment';
+import { TaskTwoAssessment } from './task2/TaskTwoAssessment';
 import {
   createIntervalMeasurementQuestion,
   toStudentAssessmentQuestion,
@@ -58,6 +59,7 @@ export function AssessmentApp() {
   const assessmentView = resolveAssessmentView(window.location.search);
   const selectedTask = new URLSearchParams(window.location.search).get('task');
   if (selectedTask === '1') return <TaskOneAssessment assessmentView={assessmentView} />;
+  if (selectedTask === '2') return <TaskTwoAssessment assessmentView={assessmentView} />;
   return <IntervalAssessmentApp assessmentView={assessmentView} />;
 }
 
@@ -270,6 +272,7 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
       <nav className="assessment-task-nav" aria-label="Assessment sections">
         <a className="active" href={instructorView ? '/?mode=assessment&view=instructor' : '/?mode=assessment'}>Interval trainer</a>
         <a href={instructorView ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
+        <a href={instructorView ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
       </nav>
 
       <div className="prototype-warning">

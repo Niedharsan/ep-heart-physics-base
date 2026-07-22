@@ -9,7 +9,6 @@ function run(precision: StatePrecision): MonodomainSolver {
     grid: { width: 48, height: 32, dx: 1 },
     diffusion: 0.8,
     requestedDt: 0.08,
-    stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     statePrecision: precision,
   });

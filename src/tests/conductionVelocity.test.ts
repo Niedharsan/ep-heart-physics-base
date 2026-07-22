@@ -18,7 +18,6 @@ const referenceProtocol: PlanarVelocityProtocol = {
     diffusion: 0.8,
     requestedDt: 0.08,
     statePrecision: 'float32',
-    stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   },
   stimulusMaximumX: 2,

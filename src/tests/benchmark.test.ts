@@ -9,7 +9,6 @@ describe('reference numerical benchmark', () => {
       diffusion: 0.8,
       requestedDt: 0.08,
       statePrecision: 'float32',
-      stepsPerFrame: 8,
       model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });
     solver.applyStimulus({ x: 20, y: 52, radius: 4, amplitude: 1 });

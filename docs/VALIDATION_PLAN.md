@@ -53,6 +53,14 @@
 - physical nodal-grid aspect-ratio and clamped edge/out-of-bounds pointer tests
 - finite, positive and in-domain validation for rectangular/circular stimuli,
   lesions and obstacle regions, including rejection before partial mutation
+- versioned definition uniqueness, freezing, JSON serialization and exact
+  electrode/measurement/lesson reference checks
+- deterministic scenario compilation and preservation of existing planar and
+  obstacle setup geometry
+- integer-step scenario-time quantization checks
+- solver-batch and render-drain invariance for timestamped signal samples
+- passive publication and runtime reset checks proving that rendering does not
+  advance scientific state or retain signal backlog
 
 ## Required before claiming credible 2D propagation
 

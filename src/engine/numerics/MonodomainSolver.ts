@@ -6,7 +6,6 @@ import {
   validateNodalRectangle,
 } from '../geometry/SpatialInputValidation';
 import { AlievPanfilovModel } from '../models/AlievPanfilov';
-import { PseudoEcg } from '../signals/PseudoEcg';
 import {
   copyNumericalDiagnostics,
   copyNumericalStateExtrema,
@@ -35,7 +34,6 @@ export class MonodomainSolver {
 
   time = 0;
   private readonly model: AlievPanfilovModel;
-  private readonly ecg: PseudoEcg;
   private readonly diffusion: number;
   private readonly diagnosticCounts = createNumericalDiagnostics();
   private readonly observedStateExtrema = createNumericalStateExtrema();
@@ -55,7 +53,6 @@ export class MonodomainSolver {
     this.recovery = createStateArray(config.statePrecision, this.tissue.size);
     this.nextVoltage = createStateArray(config.statePrecision, this.tissue.size);
     this.nextRecovery = createStateArray(config.statePrecision, this.tissue.size);
-    this.ecg = new PseudoEcg(this.tissue.width, this.tissue.height, config.statePrecision);
 
     // Explicit five-point Laplacian stability limit in 2D.
     const diffusionLimit = (config.grid.dx * config.grid.dx) / (4 * config.diffusion);
@@ -84,7 +81,6 @@ export class MonodomainSolver {
     this.tissue.mask.fill(1);
     this.lesions.length = 0;
     this.time = 0;
-    this.ecg.reset();
     Object.assign(this.diagnosticCounts, createNumericalDiagnostics());
     Object.assign(this.observedStateExtrema, createNumericalStateExtrema());
     this.model.resetDiagnostics();
@@ -164,7 +160,7 @@ export class MonodomainSolver {
     this.tissue.setCircularObstacle(x, y, radius);
   }
 
-  step(source?: ReactionDiffusionSource): number {
+  step(source?: ReactionDiffusionSource): void {
     const { width, height, dx, mask } = this.tissue;
     const dt = this.stableDt;
     if (source && (source.voltage.length !== this.tissue.size || source.recovery.length !== this.tissue.size)) {
@@ -211,7 +207,6 @@ export class MonodomainSolver {
     this.voltage.set(this.nextVoltage);
     this.recovery.set(this.nextRecovery);
     this.time += dt;
-    return this.ecg.sample(this.voltage, this.tissue.mask);
   }
 
   private recordStateExtrema(voltage: number, recovery: number): void {

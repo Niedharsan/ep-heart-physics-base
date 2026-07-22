@@ -101,7 +101,6 @@ export function runPlanarRefinementStudy(
         diffusion: protocol.diffusion,
         requestedDt,
         statePrecision: 'float32',
-        stepsPerFrame: 1,
         model: protocol.model,
       },
       stimulusMaximumX: protocol.stimulusMaximumX,

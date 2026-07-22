@@ -95,7 +95,6 @@ describe('masked obstacle no-flux stencil', () => {
       grid: { width: 17, height: 17, dx: 1 },
       diffusion: 0.1,
       requestedDt: 0.01,
-      stepsPerFrame: 1,
       model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
       statePrecision: 'float64',
     });

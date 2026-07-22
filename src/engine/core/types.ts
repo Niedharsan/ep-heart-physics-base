@@ -20,9 +20,14 @@ export interface SolverConfig {
   readonly grid: GridConfig;
   readonly diffusion: number;
   readonly requestedDt: number;
-  readonly stepsPerFrame: number;
   readonly model: ModelParameters;
   readonly statePrecision: StatePrecision;
+}
+
+export interface RuntimeClockConfig {
+  readonly solverIntervalMs: number;
+  readonly solverStepsPerBatch: number;
+  readonly renderIntervalMs: number;
 }
 
 export interface Stimulus {
@@ -45,25 +50,38 @@ export interface EngineSnapshot {
   readonly height: number;
   readonly dx: number;
   readonly time: number;
+  readonly solverStepIndex: number;
   readonly voltage: Float32Array;
   readonly tissueMask: Uint8Array;
-  readonly ecgSample: number;
   readonly lesions: readonly Lesion[];
   readonly simulationStepsPerSecond: number;
   readonly diagnostics: NumericalDiagnostics;
 }
 
+export interface SignalSample {
+  readonly measurementId: string;
+  readonly solverStepIndex: number;
+  readonly modelTime: number;
+  readonly value: number;
+}
+
 export type WorkerCommand =
-  | { readonly type: 'initialize'; readonly config: SolverConfig; readonly scenario: ScenarioId }
+  | {
+    readonly type: 'initialize';
+    readonly config: SolverConfig;
+    readonly clocks: RuntimeClockConfig;
+    readonly scenario: ScenarioId;
+  }
   | { readonly type: 'start' }
   | { readonly type: 'pause' }
   | { readonly type: 'reset'; readonly scenario: ScenarioId }
   | { readonly type: 'stimulate'; readonly stimulus: Stimulus }
   | { readonly type: 'ablate'; readonly lesion: Omit<Lesion, 'id' | 'createdAt'> }
-  | { readonly type: 'set-speed'; readonly stepsPerFrame: number };
+  | { readonly type: 'set-solver-steps-per-batch'; readonly solverStepsPerBatch: number };
 
 export type WorkerEvent =
   | { readonly type: 'ready'; readonly stableDt: number }
   | { readonly type: 'snapshot'; readonly snapshot: EngineSnapshot }
+  | { readonly type: 'signal-samples'; readonly samples: readonly SignalSample[] }
   | { readonly type: 'error'; readonly message: string };
 import type { NumericalDiagnostics } from './numericalDiagnostics';

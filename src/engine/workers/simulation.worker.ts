@@ -1,19 +1,29 @@
 /// <reference lib="webworker" />
 
-import type { ScenarioId, SolverConfig, WorkerCommand, WorkerEvent } from '../core/types';
-import { configureScenario, type ScenarioController } from '../core/scenarios';
+import type {
+  RuntimeClockConfig,
+  ScenarioId,
+  SolverConfig,
+  WorkerCommand,
+  WorkerEvent,
+} from '../core/types';
 import { MonodomainSolver } from '../numerics/MonodomainSolver';
 import { hasStateClipping } from '../core/numericalDiagnostics';
+import { SimulationRuntime } from '../runtime/SimulationRuntime';
 import { createEngineSnapshot, StepRateMeter } from './SimulationTelemetry';
 
 const context: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
 
 let solver: MonodomainSolver | null = null;
-let scenario: ScenarioId = 'focal-rhythm';
-let controller: ScenarioController | null = null;
+let runtime: SimulationRuntime | null = null;
 let running = false;
-let timer: ReturnType<typeof setInterval> | null = null;
-let stepsPerFrame = 8;
+let solverTimer: ReturnType<typeof setInterval> | null = null;
+let renderTimer: ReturnType<typeof setInterval> | null = null;
+let clocks: RuntimeClockConfig = {
+  solverIntervalMs: 4,
+  solverStepsPerBatch: 2,
+  renderIntervalMs: 16,
+};
 const stepRateMeter = new StepRateMeter(500, performance.now());
 let warnedAboutClipping = false;
 
@@ -22,52 +32,60 @@ function emit(event: WorkerEvent, transfer?: Transferable[]): void {
 }
 
 function stopTimer(): void {
-  if (timer !== null) {
-    clearInterval(timer);
-    timer = null;
-  }
+  if (solverTimer !== null) clearInterval(solverTimer);
+  if (renderTimer !== null) clearInterval(renderTimer);
+  solverTimer = null;
+  renderTimer = null;
 }
 
 function startTimer(): void {
-  if (timer !== null) return;
-  timer = setInterval(tick, 16);
+  if (solverTimer === null) solverTimer = setInterval(advanceSolverClock, clocks.solverIntervalMs);
+  if (renderTimer === null) renderTimer = setInterval(publishRenderClock, clocks.renderIntervalMs);
 }
 
-function emitSnapshot(ecgSample = 0): void {
-  if (!solver) throw new Error('Initialize the engine before requesting a snapshot.');
-  const snapshot = createEngineSnapshot(solver, ecgSample, stepRateMeter.measure(performance.now()));
+function emitSnapshot(): void {
+  if (!solver || !runtime) throw new Error('Initialize the engine before requesting a snapshot.');
+  const snapshot = createEngineSnapshot(
+    solver,
+    runtime.solverStepIndex,
+    stepRateMeter.measure(performance.now()),
+  );
   emit({ type: 'snapshot', snapshot }, [snapshot.voltage.buffer, snapshot.tissueMask.buffer]);
 }
 
-function tick(): void {
-  if (!running || !solver || !controller) return;
-  let ecgSample = 0;
-
+function advanceSolverClock(): void {
+  if (!running || !solver || !runtime) return;
   try {
-    for (let step = 0; step < stepsPerFrame; step += 1) {
-      controller.beforeStep(solver);
-      ecgSample = solver.step();
-      stepRateMeter.recordSteps(1);
-    }
+    runtime.advanceSolverSteps(clocks.solverStepsPerBatch);
+    stepRateMeter.recordSteps(clocks.solverStepsPerBatch);
 
     if (import.meta.env.DEV && !warnedAboutClipping && hasStateClipping(solver.diagnostics)) {
       warnedAboutClipping = true;
       console.warn('EP engine numerical state clipping occurred.', solver.diagnostics);
     }
-
-    emitSnapshot(ecgSample);
   } catch (error) {
     running = false;
     emit({ type: 'error', message: error instanceof Error ? error.message : 'Unknown simulation error.' });
   }
 }
 
-function initialize(config: SolverConfig, requestedScenario: ScenarioId): void {
+function publishRenderClock(): void {
+  if (!running || !runtime) return;
+  const samples = runtime.drainSignalSamples();
+  if (samples.length > 0) emit({ type: 'signal-samples', samples });
+  emitSnapshot();
+}
+
+function initialize(
+  config: SolverConfig,
+  requestedClocks: RuntimeClockConfig,
+  requestedScenario: ScenarioId,
+): void {
   stopTimer();
+  validateRuntimeClocks(requestedClocks);
   solver = new MonodomainSolver(config);
-  scenario = requestedScenario;
-  controller = configureScenario(solver, scenario);
-  stepsPerFrame = config.stepsPerFrame;
+  runtime = new SimulationRuntime(solver, requestedScenario);
+  clocks = requestedClocks;
   running = false;
   warnedAboutClipping = false;
   stepRateMeter.reset(performance.now());
@@ -81,7 +99,7 @@ context.onmessage = (message: MessageEvent<WorkerCommand>): void => {
   try {
     switch (command.type) {
       case 'initialize':
-        initialize(command.config, command.scenario);
+        initialize(command.config, command.clocks, command.scenario);
         break;
       case 'start':
         running = true;
@@ -91,10 +109,9 @@ context.onmessage = (message: MessageEvent<WorkerCommand>): void => {
         running = false;
         break;
       case 'reset':
-        if (!solver) throw new Error('Initialize the engine before resetting it.');
+        if (!solver || !runtime) throw new Error('Initialize the engine before resetting it.');
         running = false;
-        scenario = command.scenario;
-        controller = configureScenario(solver, scenario);
+        runtime.reset(command.scenario);
         warnedAboutClipping = false;
         stepRateMeter.reset(performance.now());
         emitSnapshot();
@@ -102,16 +119,18 @@ context.onmessage = (message: MessageEvent<WorkerCommand>): void => {
       case 'stimulate':
         if (!solver) throw new Error('Initialize the engine before stimulating tissue.');
         solver.applyStimulus(command.stimulus);
+        emitSnapshot();
         break;
       case 'ablate':
         if (!solver) throw new Error('Initialize the engine before applying ablation.');
         solver.createLesion(command.lesion.x, command.lesion.y, command.lesion.radius);
+        emitSnapshot();
         break;
-      case 'set-speed':
-        if (!(command.stepsPerFrame > 0) || !Number.isFinite(command.stepsPerFrame)) {
-          throw new Error('Steps per frame must be finite and positive.');
+      case 'set-solver-steps-per-batch':
+        if (!Number.isInteger(command.solverStepsPerBatch) || command.solverStepsPerBatch < 1) {
+          throw new Error('Solver steps per batch must be a positive integer.');
         }
-        stepsPerFrame = Math.max(1, Math.min(100, Math.round(command.stepsPerFrame)));
+        clocks = { ...clocks, solverStepsPerBatch: Math.min(100, command.solverStepsPerBatch) };
         break;
       default: {
         const neverCommand: never = command;
@@ -122,3 +141,11 @@ context.onmessage = (message: MessageEvent<WorkerCommand>): void => {
     emit({ type: 'error', message: error instanceof Error ? error.message : 'Unknown worker command error.' });
   }
 };
+
+function validateRuntimeClocks(value: RuntimeClockConfig): void {
+  if (!(value.solverIntervalMs > 0) || !Number.isFinite(value.solverIntervalMs)
+    || !(value.renderIntervalMs > 0) || !Number.isFinite(value.renderIntervalMs)
+    || !Number.isInteger(value.solverStepsPerBatch) || value.solverStepsPerBatch < 1) {
+    throw new Error('Runtime clocks require positive finite intervals and a positive integer solver batch size.');
+  }
+}

@@ -14,6 +14,13 @@ Provide a clean executable foundation that proves:
 4. derived waveforms can be streamed to a browser UI;
 5. the codebase can be verified, profiled and expanded in controlled stages.
 
+## Student-learning architecture foundation
+
+Versioned scenarios, electrodes, measurements and lessons are declarative,
+JSON-safe and framework-independent. Numerical integration, signal sampling and
+render publication have separate clocks. The current catalog is intentionally
+small; authoring workflows, scoring and persistence are later product work.
+
 ## Explicit non-goals for this base
 
 - Epicardio feature parity

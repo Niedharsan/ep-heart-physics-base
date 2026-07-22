@@ -12,8 +12,13 @@ const baseConfig = {
   diffusion: 0.8,
   requestedDt: 0.08,
   statePrecision: 'float32',
-  stepsPerFrame: 8,
   model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
+} as const;
+
+const runtimeClocks = {
+  solverIntervalMs: 4,
+  solverStepsPerBatch: 2,
+  renderIntervalMs: 16,
 } as const;
 
 export default function App() {
@@ -25,7 +30,7 @@ export default function App() {
   const [interactionMode, setInteractionMode] = useState<'stimulate' | 'ablate'>('stimulate');
   const [stableDt, setStableDt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [stepsPerFrame, setStepsPerFrame] = useState<number>(baseConfig.stepsPerFrame);
+  const [solverStepsPerBatch, setSolverStepsPerBatch] = useState<number>(runtimeClocks.solverStepsPerBatch);
 
   const scenarioLabel = useMemo(() => {
     const labels: Record<ScenarioId, string> = {
@@ -46,13 +51,22 @@ export default function App() {
         setError(null);
       } else if (event.type === 'snapshot') {
         setSnapshot(event.snapshot);
-        setEcgSamples((current) => [...current.slice(-599), event.snapshot.ecgSample]);
+      } else if (event.type === 'signal-samples') {
+        const values = event.samples
+          .filter((sample) => sample.measurementId === 'pseudo-ecg-primary')
+          .map((sample) => sample.value);
+        setEcgSamples((current) => [...current, ...values].slice(-600));
       } else if (event.type === 'error') {
         setError(event.message);
         setRunning(false);
       }
     };
-    worker.postMessage({ type: 'initialize', config: baseConfig, scenario: initialScenario } satisfies WorkerCommand);
+    worker.postMessage({
+      type: 'initialize',
+      config: baseConfig,
+      clocks: runtimeClocks,
+      scenario: initialScenario,
+    } satisfies WorkerCommand);
     return () => worker.terminate();
   }, []);
 
@@ -111,16 +125,16 @@ export default function App() {
           </select>
         </label>
         <label className="speed-control">
-          Steps/frame: {stepsPerFrame}
+          Steps/batch: {solverStepsPerBatch}
           <input
             type="range"
             min="1"
             max="32"
-            value={stepsPerFrame}
+            value={solverStepsPerBatch}
             onChange={(event) => {
               const value = Number(event.target.value);
-              setStepsPerFrame(value);
-              send({ type: 'set-speed', stepsPerFrame: value });
+              setSolverStepsPerBatch(value);
+              send({ type: 'set-solver-steps-per-batch', solverStepsPerBatch: value });
             }}
           />
         </label>

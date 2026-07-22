@@ -8,7 +8,6 @@ function createSolver(): MonodomainSolver {
     grid: { width: 16, height: 12, dx: 0.5 },
     diffusion: 0.8,
     requestedDt: 0.02,
-    stepsPerFrame: 1,
     statePrecision: 'float32',
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   });
@@ -33,6 +32,7 @@ describe('simulation telemetry', () => {
     solver.reset();
     const snapshot = createEngineSnapshot(solver, 0, 0);
     expect(snapshot.time).toBe(0);
+    expect(snapshot.solverStepIndex).toBe(0);
     expect(snapshot.dx).toBe(0.5);
     expect(snapshot.simulationStepsPerSecond).toBe(0);
     expect(snapshot.voltage).not.toBe(solver.voltage);

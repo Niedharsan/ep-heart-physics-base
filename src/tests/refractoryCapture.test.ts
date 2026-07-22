@@ -76,7 +76,7 @@ describe('deterministic paired-stimulus capture study', () => {
     expect(capture.stationMeanS2ActivationTimes).toEqual([...capture.stationMeanS2ActivationTimes].sort((a, b) => a! - b!));
     expect(capture.transverseSpreads.every((spread) => spread !== null && spread <= 0.02)).toBe(true);
     const s2Latencies = capture.stationMeanS2ActivationTimes.map((time) => time! - capture.s2ApplicationTime);
-    [5.64225, 11.04835, 15.62037].forEach((expected, index) => {
+    [5.58395, 11.00124, 15.57975].forEach((expected, index) => {
       expect(s2Latencies[index]).toBeCloseTo(expected, 2);
     });
     expect(capture.preS2State.voltage.values).toHaveLength(3);

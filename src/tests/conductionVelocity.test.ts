@@ -17,6 +17,7 @@ const referenceProtocol: PlanarVelocityProtocol = {
     grid: { width: 96, height: 24, dx: 1 },
     diffusion: 0.8,
     requestedDt: 0.08,
+    statePrecision: 'float32',
     stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   },

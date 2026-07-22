@@ -11,13 +11,20 @@ import {
   type NumericalDiagnostics,
   type NumericalStateExtrema,
 } from '../core/numericalDiagnostics';
+import { createStateArray, type FloatingPointState } from './FloatingPointState';
+import { fivePointNoFluxLaplacianAt } from './FivePointNoFluxLaplacian';
+
+export interface ReactionDiffusionSource {
+  readonly voltage: ArrayLike<number>;
+  readonly recovery: ArrayLike<number>;
+}
 
 export class MonodomainSolver {
   readonly tissue: RectangularTissue;
-  readonly voltage: Float32Array;
-  readonly recovery: Float32Array;
-  readonly nextVoltage: Float32Array;
-  readonly nextRecovery: Float32Array;
+  readonly voltage: FloatingPointState;
+  readonly recovery: FloatingPointState;
+  readonly nextVoltage: FloatingPointState;
+  readonly nextRecovery: FloatingPointState;
   readonly stableDt: number;
   readonly lesions: Lesion[] = [];
 
@@ -39,11 +46,11 @@ export class MonodomainSolver {
     this.tissue = new RectangularTissue(config.grid);
     this.model = new AlievPanfilovModel(config.model);
     this.diffusion = config.diffusion;
-    this.voltage = new Float32Array(this.tissue.size);
-    this.recovery = new Float32Array(this.tissue.size);
-    this.nextVoltage = new Float32Array(this.tissue.size);
-    this.nextRecovery = new Float32Array(this.tissue.size);
-    this.ecg = new PseudoEcg(this.tissue.width, this.tissue.height);
+    this.voltage = createStateArray(config.statePrecision, this.tissue.size);
+    this.recovery = createStateArray(config.statePrecision, this.tissue.size);
+    this.nextVoltage = createStateArray(config.statePrecision, this.tissue.size);
+    this.nextRecovery = createStateArray(config.statePrecision, this.tissue.size);
+    this.ecg = new PseudoEcg(this.tissue.width, this.tissue.height, config.statePrecision);
 
     // Explicit five-point Laplacian stability limit in 2D.
     const diffusionLimit = (config.grid.dx * config.grid.dx) / (4 * config.diffusion);
@@ -146,10 +153,12 @@ export class MonodomainSolver {
     this.tissue.setCircularObstacle(x, y, radius);
   }
 
-  step(): number {
+  step(source?: ReactionDiffusionSource): number {
     const { width, height, dx, mask } = this.tissue;
-    const inverseDxSquared = 1 / (dx * dx);
     const dt = this.stableDt;
+    if (source && (source.voltage.length !== this.tissue.size || source.recovery.length !== this.tissue.size)) {
+      throw new Error('Reaction-diffusion source arrays must match the tissue size.');
+    }
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
@@ -161,23 +170,16 @@ export class MonodomainSolver {
         }
 
         const center = this.voltage[index] ?? 0;
-        // No-flux boundaries are implemented by mirroring the centre value
-        // when a neighbour is outside tissue or non-conductive.
-        const leftIndex = x > 0 ? index - 1 : index;
-        const rightIndex = x < width - 1 ? index + 1 : index;
-        const upIndex = y > 0 ? index - width : index;
-        const downIndex = y < height - 1 ? index + width : index;
-
-        const left = mask[leftIndex] === 1 ? (this.voltage[leftIndex] ?? center) : center;
-        const right = mask[rightIndex] === 1 ? (this.voltage[rightIndex] ?? center) : center;
-        const up = mask[upIndex] === 1 ? (this.voltage[upIndex] ?? center) : center;
-        const down = mask[downIndex] === 1 ? (this.voltage[downIndex] ?? center) : center;
-
-        const laplacian = (left + right + up + down - 4 * center) * inverseDxSquared;
+        const laplacian = fivePointNoFluxLaplacianAt(this.voltage, mask, width, height, dx, x, y);
         const recovery = this.recovery[index] ?? 0;
         const [reactionU, reactionV] = this.model.derivatives(center, recovery);
-        const nextU = center + dt * (reactionU + this.diffusion * laplacian);
-        const nextV = recovery + dt * reactionV;
+        const sourceU = source?.voltage[index] ?? 0;
+        const sourceV = source?.recovery[index] ?? 0;
+        if (!Number.isFinite(sourceU) || !Number.isFinite(sourceV)) {
+          throw new Error(`Reaction-diffusion source must be finite at cell ${index}.`);
+        }
+        const nextU = center + dt * (reactionU + this.diffusion * laplacian + sourceU);
+        const nextV = recovery + dt * (reactionV + sourceV);
 
         if (!Number.isFinite(nextU) || !Number.isFinite(nextV)) {
           this.diagnosticCounts.nonFiniteStateCount += 1;

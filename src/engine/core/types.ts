@@ -1,4 +1,5 @@
 export type ScenarioId = 'planar-wave' | 'focal-rhythm' | 'obstacle-reentry';
+export type StatePrecision = 'float32' | 'float64';
 
 export interface GridConfig {
   readonly width: number;
@@ -21,6 +22,7 @@ export interface SolverConfig {
   readonly requestedDt: number;
   readonly stepsPerFrame: number;
   readonly model: ModelParameters;
+  readonly statePrecision: StatePrecision;
 }
 
 export interface Stimulus {

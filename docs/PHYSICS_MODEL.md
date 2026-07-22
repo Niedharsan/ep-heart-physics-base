@@ -25,8 +25,11 @@ The model is embedded in a reduced monodomain-style equation
 \frac{du}{dt}=D\nabla^2u+f(u,v),\qquad \frac{dv}{dt}=g(u,v),
 \]
 
-using a five-point finite-difference Laplacian and centre-value substitution at
-domain and obstacle faces (a discrete no-flux treatment).
+using a five-point finite-difference Laplacian. The nodal outer boundary uses
+an even reflected ghost node (`u[-1]=u[1]`) to impose homogeneous Neumann data;
+a face adjacent to a non-conductive obstacle substitutes the conductive centre
+value. These are distinct discrete no-flux treatments for the documented nodal
+domain and the cell mask, respectively.
 
 Space and time are uncalibrated normalized model coordinates. `dx` is the
 distance between adjacent grid samples in model-length units, and `D` has the
@@ -89,9 +92,10 @@ q_R=q_2+\frac{q_2-q_1}{r^{p_{app}}-1}.
 \]
 
 These are observed quantity-of-interest refinement trends for propagation
-speed. They are not formal verification of the solver's theoretical order:
-there is no analytic or manufactured reference solution. The rebaselined
-planar runs have zero clipping, denominator guards and non-finite states.
+speed. They are not formal verification of the solver's theoretical order.
+Formal order evidence is now provided separately by Float64 analytic-diffusion
+and manufactured reaction–diffusion protocols. The rebaselined planar runs
+have zero clipping, denominator guards and non-finite states.
 
 The contraction, apparent-order, finest-pair-change, radial-deviation and
 activation-spread thresholds are project-defined regression/characterization
@@ -136,9 +140,29 @@ For the fixed `dx=0.5`, `dt=0.02` protocol, timestep-indexed bisection brackets
 the deterministic transition between the longest failing coupling interval
 and shortest captured interval. All times and distances remain normalized
 model units. This is an implementation characterization, not an effective
-refractory period in physiological units. The current result activates the
-recovery upper clip and therefore describes only the safeguard-modified
-implementation.
+refractory period in physiological units. The current sourced-preset result
+has zero recovery clipping. That does not turn it into a physiological
+refractory-period measurement.
+
+## Reference precision and formal numerical verification
+
+The runtime state-storage mode is explicit: browser scenarios use
+`statePrecision='float32'`, while formal verification uses
+`statePrecision='float64'`. JavaScript arithmetic remains IEEE-754 binary64 in
+both modes; Float64 is a higher-precision state-storage reference, not
+arbitrary precision or an independent solver implementation.
+
+The pure-diffusion check uses
+`u=0.4+0.1 exp(-2π²Dt) cos(πx)cos(πy)` on `[0,1]²`, whose normal derivative is
+zero on every outer face. Verification-only source arrays cancel the local
+reaction at each explicit step. A separate manufactured problem uses
+`u=0.4+0.1 exp(-t)cos(πx)cos(πy)` and
+`v=0.1+0.02 exp(-t)cos(πx)cos(πy)` with forcing obtained by substituting those
+fields into the implemented reaction–diffusion equations. Its spatial study
+holds `dt` proportional to `dx²`; its spatially constant temporal study removes
+spatial truncation error. Analysis always returns the measured errors and
+orders, including divergent or oscillatory sequences. A separate acceptance
+layer applies CI gates.
 
 ## Variant and provenance
 

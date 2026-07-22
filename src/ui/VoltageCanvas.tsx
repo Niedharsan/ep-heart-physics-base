@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { EngineSnapshot } from '../engine/core/types';
+import { mapPointerToNodalGrid, physicalGridAspectRatio } from './CanvasGeometry';
 
 interface VoltageCanvasProps {
   readonly snapshot: EngineSnapshot | null;
@@ -17,6 +18,11 @@ function voltageToRgb(value: number): readonly [number, number, number] {
 
 export function VoltageCanvas({ snapshot, interactionMode, onPoint }: VoltageCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const aspectRatio = snapshot
+    ? physicalGridAspectRatio(snapshot.width, snapshot.height, snapshot.dx)
+    : physicalGridAspectRatio(160, 104, 1);
+  const backingWidth = 960;
+  const backingHeight = Math.round(backingWidth / aspectRatio);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -71,15 +77,17 @@ export function VoltageCanvas({ snapshot, interactionMode, onPoint }: VoltageCan
   return (
     <canvas
       ref={canvasRef}
-      width={960}
-      height={560}
+      width={backingWidth}
+      height={backingHeight}
+      style={{ aspectRatio }}
       className={`voltage-canvas mode-${interactionMode}`}
       onPointerDown={(event) => {
         if (!snapshot) return;
         const bounds = event.currentTarget.getBoundingClientRect();
-        const x = ((event.clientX - bounds.left) / bounds.width) * snapshot.width;
-        const y = ((event.clientY - bounds.top) / bounds.height) * snapshot.height;
-        onPoint(x, y);
+        const point = mapPointerToNodalGrid(
+          event.clientX, event.clientY, bounds, snapshot.width, snapshot.height,
+        );
+        onPoint(point.x, point.y);
       }}
       aria-label="Cardiac tissue voltage field"
     />

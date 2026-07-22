@@ -48,6 +48,11 @@
 - deterministic replay
 - finite numerical state
 - reference throughput measurement
+- resettable performance-meter unit checks and immediate independently copied
+  reset snapshot checks
+- physical nodal-grid aspect-ratio and clamped edge/out-of-bounds pointer tests
+- finite, positive and in-domain validation for rectangular/circular stimuli,
+  lesions and obstacle regions, including rejection before partial mutation
 
 ## Required before claiming credible 2D propagation
 

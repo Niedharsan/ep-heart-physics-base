@@ -1,4 +1,5 @@
 import type { FloatingPointState } from './FloatingPointState';
+import { validateFinitePositive } from '../geometry/SpatialInputValidation';
 
 export interface RectangularCurrentRegion {
   readonly minimumX: number;
@@ -30,9 +31,7 @@ export function writeRectangularStimulusCurrent(
   if (target.length !== width * height || mask.length !== target.length) {
     throw new Error('Stimulus-current arrays must match the grid dimensions.');
   }
-  if (!(amplitude > 0) || !Number.isFinite(amplitude)) {
-    throw new Error('Stimulus-current amplitude must be finite and positive.');
-  }
+  validateFinitePositive(amplitude, 'Stimulus-current amplitude');
   for (const [name, value] of Object.entries(region)) {
     if (!Number.isInteger(value)) throw new Error(`Stimulus-current ${name} must be an integer grid index.`);
   }

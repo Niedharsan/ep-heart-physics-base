@@ -9,7 +9,6 @@ function createSolver(): MonodomainSolver {
     diffusion: 0.8,
     requestedDt: 0.08,
     statePrecision: 'float32',
-    stepsPerFrame: 4,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   });
 }
@@ -20,7 +19,6 @@ function createDiagnosticSolver(requestedDt = 1): MonodomainSolver {
     diffusion: 0.001,
     requestedDt,
     statePrecision: 'float32',
-    stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   });
 }
@@ -190,12 +188,11 @@ describe('MonodomainSolver', () => {
       diffusion: 0.8,
       requestedDt: 0.08,
       statePrecision: 'float32',
-      stepsPerFrame: 8,
       model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });
     const scenario = configureScenario(solver, 'focal-rhythm');
     for (let step = 0; step < 500; step += 1) {
-      scenario.beforeStep(solver);
+      scenario.beforeStep(solver, step);
       solver.step();
     }
     expect(solver.diagnostics).toEqual({

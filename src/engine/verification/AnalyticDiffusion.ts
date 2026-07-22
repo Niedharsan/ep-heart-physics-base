@@ -32,7 +32,6 @@ export function runAnalyticDiffusionDecay(): AnalyticDiffusionResult {
     grid: { width: nodeCount, height: nodeCount, dx },
     diffusion,
     requestedDt: dt,
-    stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     statePrecision: 'float64',
   });

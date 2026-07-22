@@ -132,7 +132,6 @@ function runCase(
       diffusion: protocol.diffusion,
       requestedDt: protocol.dt,
       statePrecision: 'float32',
-      stepsPerFrame: 1,
       model: protocol.model,
     },
     centerX,

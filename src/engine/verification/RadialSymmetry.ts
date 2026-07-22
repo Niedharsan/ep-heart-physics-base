@@ -69,7 +69,6 @@ export const defaultRadialSymmetryProtocol: RadialSymmetryProtocol = Object.free
     diffusion: 0.8,
     requestedDt: 0.02,
     statePrecision: 'float32',
-    stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   }),
   centerX: 24,

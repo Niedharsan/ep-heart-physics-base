@@ -9,7 +9,12 @@ export class PseudoEcg {
   private readonly weights: Float32Array;
   private previousVoltage: FloatingPointState;
 
-  constructor(width: number, height: number, precision: StatePrecision) {
+  constructor(
+    width: number,
+    height: number,
+    precision: StatePrecision,
+    electrode: ElectrodeDefinitionV1,
+  ) {
     const size = width * height;
     this.weights = new Float32Array(size);
     this.previousVoltage = createStateArray(precision, size);
@@ -18,7 +23,8 @@ export class PseudoEcg {
       for (let x = 0; x < width; x += 1) {
         const nx = x / Math.max(width - 1, 1);
         const ny = y / Math.max(height - 1, 1);
-        this.weights[y * width + x] = (nx - 0.5) * 1.4 + (ny - 0.5) * 0.35;
+        this.weights[y * width + x] = (nx - 0.5) * electrode.normalizedXWeight
+          + (ny - 0.5) * electrode.normalizedYWeight;
       }
     }
   }
@@ -49,3 +55,4 @@ export class PseudoEcg {
 }
 import { createStateArray, type FloatingPointState } from '../numerics/FloatingPointState';
 import type { StatePrecision } from '../core/types';
+import type { ElectrodeDefinitionV1 } from '../definitions/types';

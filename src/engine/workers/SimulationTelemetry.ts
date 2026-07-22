@@ -39,21 +39,23 @@ export class StepRateMeter {
 
 export function createEngineSnapshot(
   solver: MonodomainSolver,
-  ecgSample: number,
+  solverStepIndex: number,
   simulationStepsPerSecond: number,
 ): EngineSnapshot {
-  if (!Number.isFinite(ecgSample) || !(simulationStepsPerSecond >= 0)
-    || !Number.isFinite(simulationStepsPerSecond)) {
-    throw new Error('Snapshot signal and performance values must be finite and rate must be non-negative.');
+  if (!Number.isInteger(solverStepIndex) || solverStepIndex < 0) {
+    throw new Error('Snapshot solver step index must be a non-negative integer.');
+  }
+  if (!(simulationStepsPerSecond >= 0) || !Number.isFinite(simulationStepsPerSecond)) {
+    throw new Error('Snapshot performance rate must be finite and non-negative.');
   }
   return Object.freeze({
     width: solver.tissue.width,
     height: solver.tissue.height,
     dx: solver.tissue.dx,
     time: solver.time,
+    solverStepIndex,
     voltage: new Float32Array(solver.voltage),
     tissueMask: new Uint8Array(solver.tissue.mask),
-    ecgSample,
     lesions: Object.freeze(solver.lesions.map((lesion) => Object.freeze({ ...lesion }))),
     simulationStepsPerSecond,
     diagnostics: solver.diagnostics,

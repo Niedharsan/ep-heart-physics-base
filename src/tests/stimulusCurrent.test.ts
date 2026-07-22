@@ -33,7 +33,6 @@ describe('finite-duration rectangular stimulus current', () => {
       grid: { width: 8, height: 8, dx: 1 },
       diffusion: 0.1,
       requestedDt: 0.02,
-      stepsPerFrame: 1,
       statePrecision: 'float64',
       model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });

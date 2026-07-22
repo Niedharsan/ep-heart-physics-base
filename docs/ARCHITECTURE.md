@@ -6,7 +6,12 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
 
 ## Runtime flow
 
-`React controls → typed worker messages → Web Worker → MonodomainSolver → snapshot + pseudo-ECG → Canvas UI`
+`React controls → typed worker messages → Web Worker → SimulationRuntime → MonodomainSolver + measurement samplers → independent signal batches/state snapshots → Canvas UI`
+
+The solver clock advances an integer number of numerical steps. Measurement
+samplers are due by integer solver-step index. A separate render clock publishes
+copied snapshots and drains accumulated signal samples. Browser wall time never
+determines scientific scenario or sampling events.
 
 ## Current modules
 
@@ -21,6 +26,10 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
 - `numerics/RectangularStimulusCurrent`: reusable endpoint-exclusive current
   source writer for the solver RHS; it does not overwrite state
 - `signals/PseudoEcg`: approximate signal projection
+- `definitions`: validated, frozen, JSON-safe version-1 scenario, electrode and
+  measurement definitions with exact id/version references
+- `runtime/SimulationRuntime`: framework-independent scenario execution,
+  integer solver-step clock, signal-sampler clocks and sample backlog
 - `verification/ActivationTime`: shared first-rising threshold interpolation
 - `verification/PhysicalCoordinates`: exact normalized-coordinate/grid mapping
 - `verification/PlanarConductionVelocity`: planar propagation-speed measurement and fit gates
@@ -45,9 +54,14 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
   snapshot construction
 - `workers/simulation.worker`: timing and transfer boundary; initialize and
   reset stop execution, reset telemetry and emit a fresh snapshot immediately
+- `learning`: versioned lesson definitions referencing engine scenarios and
+  measurements without importing React
 - `ui/CanvasGeometry`: physical nodal-grid aspect ratio and clamped pointer
   mapping to the inclusive nodal coordinate domain
 - `ui`: rendering and user interactions
+
+ESLint rejects React, React DOM and UI imports from `src/engine` and
+`src/learning`.
 
 ## Upgrade path
 

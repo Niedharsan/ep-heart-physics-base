@@ -23,4 +23,19 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error'
     },
   },
+  {
+    files: ['src/engine/**/*.ts', 'src/learning/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: 'react', message: 'Engine and learning definitions must remain framework-independent.' },
+          { name: 'react-dom', message: 'Engine and learning definitions must remain framework-independent.' },
+        ],
+        patterns: [{
+          group: ['**/ui/**'],
+          message: 'Engine and learning definitions must not import UI modules.',
+        }],
+      }],
+    },
+  },
 );

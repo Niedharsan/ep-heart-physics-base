@@ -80,7 +80,6 @@ function runLevel(
     grid: { width: nodeCount, height: nodeCount, dx },
     diffusion: manufactured.diffusion,
     requestedDt: dt,
-    stepsPerFrame: 1,
     model: modelParameters,
     statePrecision: 'float64',
   });

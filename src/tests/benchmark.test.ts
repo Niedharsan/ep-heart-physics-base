@@ -8,6 +8,7 @@ describe('reference numerical benchmark', () => {
       grid: { width: 160, height: 104, dx: 1 },
       diffusion: 0.8,
       requestedDt: 0.08,
+      statePrecision: 'float32',
       stepsPerFrame: 8,
       model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });

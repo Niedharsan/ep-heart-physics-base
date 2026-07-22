@@ -63,6 +63,7 @@ export const defaultRadialSymmetryProtocol: RadialSymmetryProtocol = Object.free
     grid: Object.freeze({ width: 97, height: 97, dx: 0.5 }),
     diffusion: 0.8,
     requestedDt: 0.02,
+    statePrecision: 'float32',
     stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   }),

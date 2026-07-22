@@ -297,6 +297,7 @@ function copyPlanarVelocityProtocol(protocol: PlanarVelocityProtocol): PlanarVel
     grid: Object.freeze({ ...protocol.solverConfig.grid }),
     diffusion: protocol.solverConfig.diffusion,
     requestedDt: protocol.solverConfig.requestedDt,
+    statePrecision: protocol.solverConfig.statePrecision,
     stepsPerFrame: protocol.solverConfig.stepsPerFrame,
     model: Object.freeze({ ...protocol.solverConfig.model }),
   });

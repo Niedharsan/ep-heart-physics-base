@@ -79,6 +79,7 @@ export function runPlanarRefinementStudy(
         grid: { width, height, dx },
         diffusion: protocol.diffusion,
         requestedDt,
+        statePrecision: 'float32',
         stepsPerFrame: 1,
         model: protocol.model,
       },

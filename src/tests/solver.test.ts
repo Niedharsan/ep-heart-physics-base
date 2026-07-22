@@ -8,6 +8,7 @@ function createSolver(): MonodomainSolver {
     grid: { width: 48, height: 32, dx: 1 },
     diffusion: 0.8,
     requestedDt: 0.08,
+    statePrecision: 'float32',
     stepsPerFrame: 4,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   });
@@ -18,6 +19,7 @@ function createDiagnosticSolver(requestedDt = 1): MonodomainSolver {
     grid: { width: 8, height: 8, dx: 1 },
     diffusion: 0.001,
     requestedDt,
+    statePrecision: 'float32',
     stepsPerFrame: 1,
     model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   });
@@ -135,6 +137,7 @@ describe('MonodomainSolver', () => {
       grid: { width: 160, height: 104, dx: 1 },
       diffusion: 0.8,
       requestedDt: 0.08,
+      statePrecision: 'float32',
       stepsPerFrame: 8,
       model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });

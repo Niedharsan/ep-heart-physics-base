@@ -22,6 +22,15 @@
   nodal activation-time interpolation
 - deterministic S1–S2 failure/capture transition bracket using nine
   downstream probes, timestep-indexed bisection and explicit safeguard status
+- selectable Float32 runtime and Float64 reference state storage with
+  deterministic within-mode replay and quantified cross-mode differences
+- analytic cosine-mode diffusion decay with homogeneous Neumann boundaries
+- manufactured reaction–diffusion RMS and maximum-error studies demonstrating
+  approximately second-order spatial and first-order temporal convergence
+- explicit outer-domain edge/corner and masked-obstacle no-flux tests,
+  including uniform-field preservation, wall isolation and an interior
+  obstacle conservation check
+- reporting-preserving order analysis separated from CI acceptance gates
 - zero clip counts, denominator guards and non-finite states in every PR2–PR4
   scientific integration protocol, with observed state extrema reported
 - positive stable timestep
@@ -35,12 +44,15 @@
 ## Required before claiming credible 2D propagation
 
 1. planar-wave fixed-grid and three-resolution sensitivity measurements are
-   rebaselined with zero clipping; manufactured-solution verification remains;
+   rebaselined with zero clipping; analytic and manufactured-solution checks
+   now establish expected order for the tested smooth problems;
 2. radial-wave symmetry is characterized for one grid; refinement of the
    symmetry metric remains desirable;
 3. separate dx and dt quantity-of-interest trends are characterized; formal
    order verification against an analytic/manufactured solution remains;
-4. no-flux boundary verification;
+4. no-flux domain and obstacle-boundary verification is present for the
+   documented rectangular nodal grid and mask convention; irregular geometry
+   and anisotropic-flux verification remain;
 5. paired-stimulus capture/failure is characterized for one unclipped fixed-grid
    protocol; stimulus-strength, dx/dt and threshold sensitivity remain;
 6. obstacle re-entry initiation and persistence with deterministic setup;

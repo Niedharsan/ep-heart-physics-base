@@ -67,8 +67,12 @@ The current regression bracket is:
 - resolution: `0.02` model-time unit.
 
 At `31.60`, the mean S2 latencies at `x=[6,12,18]` are approximately
-`[5.642,11.048,15.620]` model-time units and are strictly ordered downstream.
+`[5.584,11.001,15.580]` model-time units and are strictly ordered downstream.
 Exact repeated studies return identical structured results.
+
+These latencies supersede the earlier values after correcting the documented
+nodal outer no-flux stencil from centre substitution to even ghost-node
+reflection. The failure/capture bracket itself remains `31.58/31.60`.
 
 ## Limitations and deferred work
 

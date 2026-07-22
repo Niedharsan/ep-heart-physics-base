@@ -1,4 +1,4 @@
-import { defaultAlievPanfilovParameters } from '../models/AlievPanfilov';
+import { alievPanfilovPresets } from '../models/AlievPanfilov';
 import type { ModelParameters } from '../core/types';
 import { gridNodeCountForExtent, physicalCoordinateToGridIndex } from './PhysicalCoordinates';
 import {
@@ -44,7 +44,7 @@ export const defaultPlanarRefinementProtocol: PlanarRefinementProtocol = Object.
   domainWidth: 48,
   domainHeight: 12,
   diffusion: 0.8,
-  model: defaultAlievPanfilovParameters,
+  model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
   stimulusMaximumX: 2,
   threshold: 0.5,
   stationX: Object.freeze([12, 18, 24, 30, 36]),

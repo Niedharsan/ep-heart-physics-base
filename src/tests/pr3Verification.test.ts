@@ -18,9 +18,9 @@ import {
 } from '../engine/verification/RadialSymmetry';
 
 const regressionRelativeTolerance = 0.002;
-const spatialSpeedBaseline = [1.5129636619815445, 1.5714429706761952, 1.588756694264268];
-const temporalSpeedBaseline = [1.5824828175616377, 1.588756694264268, 1.591918607695088];
-const radialMeanSpeedBaseline = 1.4890381119567628;
+const spatialSpeedBaseline = [1.5209197267468286, 1.57869319420392, 1.5959101810581984];
+const temporalSpeedBaseline = [1.5895046105537185, 1.5959101810581984, 1.5991389791351234];
+const radialMeanSpeedBaseline = 1.4962693390258603;
 
 function expectRelative(actual: number, expected: number, tolerance = regressionRelativeTolerance): void {
   expect(Math.abs(actual - expected) / Math.abs(expected)).toBeLessThanOrEqual(tolerance);
@@ -111,32 +111,32 @@ describe('PR3 deterministic integration protocols', () => {
     const second = runPlanarRefinementStudy();
     expect(second).toEqual(first);
     expect(first.uniqueRunCount).toBe(5);
-    expect(first.safeguardStatus).toBe('clipped');
+    expect(first.safeguardStatus).toBe('unclipped');
     first.spatialRuns.forEach((run, index) => {
       expectRelative(run.speed, spatialSpeedBaseline[index]!);
       expect(run.stableDt).toBe(defaultPlanarRefinementProtocol.spatialDt);
       expect((run.protocol.solverConfig.grid.width - 1) * run.protocol.solverConfig.grid.dx).toBe(48);
       expect((run.protocol.solverConfig.grid.height - 1) * run.protocol.solverConfig.grid.dx).toBe(12);
-      expect(run.safeguardStatus).toBe('clipped');
+      expect(run.safeguardStatus).toBe('unclipped');
       expect(run.diagnostics).toEqual({
         denominatorGuardCount: 0,
         voltageClipLowCount: 0,
         voltageClipHighCount: 0,
         recoveryClipLowCount: 0,
-        recoveryClipHighCount: [62_101, 196_975, 718_291][index],
+        recoveryClipHighCount: 0,
         nonFiniteStateCount: 0,
       });
     });
     first.temporalRuns.forEach((run, index) => {
       expectRelative(run.speed, temporalSpeedBaseline[index]!);
       expect(run.stableDt).toBe(defaultPlanarRefinementProtocol.temporalDt[index]);
-      expect(run.safeguardStatus).toBe('clipped');
+      expect(run.safeguardStatus).toBe('unclipped');
       expect(run.diagnostics).toEqual({
         denominatorGuardCount: 0,
         voltageClipLowCount: 0,
         voltageClipHighCount: 0,
         recoveryClipLowCount: 0,
-        recoveryClipHighCount: [366_520, 718_291, 1_424_185][index],
+        recoveryClipHighCount: 0,
         nonFiniteStateCount: 0,
       });
     });
@@ -169,6 +169,7 @@ describe('PR3 deterministic integration protocols', () => {
       recoveryClipHighCount: 0,
       nonFiniteStateCount: 0,
     });
+    expect(first.stateExtrema.recoveryMaximum).toBeGreaterThan(0);
     expect(Object.isFrozen(first.protocol)).toBe(true);
     expect(Object.isFrozen(first.samplesByRadius[0])).toBe(true);
   }, 60_000);

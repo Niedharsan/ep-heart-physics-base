@@ -1,4 +1,8 @@
-import { hasStateClipping, type NumericalDiagnostics } from '../core/numericalDiagnostics';
+import {
+  hasStateClipping,
+  type NumericalDiagnostics,
+  type NumericalStateExtrema,
+} from '../core/numericalDiagnostics';
 import type { SolverConfig } from '../core/types';
 import { MonodomainSolver } from '../numerics/MonodomainSolver';
 import { interpolateUpwardCrossing } from './ActivationTime';
@@ -34,6 +38,7 @@ export interface PlanarVelocityResult {
   readonly maximumAbsoluteResidual: number;
   readonly maximumTransverseSpread: number;
   readonly diagnostics: NumericalDiagnostics;
+  readonly stateExtrema: NumericalStateExtrema;
 }
 
 export interface PlanarVelocityProtocolSnapshot extends PlanarVelocityProtocol {
@@ -242,6 +247,7 @@ export function measurePlanarConductionVelocity(protocol: PlanarVelocityProtocol
     maximumAbsoluteResidual: analysis.maximumAbsoluteResidual,
     maximumTransverseSpread: analysis.maximumTransverseSpread,
     diagnostics,
+    stateExtrema: solver.stateExtrema,
   });
 }
 

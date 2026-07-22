@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultAlievPanfilovParameters } from '../engine/models/AlievPanfilov';
+import { alievPanfilovPresets } from '../engine/models/AlievPanfilov';
 import { MonodomainSolver } from '../engine/numerics/MonodomainSolver';
 
 describe('reference numerical benchmark', () => {
@@ -9,7 +9,7 @@ describe('reference numerical benchmark', () => {
       diffusion: 0.8,
       requestedDt: 0.08,
       stepsPerFrame: 8,
-      model: defaultAlievPanfilovParameters,
+      model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });
     solver.applyStimulus({ x: 20, y: 52, radius: 4, amplitude: 1 });
 

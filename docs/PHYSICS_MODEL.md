@@ -135,11 +135,25 @@ thresholds.
 
 ## Paired-stimulus propagated-capture characterization
 
-PR 4 applies S1 at model time zero and S2 after a selected coupling interval.
-Both use the existing instantaneous assignment operator, which sets
-`u = max(u, 1)` over the full-height physical strip `x ∈ [0,2]`. This is not a
-current stimulus with calibrated strength or duration. Local voltage inside
-the strip is therefore not evidence of capture.
+The strengthened PR 4 protocol adds a rectangular monophasic source to the
+voltage equation:
+
+\[
+\frac{du}{dt}=D\nabla^2u+f(u,v)+I_{stim}(x,t).
+\]
+
+Inside the full-height strip `x ∈ [0,2]`, the square pulse has dimensionless
+current amplitude 5 for duration 0.20 model-time unit; elsewhere and outside
+the endpoint-exclusive pulse interval it is zero. Its integrated numerical
+strength is 1 dimensionless-voltage unit. These are chosen protocol values,
+not calibrated electrode strength or a literature-derived strength-duration
+pair. Unlike the superseded operator, the pulse does not directly assign
+voltage.
+
+Three S1 pulses are applied at a configurable basic cycle length, default 40,
+before S2. The coupling interval is measured from the final S1 onset to the S2
+onset. Three pulses are a minimal conditioning train and do not demonstrate a
+periodic steady state.
 
 The verification protocol instead observes the rising `u=0.5` crossing at
 nine unforced probes: physical stations `x=[6,12,18]` and transverse rows
@@ -151,13 +165,18 @@ than one timestep, and station-mean activation times are strictly ordered
 downstream. This guards against confusing forced local excitation, partial
 propagation, or a residual S1 wave with S2 capture.
 
-For the fixed `dx=0.5`, `dt=0.02` protocol, timestep-indexed bisection brackets
-the deterministic transition between the longest failing coupling interval
-and shortest captured interval. All times and distances remain normalized
-model units. This is an implementation characterization, not an effective
-refractory period in physiological units. The current sourced-preset result
-has zero recovery clipping. That does not turn it into a physiological
-refractory-period measurement.
+For the fixed `dx=0.5`, `dt=0.02` protocol, every coupling interval from 20 to
+22 is evaluated at one-timestep resolution. A cached integer-step bisection
+must return the same boundary as this 101-trial exhaustive reference. The full
+outcome sequence is retained even if it is nonmonotone. A matched no-S2 control
+must show the final S1 rise and fall at every probe and no subsequent rising
+crossing.
+
+All times and distances remain normalized model units. The output is a
+normalized paired-stimulus propagated-capture transition and implementation
+characterization. It is not a physiological or effective refractory period.
+The sourced-preset result has zero clipping, which does not alter that claim
+boundary.
 
 ## Reference precision and formal numerical verification
 

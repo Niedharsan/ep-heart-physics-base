@@ -1,89 +1,122 @@
-# PR 4 report: deterministic paired-stimulus propagated capture
+# PR 4 report: normalized paired-stimulus propagated capture
 
-## Scope
+Date: 2026-07-22
 
-This PR adds a framework-independent verification protocol. It does not change
-the reaction equations, diffusion update, worker, scenarios or interface. It
-does not add 3D, re-entry, lesions or ECG functionality.
+## Scope and claim boundary
 
-The result is not clinical validation, a physiologically calibrated effective
-refractory period, or evidence of Epicardio equivalence.
+This corrective PR replaces direct voltage assignment in the verification
+protocol with a finite-duration current source, adds a three-pulse S1
+conditioning train, adds a matched no-S2 control, and confirms cached bisection
+against an exhaustive timestep-resolved reference scan.
 
-## Scientific basis and measurement definition
+The result is a normalized implementation characterization. It is not a
+physiological or effective refractory period, clinical validation, or evidence
+of Epicardio equivalence. It adds no re-entry, ECG or 3D functionality.
 
-Standard S1–S2 refractory protocols vary the interval between a conditioning
-stimulus and a premature stimulus, then determine whether the premature
-response propagates to a sensing site. Relevant references include:
+## Scientific basis
 
-- the openCARP ERP restitution example, which detects capture near a sensing
-  electrode and narrows a failure/capture bracket by bisection:
+S1–S2 protocols condition tissue with regular S1 stimuli, vary the premature
+S2 coupling interval, and assess propagated capture at a separate sensing
+location. Relevant implementation references include:
+
+- the openCARP ERP restitution example, which uses an S1 train, sensing-site
+  capture and bisection:
   <https://opencarp.org/documentation/examples/02_ep_tissue/03f_erp_restitution>;
-- Connolly et al., *Biophysical Journal* (2018), a tissue S1–S2 computational
-  study using propagated capture and bisection:
-  <https://doi.org/10.1016/j.bpj.2018.11.003>;
-- Kandel and Roth (2013), a review of strength–interval behavior emphasizing
-  that initiation and propagation depend on both interval and stimulus
-  strength: <https://doi.org/10.1155/2013/134163>.
+- the openCARP parameter reference, which separates pulse start, duration,
+  strength, count and BCL: <https://opencarp.org/parameters/master/>;
+- Göktepe and Kuhl (2009), which includes an external source term in the
+  generalized model: <https://doi.org/10.1002/nme.2571>.
 
-The current engine instantaneously assigns voltage in the stimulus region.
-Consequently, local post-S2 voltage is guaranteed by the operator and cannot
-classify capture. PR 4 requires a separate second wave at every downstream
-probe after the S1 waveform has crossed downward through the measurement
-threshold.
+The current amplitude/duration pair below is selected for this normalized
+protocol after zero-clipping exploration. It is not copied as a calibrated
+pair from those sources.
 
 ## Fixed protocol
 
 | Item | Value |
 |---|---:|
 | Domain | `48 × 12` model-length units |
-| Grid | `97 × 25`, `dx=0.5` model-length unit |
+| Grid | `97 × 25`, `dx=0.5` |
 | Diffusion | `0.8` model-length-unit²/model-time-unit |
 | Requested/effective timestep | `0.02` model-time unit |
-| S1 | model time `0` |
-| S2 | selected coupling interval |
-| Stimulus | full-height `x ∈ [0,2]`, instantaneous assigned `u=1` |
+| Current region | full-height `x ∈ [0,2]` |
+| Current amplitude | `5` dimensionless-voltage/model-time-unit |
+| Pulse duration | `0.20` model-time unit, 10 endpoint-exclusive steps |
+| Integrated numerical strength | `1` dimensionless-voltage unit |
+| Conditioning pulses | `3` |
+| Basic cycle length | `40` model-time units |
+| S1 onset times | `[0,40,80]` model-time units |
 | Threshold | rising/falling `u=0.5` |
 | Downstream stations | `x=[6,12,18]` |
 | Transverse rows | `y=[3,6,9]` |
 | Observation after S2 | `20` model-time units |
-| Planarity gate | transverse S2 activation spread `≤0.02` |
+| Reference scan | inclusive `[20,22]` at `0.02`, 101 trials |
+| Coarse anchors | `[18,24]` |
 
-The protocol records each probe's S1 rise, S1 fall and S2 rise; pre-S2 voltage
-and recovery at `x=1` across the three rows; per-trial diagnostics; and copied,
-immutable protocol metadata. Denominator guarding and non-finite state abort a
-trial. A timestep silently capped by the diffusion limit is rejected.
+The source enters `du/dt`; it never assigns `u`. S2 coupling is measured from
+the final S1 onset. Three conditioning beats do not establish periodic steady
+state.
 
-## Transition search and result
+## Conditioning and no-S2 control
 
-Known failure/capture endpoints at `31` and `32` model-time units are narrowed
-by deterministic integer-timestep bisection. Additional anchors at `30` and
-`33` check the expected sides of the transition. This avoids an exhaustive,
-redundant restart at every timestep while returning the same resolution.
+Every S1 beat propagates planarly through all nine probes. Station-mean rising
+activation times are:
 
-The current regression bracket is:
+| Beat | Onset | Station means |
+|---:|---:|---|
+| 1 | 0 | `[2.7654299561998372,6.614114502405336,10.461566255499903]` |
+| 2 | 40 | `[43.02932481506389,47.28222582298443,51.51714474440201]` |
+| 3 | 80 | `[82.86490809569807,86.87073128625115,90.87820847455244]` |
 
-- longest failing interval: `31.58` model-time units;
-- shortest captured interval: `31.60` model-time units;
+The matched no-S2 control records final-S1 rise and fall at every probe and no
+subsequent rising crossing. This rejects residual or self-sustained activation
+as the explanation for an S2 capture result.
+
+## Exhaustive transition result
+
+All 101 reference coupling intervals are retained in order. The sequence has
+one monotone failure-to-capture transition:
+
+- longest failing interval: `21.22` model-time units;
+- shortest captured interval: `21.24` model-time units;
 - resolution: `0.02` model-time unit.
 
-At `31.60`, the mean S2 latencies at `x=[6,12,18]` are approximately
-`[5.584,11.001,15.580]` model-time units and are strictly ordered downstream.
-Exact repeated studies return identical structured results.
+Cached integer-step bisection returns exactly the same `21.22/21.24` bracket.
+It evaluates nine unique in-range coupling intervals before the exhaustive
+reference pass; both layers then share the trial cache.
+The analyzer preserves nonmonotone synthetic sequences and reports them as
+failed acceptance rather than throwing away their outcomes.
 
-These latencies supersede the earlier values after correcting the documented
-nodal outer no-flux stencil from centre substitution to even ghost-node
-reflection. The failure/capture bracket itself remains `31.58/31.60`.
+At the first captured interval, S2 station-mean activation times are
+`[27.136566415514093,32.12672672184151,36.6962358518251]`, giving onset-to-
+activation latencies `[5.896566415514093,10.88672672184151,15.4562358518251]`.
+Transverse spreads are exactly zero in this full-height planar setup.
 
-## Limitations and deferred work
+Immediately before S2 at `21.24`, the stimulus-strip sample means are
+`u=0.017987007275223732` and `v=0.9299807548522949` across the three rows.
 
-The source-named preset rebaseline records recovery range
-`[0,2.3355346439117577]` with zero clipping, denominator guards and non-finite
-states. The previous clipped `24.30/24.32` bracket is superseded. This remains
-an implementation characterization, not verification of physiological ERP.
+## Numerical safeguards and reproducibility
 
-This single S1–S2 protocol does not include a conditioning train, restitution
-over multiple basic cycle lengths, a current stimulus with duration, diastolic
-strength calibration, amplitude sweeps, dx/dt/threshold sensitivity, or
-comparison with an ionic-model reference. Model time is not calibrated to
-milliseconds, and the bracket must not be reported as a clinical refractory
-period.
+The aggregate proposed-state range is:
+
+- voltage: `[0,1.1901960123838653]`;
+- recovery: `[0,2.3978387300831683]`.
+
+Denominator-guard, voltage-clip, recovery-clip and non-finite counts are all
+zero. Repeated complete studies return identical structured results.
+
+On 2026-07-22, `npm run check` passed type checking, lint, 58 tests,
+deterministic replay and the production build in 81.98 seconds wall time. A
+separate run measured `831` Float32 solver steps/s on the documented `160×104`
+benchmark grid on an Apple M3 Pro. These are local observations, not universal
+performance requirements.
+
+## Limitations
+
+- current strength and duration have not undergone strength-duration
+  sensitivity analysis;
+- `dx`, `dt`, threshold, BCL and conditioning-count sensitivity remain;
+- three S1 pulses do not prove steady state;
+- model time and current are dimensionless and uncalibrated;
+- the phenomenological two-variable model is not an ionic reference;
+- the transition is not a physiological refractory-period measurement.

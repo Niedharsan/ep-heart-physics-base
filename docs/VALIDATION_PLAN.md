@@ -25,8 +25,11 @@
 - planar activation-threshold sensitivity at three dimensionless thresholds
 - PR 3 quantity-of-interest analysis preserves oscillatory/non-contracting
   results while a separate acceptance layer records gate failures
-- deterministic S1–S2 failure/capture transition bracket using nine
-  downstream probes, timestep-indexed bisection and explicit safeguard status
+- deterministic conditioned S1–S2 failure/capture transition using nine
+  downstream probes, a 101-trial timestep-resolved reference scan, matching
+  cached bisection, finite-duration current pulses and explicit safeguard status
+- matched no-S2 control requiring final-S1 propagation/recovery and no
+  spontaneous post-conditioning activation
 - selectable Float32 runtime and Float64 reference state storage with
   deterministic within-mode replay and quantified cross-mode differences
 - analytic cosine-mode diffusion decay with homogeneous Neumann boundaries
@@ -60,7 +63,9 @@
    documented rectangular nodal grid and mask convention; irregular geometry
    and anisotropic-flux verification remain;
 5. paired-stimulus capture/failure is characterized for one unclipped fixed-grid
-   protocol; stimulus-strength, dx/dt and threshold sensitivity remain;
+   current-pulse protocol with a minimal conditioning train, exhaustive scan
+   and no-S2 control; strength-duration, dx/dt, threshold, BCL and train-length
+   sensitivity remain;
 6. obstacle re-entry initiation and persistence with deterministic setup;
 7. lesion-complete versus lesion-gap conduction tests;
 8. energy/state bounds over long runs;

@@ -16,6 +16,8 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
   Float32/Float64 state storage and proposed-state extrema
 - `numerics/FivePointNoFluxLaplacian`: framework-independent nodal outer and
   masked-obstacle no-flux operator
+- `numerics/RectangularStimulusCurrent`: reusable endpoint-exclusive current
+  source writer for the solver RHS; it does not overwrite state
 - `signals/PseudoEcg`: approximate signal projection
 - `verification/ActivationTime`: shared first-rising threshold interpolation
 - `verification/PhysicalCoordinates`: exact normalized-coordinate/grid mapping
@@ -25,7 +27,9 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
 - `verification/RadialSymmetry`: equal-angle radial activation and grid-isotropy measurement
 - `verification/RadialSensitivityStudy`: reusable multi-resolution and
   sub-cell-centre radial matrix
-- `verification/RefractoryCapture`: framework-independent S1–S2 propagated-capture characterization
+- `verification/RefractoryCapture`: framework-independent conditioned S1–S2
+  propagated-capture characterization, exhaustive reference scan and no-S2
+  control
 - `verification/AnalyticDiffusion`: Float64 cosine-mode diffusion decay
 - `verification/ManufacturedReactionDiffusion`: Float64 forced-solution spatial
   and temporal error studies

@@ -62,10 +62,12 @@ order between `0.9` and `1.1`.
 
 The corrected boundary leaves the PR 4 transition at failure `31.58` and
 capture `31.60`, but changes capture latencies to approximately
-`[5.584,11.001,15.580]`. PR 2 and PR 3 regression outputs are checked by the
-full suite. These tests cover smooth isotropic rectangular-grid cases. They do
-not verify anisotropic diffusion, irregular geometry, physiological units or
-clinical behavior.
+`[5.584,11.001,15.580]` for the then-current direct-assignment protocol. The
+later finite-duration-current PR 4 correction supersedes that protocol and
+baseline. PR 2 and PR 3 regression outputs are checked by the full suite. These
+tests cover smooth isotropic rectangular-grid cases. They do not verify
+anisotropic diffusion, irregular geometry, physiological units or clinical
+behavior.
 
 ## Verification record
 

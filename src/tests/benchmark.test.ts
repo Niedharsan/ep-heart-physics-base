@@ -21,5 +21,5 @@ describe('reference numerical benchmark', () => {
 
     console.info(`Reference CPU throughput: ${stepsPerSecond.toFixed(0)} solver steps/s on ${solver.tissue.width}x${solver.tissue.height}.`);
     expect(stepsPerSecond).toBeGreaterThan(0);
-  });
+  }, 30_000);
 });

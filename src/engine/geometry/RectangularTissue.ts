@@ -1,4 +1,5 @@
 import type { GridConfig } from '../core/types';
+import { validateCircularRegion } from './SpatialInputValidation';
 
 export class RectangularTissue {
   readonly width: number;
@@ -35,6 +36,7 @@ export class RectangularTissue {
   }
 
   setCircularObstacle(cx: number, cy: number, radius: number): void {
+    validateCircularRegion(cx, cy, radius, this.width, this.height, 'Obstacle');
     const r2 = radius * radius;
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {

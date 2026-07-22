@@ -1,5 +1,10 @@
 import type { Lesion, SolverConfig, Stimulus } from '../core/types';
 import { RectangularTissue } from '../geometry/RectangularTissue';
+import {
+  validateCircularRegion,
+  validateFinitePositive,
+  validateNodalRectangle,
+} from '../geometry/SpatialInputValidation';
 import { AlievPanfilovModel } from '../models/AlievPanfilov';
 import { PseudoEcg } from '../signals/PseudoEcg';
 import {
@@ -92,10 +97,14 @@ export class MonodomainSolver {
     yMax: number,
     amplitude: number,
   ): void {
-    const startX = Math.max(0, Math.floor(Math.min(xMin, xMax)));
-    const endX = Math.min(this.tissue.width - 1, Math.ceil(Math.max(xMin, xMax)));
-    const startY = Math.max(0, Math.floor(Math.min(yMin, yMax)));
-    const endY = Math.min(this.tissue.height - 1, Math.ceil(Math.max(yMin, yMax)));
+    validateNodalRectangle(
+      xMin, xMax, yMin, yMax, this.tissue.width, this.tissue.height, 'Rectangular stimulus',
+    );
+    this.validateDirectStimulusAmplitude(amplitude);
+    const startX = Math.floor(xMin);
+    const endX = Math.ceil(xMax);
+    const startY = Math.floor(yMin);
+    const endY = Math.ceil(yMax);
     for (let y = startY; y <= endY; y += 1) {
       for (let x = startX; x <= endX; x += 1) {
         const index = this.tissue.index(x, y);
@@ -108,6 +117,10 @@ export class MonodomainSolver {
   }
 
   applyStimulus(stimulus: Stimulus): void {
+    validateCircularRegion(
+      stimulus.x, stimulus.y, stimulus.radius, this.tissue.width, this.tissue.height, 'Stimulus',
+    );
+    this.validateDirectStimulusAmplitude(stimulus.amplitude);
     const radiusSquared = stimulus.radius * stimulus.radius;
     const minX = Math.max(0, Math.floor(stimulus.x - stimulus.radius));
     const maxX = Math.min(this.tissue.width - 1, Math.ceil(stimulus.x + stimulus.radius));
@@ -128,9 +141,7 @@ export class MonodomainSolver {
   }
 
   createLesion(x: number, y: number, radius: number): Lesion {
-    if (!(radius > 0) || !Number.isFinite(radius)) {
-      throw new Error('Lesion radius must be finite and greater than zero.');
-    }
+    validateCircularRegion(x, y, radius, this.tissue.width, this.tissue.height, 'Lesion');
     const lesion: Lesion = {
       id: `lesion-${this.lesions.length + 1}`,
       x,
@@ -208,5 +219,14 @@ export class MonodomainSolver {
     this.observedStateExtrema.voltageMaximum = Math.max(this.observedStateExtrema.voltageMaximum, voltage);
     this.observedStateExtrema.recoveryMinimum = Math.min(this.observedStateExtrema.recoveryMinimum, recovery);
     this.observedStateExtrema.recoveryMaximum = Math.max(this.observedStateExtrema.recoveryMaximum, recovery);
+  }
+
+  private validateDirectStimulusAmplitude(amplitude: number): void {
+    validateFinitePositive(amplitude, 'Direct-stimulus amplitude');
+    if (amplitude > numericalSafeguards.voltageMaximum) {
+      throw new Error(
+        `Direct-stimulus amplitude must not exceed supported voltage ${numericalSafeguards.voltageMaximum}.`,
+      );
+    }
   }
 }

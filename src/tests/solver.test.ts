@@ -56,6 +56,58 @@ describe('MonodomainSolver', () => {
     expect(solver.lesions).toHaveLength(1);
   });
 
+  it('rejects invalid circular interactions atomically at the engine boundary', () => {
+    const invalidStimuli = [
+      { x: Number.NaN, y: 1, radius: 1, amplitude: 1 },
+      { x: -1, y: 1, radius: 1, amplitude: 1 },
+      { x: 48, y: 1, radius: 1, amplitude: 1 },
+      { x: 1, y: 32, radius: 1, amplitude: 1 },
+      { x: 1, y: 1, radius: 0, amplitude: 1 },
+      { x: 1, y: 1, radius: Number.POSITIVE_INFINITY, amplitude: 1 },
+      { x: 1, y: 1, radius: 1, amplitude: 0 },
+      { x: 1, y: 1, radius: 1, amplitude: Number.NaN },
+      { x: 1, y: 1, radius: 1, amplitude: 1.6 },
+    ];
+    invalidStimuli.forEach((stimulus) => {
+      const solver = createSolver();
+      const before = [...solver.voltage];
+      expect(() => solver.applyStimulus(stimulus)).toThrow();
+      expect([...solver.voltage]).toEqual(before);
+    });
+
+    const invalidCircles = [
+      [-1, 1, 1], [48, 1, 1], [1, Number.NaN, 1], [1, 1, 0], [1, 1, Number.POSITIVE_INFINITY],
+    ] as const;
+    invalidCircles.forEach(([x, y, radius]) => {
+      const solver = createSolver();
+      const mask = [...solver.tissue.mask];
+      expect(() => solver.createLesion(x, y, radius)).toThrow();
+      expect([...solver.tissue.mask]).toEqual(mask);
+      expect(solver.lesions).toHaveLength(0);
+      expect(() => solver.addObstacle(x, y, radius)).toThrow();
+      expect([...solver.tissue.mask]).toEqual(mask);
+    });
+  });
+
+  it('rejects invalid rectangular stimuli before mutating voltage', () => {
+    const invalid = [
+      [-1, 2, 0, 4, 1],
+      [0, 48, 0, 4, 1],
+      [2, 1, 0, 4, 1],
+      [0, 2, 4, 3, 1],
+      [0, 2, 0, 4, 0],
+      [0, 2, 0, 4, Number.NaN],
+      [0, 2, 0, 4, 1.6],
+    ] as const;
+    invalid.forEach(([minimumX, maximumX, minimumY, maximumY, amplitude]) => {
+      const solver = createSolver();
+      expect(() => solver.applyRectangularStimulus(
+        minimumX, maximumX, minimumY, maximumY, amplitude,
+      )).toThrow();
+      expect([...solver.voltage].every((value) => value === 0)).toBe(true);
+    });
+  });
+
   it('is deterministic for identical inputs', () => {
     const first = createSolver();
     const second = createSolver();

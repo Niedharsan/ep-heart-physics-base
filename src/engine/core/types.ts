@@ -43,6 +43,7 @@ export interface Lesion {
 export interface EngineSnapshot {
   readonly width: number;
   readonly height: number;
+  readonly dx: number;
   readonly time: number;
   readonly voltage: Float32Array;
   readonly tissueMask: Uint8Array;

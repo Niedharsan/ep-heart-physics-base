@@ -7,6 +7,8 @@
 - UI snapshot frequency near display refresh, independent of numerical timestep
 - no React element per grid cell
 - typed arrays for numerical state
+- performance counters are observational runtime state: initialize and reset
+  clear both accumulated steps and the last displayed rate
 
 ## Next target
 

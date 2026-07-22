@@ -11,6 +11,8 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
 ## Current modules
 
 - `geometry/RectangularTissue`: conductive mask and lesions
+- `geometry/SpatialInputValidation`: shared finite, in-domain validation for
+  nodal points, circular regions and rectangles before solver mutation
 - `models/AlievPanfilov`: local reaction dynamics and immutable source-named presets
 - `numerics/MonodomainSolver`: explicit reaction–diffusion update, selectable
   Float32/Float64 state storage and proposed-state extrema
@@ -39,7 +41,12 @@ The numerical engine is framework-independent TypeScript under `src/engine`. Rea
   that retains non-contracting and oscillatory sequences; acceptance policy is
   shared through `VerificationAcceptance`
 - `core/scenarios`: deterministic scenario scheduling
-- `workers/simulation.worker`: timing and transfer boundary
+- `workers/SimulationTelemetry`: resettable throughput accounting and immutable
+  snapshot construction
+- `workers/simulation.worker`: timing and transfer boundary; initialize and
+  reset stop execution, reset telemetry and emit a fresh snapshot immediately
+- `ui/CanvasGeometry`: physical nodal-grid aspect ratio and clamped pointer
+  mapping to the inclusive nodal coordinate domain
 - `ui`: rendering and user interactions
 
 ## Upgrade path

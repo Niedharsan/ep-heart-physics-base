@@ -4,6 +4,7 @@ import type { ScenarioId, SolverConfig, WorkerCommand, WorkerEvent } from '../co
 import { configureScenario, type ScenarioController } from '../core/scenarios';
 import { MonodomainSolver } from '../numerics/MonodomainSolver';
 import { hasStateClipping } from '../core/numericalDiagnostics';
+import { createEngineSnapshot, StepRateMeter } from './SimulationTelemetry';
 
 const context: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
 
@@ -13,9 +14,7 @@ let controller: ScenarioController | null = null;
 let running = false;
 let timer: ReturnType<typeof setInterval> | null = null;
 let stepsPerFrame = 8;
-let lastFrameAt = performance.now();
-let stepsSinceMeasurement = 0;
-let measuredStepsPerSecond = 0;
+const stepRateMeter = new StepRateMeter(500, performance.now());
 let warnedAboutClipping = false;
 
 function emit(event: WorkerEvent, transfer?: Transferable[]): void {
@@ -34,6 +33,12 @@ function startTimer(): void {
   timer = setInterval(tick, 16);
 }
 
+function emitSnapshot(ecgSample = 0): void {
+  if (!solver) throw new Error('Initialize the engine before requesting a snapshot.');
+  const snapshot = createEngineSnapshot(solver, ecgSample, stepRateMeter.measure(performance.now()));
+  emit({ type: 'snapshot', snapshot }, [snapshot.voltage.buffer, snapshot.tissueMask.buffer]);
+}
+
 function tick(): void {
   if (!running || !solver || !controller) return;
   let ecgSample = 0;
@@ -42,7 +47,7 @@ function tick(): void {
     for (let step = 0; step < stepsPerFrame; step += 1) {
       controller.beforeStep(solver);
       ecgSample = solver.step();
-      stepsSinceMeasurement += 1;
+      stepRateMeter.recordSteps(1);
     }
 
     if (import.meta.env.DEV && !warnedAboutClipping && hasStateClipping(solver.diagnostics)) {
@@ -50,33 +55,7 @@ function tick(): void {
       console.warn('EP engine numerical state clipping occurred.', solver.diagnostics);
     }
 
-    const now = performance.now();
-    const elapsed = now - lastFrameAt;
-    if (elapsed >= 500) {
-      measuredStepsPerSecond = (stepsSinceMeasurement * 1000) / elapsed;
-      stepsSinceMeasurement = 0;
-      lastFrameAt = now;
-    }
-
-    const voltageCopy = new Float32Array(solver.voltage);
-    const maskCopy = new Uint8Array(solver.tissue.mask);
-    emit(
-      {
-        type: 'snapshot',
-        snapshot: {
-          width: solver.tissue.width,
-          height: solver.tissue.height,
-          time: solver.time,
-          voltage: voltageCopy,
-          tissueMask: maskCopy,
-          ecgSample,
-          lesions: [...solver.lesions],
-          simulationStepsPerSecond: measuredStepsPerSecond,
-          diagnostics: solver.diagnostics,
-        },
-      },
-      [voltageCopy.buffer, maskCopy.buffer],
-    );
+    emitSnapshot(ecgSample);
   } catch (error) {
     running = false;
     emit({ type: 'error', message: error instanceof Error ? error.message : 'Unknown simulation error.' });
@@ -91,7 +70,9 @@ function initialize(config: SolverConfig, requestedScenario: ScenarioId): void {
   stepsPerFrame = config.stepsPerFrame;
   running = false;
   warnedAboutClipping = false;
+  stepRateMeter.reset(performance.now());
   emit({ type: 'ready', stableDt: solver.stableDt });
+  emitSnapshot();
   startTimer();
 }
 
@@ -111,9 +92,12 @@ context.onmessage = (message: MessageEvent<WorkerCommand>): void => {
         break;
       case 'reset':
         if (!solver) throw new Error('Initialize the engine before resetting it.');
+        running = false;
         scenario = command.scenario;
         controller = configureScenario(solver, scenario);
         warnedAboutClipping = false;
+        stepRateMeter.reset(performance.now());
+        emitSnapshot();
         break;
       case 'stimulate':
         if (!solver) throw new Error('Initialize the engine before stimulating tissue.');
@@ -124,6 +108,9 @@ context.onmessage = (message: MessageEvent<WorkerCommand>): void => {
         solver.createLesion(command.lesion.x, command.lesion.y, command.lesion.radius);
         break;
       case 'set-speed':
+        if (!(command.stepsPerFrame > 0) || !Number.isFinite(command.stepsPerFrame)) {
+          throw new Error('Steps per frame must be finite and positive.');
+        }
         stepsPerFrame = Math.max(1, Math.min(100, Math.round(command.stepsPerFrame)));
         break;
       default: {

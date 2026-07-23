@@ -37,7 +37,7 @@ describe('Task 3 assessment UI', () => {
     expect(resolveAssessmentTask('?mode=assessment')).toBe('interval');
   });
 
-  it('starts with an unanswered, non-persistent response model', () => {
+  it('starts with an unanswered response model', () => {
     expect(createEmptyTaskThreeResponses()).toEqual({
       atrialTachycardia: {
         'at-1': { diagnosis: '', side: '' },
@@ -68,6 +68,10 @@ describe('Task 3 assessment UI', () => {
     expect(markup).not.toContain('A2H2 90 ms');
     expect(markup).not.toContain('Typical slow-fast AVNRT: antegrade slow pathway');
     expect(markup).not.toContain('instructor-answer-key');
+    expect(markup).toContain('Mark and save Task 3');
+    expect(markup).toContain('No marked Task 3 attempts yet.');
+    expect(markup).toContain('Copy Task 3 feedback package');
+    expect(markup).not.toContain('This preview does not save Task 3 attempts yet.');
   });
 
   it('shows trace annotations and answer keys only in instructor markup', () => {

@@ -1,4 +1,7 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { ClientPreviewHome } from '../clientPreview/ClientPreviewHome';
 import {
   clientModules,
   plannedClientCapabilities,
@@ -27,12 +30,22 @@ describe('client preview integration', () => {
     expect(clientModules.every((module) => module.href.startsWith('/?mode='))).toBe(true);
   });
 
-  it('labels unfinished requirements as planned instead of implemented', () => {
-    expect(plannedClientCapabilities.length).toBeGreaterThanOrEqual(2);
-    expect(clientModules.find((module) => module.id === 'assessment')?.capabilities.join(' ')).toContain('Task 1');
-    expect(clientModules.find((module) => module.id === 'assessment')?.capabilities.join(' ')).toContain('Task 2');
-    expect(plannedClientCapabilities.join(' ')).not.toContain('Catheter placement');
-    expect(plannedClientCapabilities.join(' ')).not.toContain('SNRT');
-    expect(plannedClientCapabilities.join(' ')).toContain('Weekly quizzes');
+  it('advertises completed Tasks 1-3 and keeps later work planned', () => {
+    const assessment = clientModules.find((module) => module.id === 'assessment');
+    const delivered = assessment?.capabilities.join(' ') ?? '';
+    const planned = plannedClientCapabilities.join(' ');
+    expect(delivered).toContain('Task 1');
+    expect(delivered).toContain('Task 2');
+    expect(delivered).toContain('Task 3');
+    expect(delivered).toContain('structured client feedback');
+    expect(planned).not.toContain('Arrhythmia and ECG pattern-recognition');
+    expect(planned).toContain('Task 4 and Task 5');
+    expect(planned).toContain('Weekly quizzes');
+  });
+
+  it('links the review guide to the completed Task 3 feedback panel', () => {
+    const markup = renderToStaticMarkup(createElement(ClientPreviewHome));
+    expect(markup).toContain('/?mode=assessment&amp;task=3#feedback');
+    expect(markup).toContain('Open Task 3 feedback panel');
   });
 });

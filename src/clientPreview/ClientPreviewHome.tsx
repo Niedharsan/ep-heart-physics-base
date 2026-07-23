@@ -11,8 +11,8 @@ export function ClientPreviewHome() {
           <p className="client-preview-eyebrow">EP HEART · CLIENT REVIEW WORKSPACE</p>
           <h1>One place to review every available module</h1>
           <p className="client-preview-lead">
-            Open either working module below, test the interaction and send feedback from
-            the EGM assessment page. Features marked as planned are not presented as complete.
+            Open either working module below, test the interaction and return structured feedback
+            from the assessment workspace. Features marked as planned are not presented as complete.
           </p>
         </div>
         <div className="client-preview-status" role="status">
@@ -66,7 +66,7 @@ export function ClientPreviewHome() {
           <li>Record any incorrect labels, morphology, behaviour or missing feature.</li>
           <li>Use the assessment feedback panel to copy a structured feedback package.</li>
         </ol>
-        <a href="/?mode=assessment#feedback">Open feedback panel</a>
+        <a href="/?mode=assessment&task=3#feedback">Open Task 3 feedback panel</a>
       </section>
 
       <footer className="client-preview-footer">

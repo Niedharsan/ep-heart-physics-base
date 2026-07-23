@@ -14,6 +14,7 @@ import type {
   TaskThreeAtrialTachycardiaCaseId,
 } from './catalog';
 import { taskThreeClinicalRubric } from './clinicalRubric';
+import { buildTaskThreeFeedbackPackage } from './feedback';
 import { countWords, markTaskThree } from './marking';
 import type {
   AhJumpResponse,
@@ -23,6 +24,11 @@ import type {
   TaskThreeScore,
 } from './marking';
 import { taskThreeTraceCatalog } from './traceCatalog';
+import {
+  clearTaskThreeAttempts,
+  loadTaskThreeAttempts,
+  saveTaskThreeAttempt,
+} from './store';
 import { TaskThreeTraceStrip } from './TaskThreeTraceStrip';
 
 const atrialTachycardiaDiagnosisOptions = Object.freeze([
@@ -38,6 +44,11 @@ const avnrtDiagnosisOptions = Object.freeze([
   'Atrial tachycardia',
   'Atrial flutter',
 ]);
+
+function attemptIdentifier(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 export function createEmptyTaskThreeResponses(): TaskThreeResponses {
   return {
@@ -90,6 +101,10 @@ export function TaskThreeAssessment({ assessmentView }: { readonly assessmentVie
   const traceView = instructor ? 'instructor' : 'student';
   const [responses, setResponses] = useState<TaskThreeResponses>(createEmptyTaskThreeResponses);
   const [result, setResult] = useState<TaskThreeScore | null>(null);
+  const [attempts, setAttempts] = useState(() => loadTaskThreeAttempts());
+  const [latestAttemptId, setLatestAttemptId] = useState<string | null>(null);
+  const [feedbackNotes, setFeedbackNotes] = useState('');
+  const [copyStatus, setCopyStatus] = useState('');
 
   const updateAtrialTachycardia = (
     id: TaskThreeAtrialTachycardiaCaseId,
@@ -128,7 +143,46 @@ export function TaskThreeAssessment({ assessmentView }: { readonly assessmentVie
   };
 
   const submit = (): void => {
-    setResult(markTaskThree(responses, taskThreeClinicalRubric));
+    const nextResult = markTaskThree(responses, taskThreeClinicalRubric);
+    const id = attemptIdentifier();
+    const createdAtIso = new Date().toISOString();
+    setResult(nextResult);
+    setLatestAttemptId(id);
+    setAttempts(saveTaskThreeAttempt({ id, createdAtIso, result: nextResult }));
+    setCopyStatus(`Task 3 attempt saved locally: ${nextResult.score}/23.`);
+  };
+
+  const resetAnswers = (): void => {
+    setResponses(createEmptyTaskThreeResponses());
+    setResult(null);
+    setLatestAttemptId(null);
+    setFeedbackNotes('');
+    setCopyStatus('Task 3 answers reset. Saved attempt history was kept.');
+  };
+
+  const copyFeedbackPackage = async (): Promise<void> => {
+    if (!result || !latestAttemptId) {
+      setCopyStatus('Mark Task 3 before copying a feedback package.');
+      return;
+    }
+
+    const packageData = buildTaskThreeFeedbackPackage({
+      assessmentView,
+      attemptId: latestAttemptId,
+      createdAtIso: new Date().toISOString(),
+      responses,
+      result,
+      notes: feedbackNotes,
+      browser: typeof navigator === 'undefined' ? 'unavailable' : navigator.userAgent,
+    });
+
+    try {
+      if (typeof navigator === 'undefined' || !navigator.clipboard) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(JSON.stringify(packageData, null, 2));
+      setCopyStatus('Task 3 feedback package copied. Paste it into email or your project message.');
+    } catch {
+      setCopyStatus('Clipboard access failed. Select and copy your notes manually.');
+    }
   };
 
   const feedback = result ? scoreFeedback(result) : [];
@@ -370,8 +424,11 @@ export function TaskThreeAssessment({ assessmentView }: { readonly assessmentVie
       </section>
 
       <footer className="assessment-footer task-three-footer">
-        <button className="assessment-primary" onClick={submit}>Mark Task 3</button>
-        <span>This preview does not save Task 3 attempts yet.</span>
+        <div>
+          <button className="assessment-primary" onClick={submit}>Mark and save Task 3</button>
+          <button onClick={resetAnswers}>Reset answers</button>
+        </div>
+        <span>{attempts.length} local Task 3 attempt{attempts.length === 1 ? '' : 's'}</span>
       </footer>
 
       {result && result.score < result.maximumScore && (
@@ -380,6 +437,40 @@ export function TaskThreeAssessment({ assessmentView }: { readonly assessmentVie
           {feedback.map((item, index) => <p key={`${item}-${index}`}>{item}</p>)}
         </section>
       )}
+
+      <section className="assessment-grid lower-grid task-three-section">
+        <article className="assessment-panel">
+          <div className="assessment-panel-heading">
+            <div><span>LOCAL DEVICE ONLY</span><h2>Recent Task 3 attempts</h2></div>
+            <button onClick={() => { clearTaskThreeAttempts(); setAttempts([]); }}>Clear history</button>
+          </div>
+          {attempts.length === 0 ? (
+            <p className="empty-copy">No marked Task 3 attempts yet.</p>
+          ) : (
+            <div className="attempt-list">
+              {attempts.slice(0, 8).map((attempt) => (
+                <div key={attempt.id}>
+                  <strong>Task 3</strong>
+                  <span>{attempt.result.score}/23</span>
+                  <time>{new Date(attempt.createdAtIso).toLocaleString()}</time>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <aside id="feedback" className="assessment-panel">
+          <span className="assessment-panel-kicker">CLIENT FEEDBACK</span>
+          <h2>What should change in Task 3?</h2>
+          <textarea
+            value={feedbackNotes}
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setFeedbackNotes(event.target.value)}
+            placeholder="Describe incorrect morphology, labels, workflow, marking or visual changes."
+          />
+          <button onClick={() => void copyFeedbackPackage()}>Copy Task 3 feedback package</button>
+          {copyStatus && <p className="copy-status">{copyStatus}</p>}
+        </aside>
+      </section>
     </main>
   );
 }

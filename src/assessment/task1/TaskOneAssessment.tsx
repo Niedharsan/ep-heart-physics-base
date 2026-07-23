@@ -154,6 +154,7 @@ export function TaskOneAssessment({ assessmentView }: TaskOneAssessmentProps) {
         <a className="active" href={instructorView ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
         <a href={instructorView ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
         <a href={instructorView ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
+        <a href={instructorView ? '/?mode=assessment&task=4&view=instructor' : '/?mode=assessment&task=4'}>Task 4 · Intracardiac manoeuvres</a>
       </nav>
 
       <div className="prototype-warning">Synthetic educational assessment. The heart map is schematic and is not fluoroscopic or patient anatomy.</div>

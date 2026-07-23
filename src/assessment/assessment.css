@@ -322,3 +322,54 @@ textarea { min-height: 130px; width: 100%; resize: vertical; margin: 12px 0; }
   .task-three-grid,
   .task-three-form-row { grid-template-columns: 1fr; }
 }
+
+.task-four-scorebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 16px;
+  padding: 13px 16px;
+  border: 1px solid #2d6c54;
+  border-radius: 14px;
+  background: #092218;
+  color: #9fb5b2;
+}
+.task-four-scorebar strong { margin-right: auto; color: #eff9f5; font-size: 1.4rem; }
+.task-four-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.task-four-section { margin-top: 16px; }
+.task-four-card { display: grid; align-content: start; gap: 12px; }
+.task-four-card > label { display: grid; gap: 7px; color: #9db0b2; }
+.task-four-card textarea { min-height: 145px; margin: 0; }
+.task-four-wide { grid-column: 1 / -1; }
+.task-four-trace { display: grid; gap: 6px; margin: 0; }
+.task-four-strip {
+  width: 100%;
+  height: auto;
+  min-height: 210px;
+  border: 1px solid #213943;
+  border-radius: 12px;
+  background: #061117;
+  color: #72efbb;
+}
+.task-four-trace figcaption { color: #93a8a8; font-size: 0.72rem; line-height: 1.35; }
+.task-four-grid-lines line { stroke: rgba(109, 143, 151, 0.13); stroke-width: 1; }
+.task-four-trace-baseline { fill: none; stroke: rgba(130, 163, 169, 0.38); stroke-width: 1; }
+.task-four-event { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; }
+.task-four-event-stimulus { stroke: #ffd08a; stroke-width: 1.8; }
+.task-four-event-his { stroke: #9dc7ff; }
+.task-four-event-pvc { stroke: #f2b974; stroke-width: 2.8; }
+.task-four-event-ventricular,
+.task-four-event-qrs { stroke-width: 2.8; }
+.task-four-strip text { fill: #9bb0b0; font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.task-four-annotation line { stroke: #f2b974; stroke-width: 1.4; }
+.task-four-annotation text { fill: #f4c989; font-size: 9px; }
+.task-four-footer { align-items: center; }
+.task-four-footer > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.task-four-feedback { margin-top: 16px; }
+.task-four-feedback p { margin: 5px 0; color: #d5e3de; }
+
+@media (max-width: 900px) {
+  .task-four-grid { grid-template-columns: 1fr; }
+  .task-four-wide { grid-column: auto; }
+}

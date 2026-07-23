@@ -67,7 +67,7 @@ export function createEmptyTaskThreeResponses(): TaskThreeResponses {
   };
 }
 
-function taskHref(task: 'interval' | '1' | '2' | '3', instructor: boolean): string {
+function taskHref(task: 'interval' | '1' | '2' | '3' | '4', instructor: boolean): string {
   const taskQuery = task === 'interval' ? '' : `&task=${task}`;
   const viewQuery = instructor ? '&view=instructor' : '';
   return `/?mode=assessment${taskQuery}${viewQuery}`;
@@ -222,6 +222,7 @@ export function TaskThreeAssessment({ assessmentView }: { readonly assessmentVie
         <a href={taskHref('1', instructor)}>Task 1 · Basic EP study</a>
         <a href={taskHref('2', instructor)}>Task 2 · Sinus node, refractoriness & AV block</a>
         <a className="active" href={taskHref('3', instructor)}>Task 3 · Tachycardia & AH change</a>
+        <a href={taskHref('4', instructor)}>Task 4 · Intracardiac manoeuvres</a>
       </nav>
 
       <div className="prototype-warning">

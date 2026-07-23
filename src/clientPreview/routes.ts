@@ -32,7 +32,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
   Object.freeze({
     id: 'assessment',
     title: 'EP assessment workspace',
-    summary: 'Review channel-aware EGM measurements plus complete 15-mark Task 1, 22-mark Task 2 and 23-mark Task 3 workflows without an account.',
+    summary: 'Review channel-aware EGM measurements plus complete Tasks 1-4, including the 25-mark intracardiac manoeuvre assessment, without an account.',
     href: '/?mode=assessment',
     status: 'Available',
     capabilities: Object.freeze([
@@ -40,6 +40,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
       'Task 1 catheter placement, CS labelling and activation interpretation',
       'Task 2 SNRT, refractory-period, AVNRT, Wenckebach and ECG recognition',
       'Task 3 atrial tachycardia, AH-threshold, cannon-wave, adenosine and AVNRT assessment',
+      'Task 4 AVRT activation, VAAV/VAV response and pacing-manoeuvre interpretation',
       'Local attempt history and structured client feedback packages',
     ]),
     limitation: 'Synthetic educational traces; not patient data or a diagnostic device.',
@@ -47,7 +48,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
 ]);
 
 export const plannedClientCapabilities = Object.freeze([
-  'Task 4 and Task 5 assessment workflows',
+  'Task 5 VT and para-Hisian pacing assessment workflow',
   'Weekly quizzes, instructor publishing and shared result review',
 ]);
 

@@ -50,6 +50,7 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
         <a href={instructor ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
         <a className="active" href={instructor ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
         <a href={instructor ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
+        <a href={instructor ? '/?mode=assessment&task=4&view=instructor' : '/?mode=assessment&task=4'}>Task 4 · Intracardiac manoeuvres</a>
       </nav>
       {result && (
         <section className="task-two-scorebar" aria-live="polite">

@@ -8,6 +8,7 @@ import { resolveAssessmentView } from './assessmentView';
 import type { AssessmentView } from './assessmentView';
 import { TaskOneAssessment } from './task1/TaskOneAssessment';
 import { TaskTwoAssessment } from './task2/TaskTwoAssessment';
+import { TaskThreeAssessment } from './task3/TaskThreeAssessment';
 import {
   createIntervalMeasurementQuestion,
   toStudentAssessmentQuestion,
@@ -55,11 +56,21 @@ function allowedChannelLabels(
     .join(', ');
 }
 
+export type AssessmentTask = 'interval' | '1' | '2' | '3';
+
+export function resolveAssessmentTask(search: string): AssessmentTask {
+  const selectedTask = new URLSearchParams(search).get('task');
+  if (selectedTask === '1' || selectedTask === '2' || selectedTask === '3') return selectedTask;
+  return 'interval';
+}
+
 export function AssessmentApp() {
-  const assessmentView = resolveAssessmentView(window.location.search);
-  const selectedTask = new URLSearchParams(window.location.search).get('task');
+  const search = window.location.search;
+  const assessmentView = resolveAssessmentView(search);
+  const selectedTask = resolveAssessmentTask(search);
   if (selectedTask === '1') return <TaskOneAssessment assessmentView={assessmentView} />;
   if (selectedTask === '2') return <TaskTwoAssessment assessmentView={assessmentView} />;
+  if (selectedTask === '3') return <TaskThreeAssessment assessmentView={assessmentView} />;
   return <IntervalAssessmentApp assessmentView={assessmentView} />;
 }
 
@@ -273,6 +284,7 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
         <a className="active" href={instructorView ? '/?mode=assessment&view=instructor' : '/?mode=assessment'}>Interval trainer</a>
         <a href={instructorView ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
         <a href={instructorView ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
+        <a href={instructorView ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
       </nav>
 
       <div className="prototype-warning">

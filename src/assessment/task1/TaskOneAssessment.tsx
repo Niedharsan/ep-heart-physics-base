@@ -152,6 +152,8 @@ export function TaskOneAssessment({ assessmentView }: TaskOneAssessmentProps) {
       <nav className="assessment-task-nav" aria-label="Assessment sections">
         <a href={instructorView ? '/?mode=assessment&view=instructor' : '/?mode=assessment'}>Interval trainer</a>
         <a className="active" href={instructorView ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
+        <a href={instructorView ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
+        <a href={instructorView ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
       </nav>
 
       <div className="prototype-warning">Synthetic educational assessment. The heart map is schematic and is not fluoroscopic or patient anatomy.</div>

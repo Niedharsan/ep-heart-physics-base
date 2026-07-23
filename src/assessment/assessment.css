@@ -269,3 +269,56 @@ textarea { min-height: 130px; width: 100%; resize: vertical; margin: 12px 0; }
   .task-two-ecg-row { grid-template-columns: 1fr; }
   .task-two-ecg-row small { grid-column: auto; }
 }
+
+.task-three-scorebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 16px;
+  padding: 13px 16px;
+  border: 1px solid #2d6c54;
+  border-radius: 14px;
+  background: #092218;
+  color: #9fb5b2;
+}
+.task-three-scorebar strong { margin-right: auto; color: #eff9f5; font-size: 1.4rem; }
+.task-three-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.task-three-section { margin-top: 16px; }
+.task-three-card { display: grid; align-content: start; gap: 12px; }
+.task-three-card > label,
+.task-three-form-row label { display: grid; gap: 7px; color: #9db0b2; }
+.task-three-card textarea { min-height: 105px; margin: 0; }
+.task-three-wide { width: 100%; }
+.task-three-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.task-three-word-count { color: #9fb5b2; font: 750 0.78rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+.task-three-trace { display: grid; gap: 6px; margin: 0; }
+.task-three-strip {
+  width: 100%;
+  height: auto;
+  min-height: 150px;
+  border: 1px solid #213943;
+  border-radius: 12px;
+  background: #061117;
+  color: #72efbb;
+}
+.task-three-trace figcaption { color: #93a8a8; font-size: 0.72rem; line-height: 1.35; }
+.task-three-grid-lines line { stroke: rgba(109, 143, 151, 0.13); stroke-width: 1; }
+.task-three-trace-baseline { fill: none; stroke: rgba(130, 163, 169, 0.38); stroke-width: 1; }
+.task-three-event { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; }
+.task-three-event-stimulus { stroke: #ffd08a; stroke-width: 1.8; }
+.task-three-event-his { stroke: #9dc7ff; }
+.task-three-event-ventricular,
+.task-three-event-qrs { stroke-width: 2.8; }
+.task-three-event-pseudo-r-prime { stroke: #f0b9ff; stroke-width: 2.2; }
+.task-three-strip text { fill: #9bb0b0; font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.task-three-annotation line { stroke: #f2b974; stroke-width: 1.4; }
+.task-three-annotation text { fill: #f4c989; font-size: 10px; }
+.task-three-footer { align-items: center; }
+.task-three-feedback { margin-top: 16px; }
+.task-three-feedback p { margin: 5px 0; color: #d5e3de; }
+
+@media (max-width: 900px) {
+  .task-three-grid,
+  .task-three-form-row { grid-template-columns: 1fr; }
+}

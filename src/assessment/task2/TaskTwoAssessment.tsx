@@ -46,8 +46,10 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
         <a className="assessment-back-link" href="/?mode=assessment">Interval trainer</a>
       </header>
       <nav className="assessment-task-nav" aria-label="Assessment sections">
-        <a href="/?mode=assessment&task=1">Task 1</a>
-        <a className="active" href="/?mode=assessment&task=2">Task 2</a>
+        <a href={instructor ? '/?mode=assessment&view=instructor' : '/?mode=assessment'}>Interval trainer</a>
+        <a href={instructor ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
+        <a className="active" href={instructor ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
+        <a href={instructor ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
       </nav>
       {result && (
         <section className="task-two-scorebar" aria-live="polite">

@@ -39,7 +39,7 @@ export function createEmptyTaskFourResponses(): TaskFourResponses {
   };
 }
 
-function taskHref(task: 'interval' | '1' | '2' | '3' | '4', instructor: boolean): string {
+function taskHref(task: 'interval' | '1' | '2' | '3' | '4' | '5', instructor: boolean): string {
   const taskQuery = task === 'interval' ? '' : `&task=${task}`;
   const viewQuery = instructor ? '&view=instructor' : '';
   return `/?mode=assessment${taskQuery}${viewQuery}`;
@@ -162,6 +162,7 @@ export function TaskFourAssessment({ assessmentView }: { readonly assessmentView
         <a href={taskHref('2', instructor)}>Task 2 · Sinus node, refractoriness & AV block</a>
         <a href={taskHref('3', instructor)}>Task 3 · Tachycardia & AH change</a>
         <a className="active" href={taskHref('4', instructor)}>Task 4 · Intracardiac manoeuvres</a>
+        <a href={taskHref('5', instructor)}>Task 5 · VT & para-Hisian pacing</a>
       </nav>
 
       <div className="prototype-warning">

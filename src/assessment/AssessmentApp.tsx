@@ -10,6 +10,7 @@ import { TaskOneAssessment } from './task1/TaskOneAssessment';
 import { TaskTwoAssessment } from './task2/TaskTwoAssessment';
 import { TaskThreeAssessment } from './task3/TaskThreeAssessment';
 import { TaskFourAssessment } from './task4/TaskFourAssessment';
+import { TaskFiveAssessment } from './task5/TaskFiveAssessment';
 import {
   createIntervalMeasurementQuestion,
   toStudentAssessmentQuestion,
@@ -57,11 +58,11 @@ function allowedChannelLabels(
     .join(', ');
 }
 
-export type AssessmentTask = 'interval' | '1' | '2' | '3' | '4';
+export type AssessmentTask = 'interval' | '1' | '2' | '3' | '4' | '5';
 
 export function resolveAssessmentTask(search: string): AssessmentTask {
   const selectedTask = new URLSearchParams(search).get('task');
-  if (selectedTask === '1' || selectedTask === '2' || selectedTask === '3' || selectedTask === '4') return selectedTask;
+  if (selectedTask === '1' || selectedTask === '2' || selectedTask === '3' || selectedTask === '4' || selectedTask === '5') return selectedTask;
   return 'interval';
 }
 
@@ -73,6 +74,7 @@ export function AssessmentApp() {
   if (selectedTask === '2') return <TaskTwoAssessment assessmentView={assessmentView} />;
   if (selectedTask === '3') return <TaskThreeAssessment assessmentView={assessmentView} />;
   if (selectedTask === '4') return <TaskFourAssessment assessmentView={assessmentView} />;
+  if (selectedTask === '5') return <TaskFiveAssessment assessmentView={assessmentView} />;
   return <IntervalAssessmentApp assessmentView={assessmentView} />;
 }
 
@@ -288,6 +290,7 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
         <a href={instructorView ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
         <a href={instructorView ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
         <a href={instructorView ? '/?mode=assessment&task=4&view=instructor' : '/?mode=assessment&task=4'}>Task 4 · Intracardiac manoeuvres</a>
+        <a href={instructorView ? '/?mode=assessment&task=5&view=instructor' : '/?mode=assessment&task=5'}>Task 5 · VT & para-Hisian pacing</a>
       </nav>
 
       <div className="prototype-warning">

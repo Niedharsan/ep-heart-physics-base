@@ -66,7 +66,7 @@ export function ClientPreviewHome() {
           <li>Record any incorrect labels, morphology, behaviour or missing feature.</li>
           <li>Use the assessment feedback panel to copy a structured feedback package.</li>
         </ol>
-        <a href="/?mode=assessment&task=4#feedback">Open Task 4 feedback panel</a>
+        <a href="/?mode=assessment&task=5#feedback">Open Task 5 feedback panel</a>
       </section>
 
       <footer className="client-preview-footer">

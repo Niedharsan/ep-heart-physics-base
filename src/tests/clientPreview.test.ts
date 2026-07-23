@@ -30,7 +30,7 @@ describe('client preview integration', () => {
     expect(clientModules.every((module) => module.href.startsWith('/?mode='))).toBe(true);
   });
 
-  it('advertises completed Tasks 1-4 and keeps Task 5 planned', () => {
+  it('advertises completed Tasks 1-5 and keeps login and instructor work planned', () => {
     const assessment = clientModules.find((module) => module.id === 'assessment');
     const delivered = assessment?.capabilities.join(' ') ?? '';
     const planned = plannedClientCapabilities.join(' ');
@@ -38,16 +38,18 @@ describe('client preview integration', () => {
     expect(delivered).toContain('Task 2');
     expect(delivered).toContain('Task 3');
     expect(delivered).toContain('Task 4');
+    expect(delivered).toContain('Task 5');
     expect(delivered).toContain('structured client feedback');
     expect(planned).not.toContain('Arrhythmia and ECG pattern-recognition');
     expect(planned).not.toContain('Task 4 and Task 5');
-    expect(planned).toContain('Task 5');
+    expect(planned).not.toContain('Task 5 VT');
+    expect(planned).toContain('User login');
     expect(planned).toContain('Weekly quizzes');
   });
 
-  it('links the review guide to the completed Task 4 feedback panel', () => {
+  it('links the review guide to the completed Task 5 feedback panel', () => {
     const markup = renderToStaticMarkup(createElement(ClientPreviewHome));
-    expect(markup).toContain('/?mode=assessment&amp;task=4#feedback');
-    expect(markup).toContain('Open Task 4 feedback panel');
+    expect(markup).toContain('/?mode=assessment&amp;task=5#feedback');
+    expect(markup).toContain('Open Task 5 feedback panel');
   });
 });

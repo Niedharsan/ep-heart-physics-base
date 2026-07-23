@@ -373,3 +373,53 @@ textarea { min-height: 130px; width: 100%; resize: vertical; margin: 12px 0; }
   .task-four-grid { grid-template-columns: 1fr; }
   .task-four-wide { grid-column: auto; }
 }
+
+.task-five-scorebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 16px;
+  padding: 13px 16px;
+  border: 1px solid #2d6c54;
+  border-radius: 14px;
+  background: #092218;
+  color: #9fb5b2;
+}
+.task-five-scorebar strong { margin-right: auto; color: #eff9f5; font-size: 1.4rem; }
+.task-five-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.task-five-section { margin-top: 16px; }
+.task-five-card { display: grid; align-content: start; gap: 12px; }
+.task-five-card > label { display: grid; gap: 7px; color: #9db0b2; }
+.task-five-card textarea { min-height: 135px; margin: 0; }
+.task-five-wide { grid-column: 1 / -1; }
+.task-five-trace { display: grid; gap: 6px; margin: 0; }
+.task-five-strip {
+  width: 100%;
+  height: auto;
+  min-height: 205px;
+  border: 1px solid #213943;
+  border-radius: 12px;
+  background: #061117;
+  color: #72efbb;
+}
+.task-five-trace figcaption { color: #93a8a8; font-size: 0.72rem; line-height: 1.35; }
+.task-five-grid-lines line { stroke: rgba(109, 143, 151, 0.13); stroke-width: 1; }
+.task-five-trace-baseline { fill: none; stroke: rgba(130, 163, 169, 0.38); stroke-width: 1; }
+.task-five-event { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; }
+.task-five-event-stimulus { stroke: #ffd08a; stroke-width: 1.8; }
+.task-five-event-his { stroke: #9dc7ff; }
+.task-five-event-ventricular,
+.task-five-event-qrs { stroke-width: 2.8; }
+.task-five-strip text { fill: #9bb0b0; font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.task-five-annotation line { stroke: #f2b974; stroke-width: 1.4; }
+.task-five-annotation text { fill: #f4c989; font-size: 9px; }
+.task-five-footer { align-items: center; }
+.task-five-footer > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.task-five-feedback { margin-top: 16px; }
+.task-five-feedback p { margin: 5px 0; color: #d5e3de; }
+
+@media (max-width: 900px) {
+  .task-five-grid { grid-template-columns: 1fr; }
+  .task-five-wide { grid-column: auto; }
+}

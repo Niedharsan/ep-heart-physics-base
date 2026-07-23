@@ -33,7 +33,7 @@ const approvedFixtureRubric: TaskThreeClinicalRubric = Object.freeze({
     'at-3': Object.freeze({ acceptedDiagnoses: Object.freeze(['Atrial tachycardia']), expectedSide: 'left' }),
   }),
   ahJump: Object.freeze({
-    'ah-jump-below-50': Object.freeze({ expectedAhJump: true, expectedThresholdClass: 'below-50-ms' }),
+    'ah-jump-below-50': Object.freeze({ expectedAhJump: false, expectedThresholdClass: 'below-50-ms' }),
     'ah-jump-above-50': Object.freeze({ expectedAhJump: true, expectedThresholdClass: 'above-50-ms' }),
   }),
   cannonWaveCriteria: Object.freeze([
@@ -64,7 +64,7 @@ const completeResponses: TaskThreeResponses = Object.freeze({
     'at-3': Object.freeze({ diagnosis: 'Atrial tachycardia', side: 'left' }),
   }),
   ahJump: Object.freeze({
-    'ah-jump-below-50': Object.freeze({ identifiesAhJump: true, thresholdClass: 'below-50-ms' }),
+    'ah-jump-below-50': Object.freeze({ identifiesAhJump: false, thresholdClass: 'below-50-ms' }),
     'ah-jump-above-50': Object.freeze({ identifiesAhJump: true, thresholdClass: 'above-50-ms' }),
   }),
   cannonWave: 'A cannon wave occurs when the atrium contracts against a closed atrioventricular valve. Right atrial pressure rises, producing a large jugular venous pulsation. It reflects atrioventricular dissociation and may be intermittent when atrial and ventricular contraction coincide.',
@@ -98,7 +98,7 @@ describe('Task 3 assessment foundation', () => {
     }, approvedFixtureRubric.atrialTachycardia).score).toBe(5);
   });
 
-  it('scores AH-jump presence and the 50 ms threshold separately', () => {
+  it('scores the conventional AH-jump decision and 50 ms threshold separately', () => {
     expect(markAhJump(completeResponses.ahJump, approvedFixtureRubric.ahJump))
       .toMatchObject({ score: 4, maximumScore: 4 });
 

@@ -140,11 +140,12 @@ export function validateTaskThreeRubric(rubric: TaskThreeClinicalRubric): TaskTh
     const expectedThresholdClass = taskCase.id === 'ah-jump-below-50'
       ? 'below-50-ms'
       : 'above-50-ms';
-    if (answerKey.expectedAhJump !== true) {
-      throw new Error(`AH-jump case ${taskCase.id} must represent an AH jump.`);
+    const expectedAhJump = taskCase.id === 'ah-jump-above-50';
+    if (answerKey.expectedAhJump !== expectedAhJump) {
+      throw new Error(`AH-change case ${taskCase.id} has the wrong conventional jump classification.`);
     }
     if (answerKey.expectedThresholdClass !== expectedThresholdClass) {
-      throw new Error(`AH-jump case ${taskCase.id} has the wrong 50 ms threshold class.`);
+      throw new Error(`AH-change case ${taskCase.id} has the wrong 50 ms threshold class.`);
     }
   }
 
@@ -201,7 +202,7 @@ export function markAhJump(
     if (response.identifiesAhJump === answerKey.expectedAhJump) {
       score += 1;
     } else {
-      feedback.push(`${taskCase.id}: review whether an AH jump is present.`);
+      feedback.push(`${taskCase.id}: review whether the AH change meets the conventional 50 ms jump criterion.`);
     }
     if (response.thresholdClass === answerKey.expectedThresholdClass) {
       score += 1;
@@ -252,7 +253,7 @@ export function markAvnrtEcg(
   if (response.pathway === rubric.expectedPathway) {
     score += 1;
   } else {
-    feedback.push('Review the likely slow/fast pathway.');
+    feedback.push('Review the likely antegrade slow/fast pathway.');
   }
   if (matchesCriterion(response.explanation, rubric.explanationCriterion)) {
     score += 1;

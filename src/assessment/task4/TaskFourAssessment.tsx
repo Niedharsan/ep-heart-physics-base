@@ -68,9 +68,14 @@ export function TaskFourScoreBar({ result }: { readonly result: TaskFourScore })
 
 export function TaskFourAssessment({ assessmentView }: { readonly assessmentView: AssessmentView }) {
   const instructor = assessmentView === 'instructor';
-  const traceView = instructor ? 'instructor' : 'student';
+  const assessmentMode = typeof window === 'undefined'
+    ? 'practice'
+    : new URLSearchParams(window.location.search).get('assessmentMode') ?? 'practice';
   const [responses, setResponses] = useState<TaskFourResponses>(createEmptyTaskFourResponses);
   const [result, setResult] = useState<TaskFourScore | null>(null);
+  const traceView = instructor || (assessmentMode === 'practice' && result !== null)
+    ? 'instructor'
+    : 'student';
   const [attempts, setAttempts] = useState(() => loadTaskFourAttempts());
   const [latestAttemptId, setLatestAttemptId] = useState<string | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState('');

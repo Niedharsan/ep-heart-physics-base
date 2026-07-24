@@ -22,9 +22,13 @@ const uid = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto
 
 export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView: AssessmentView }) {
   const instructor = assessmentView === 'instructor';
+  const assessmentMode = typeof window === 'undefined'
+    ? 'practice'
+    : new URLSearchParams(window.location.search).get('assessmentMode') ?? 'practice';
   const [responses, setResponses] = useState<TaskTwoResponses>(emptyResponses);
   const [result, setResult] = useState<TaskTwoScore | null>(null);
   const [attempts, setAttempts] = useState(() => loadTaskTwoAttempts());
+  const showTraceAnnotations = instructor || (assessmentMode === 'practice' && result !== null);
   const updatePattern = (id: 'ARP' | 'ERP' | 'AVNRT', patch: Partial<PatternResponse>) => setResponses((current) => ({
     ...current,
     patterns: { ...current.patterns, [id]: { ...current.patterns[id], ...patch } },
@@ -41,7 +45,7 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
         <div>
           <span className="assessment-eyebrow">TASK 2 · 22 MARKS</span>
           <h1>Sinus-node recovery, refractoriness and AV block</h1>
-          <p>Identify synthetic educational EGM/ECG patterns and explain the defining findings.</p>
+          <p>Interpret live deterministic ECG/EGM recordings and explain the defining findings.</p>
         </div>
         <a className="assessment-back-link" href="/?mode=assessment">Interval trainer</a>
       </header>
@@ -65,7 +69,7 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
       <section className="task-two-grid">
         <article className="assessment-panel task-two-card">
           <h2>1. SNRT — 3 marks</h2>
-          <TraceStrip definition={taskTwoTraceCatalog.snrt} />
+          <TraceStrip definition={taskTwoTraceCatalog.snrt} showAnnotations={showTraceAnnotations} />
           <label>
             Where is SNRT measured?
             <textarea value={responses.snrtLocation} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setResponses((current) => ({ ...current, snrtLocation: event.target.value }))} />
@@ -84,7 +88,7 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
         {taskTwoPatternCases.map((taskCase) => (
           <article className="assessment-panel task-two-card" key={taskCase.id}>
             <h2>{taskCase.label} — 3 marks</h2>
-            <TraceStrip definition={taskTwoTraceCatalog[taskCase.traceId]} />
+            <TraceStrip definition={taskTwoTraceCatalog[taskCase.traceId]} showAnnotations={showTraceAnnotations} />
             <label>
               Diagnosis
               <select value={responses.patterns[taskCase.id].diagnosis} onChange={(event: ChangeEvent<HTMLSelectElement>) => updatePattern(taskCase.id, { diagnosis: event.target.value })}>
@@ -106,7 +110,7 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
         ))}
         <article className="assessment-panel task-two-card">
           <h2>Wenckebach — 5 marks</h2>
-          <TraceStrip definition={taskTwoTraceCatalog[wenckebachCase.traceId]} />
+          <TraceStrip definition={taskTwoTraceCatalog[wenckebachCase.traceId]} showAnnotations={showTraceAnnotations} />
           <label>
             Diagnosis
             <select value={responses.wenckebach.diagnosis} onChange={(event: ChangeEvent<HTMLSelectElement>) => setResponses((current) => ({
@@ -135,7 +139,7 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
           <h2>Five ECG interpretations — 5 marks</h2>
           {taskTwoEcgCases.map((taskCase, index) => (
             <div className="task-two-ecg-row" key={taskCase.id}>
-              <TraceStrip definition={taskTwoTraceCatalog[taskCase.traceId]} />
+              <TraceStrip definition={taskTwoTraceCatalog[taskCase.traceId]} showAnnotations={showTraceAnnotations} />
               <select value={responses.ecgAnswers[index]} onChange={(event: ChangeEvent<HTMLSelectElement>) => setResponses((current) => ({
                 ...current,
                 ecgAnswers: current.ecgAnswers.map((value, answerIndex) => answerIndex === index ? event.target.value : value),

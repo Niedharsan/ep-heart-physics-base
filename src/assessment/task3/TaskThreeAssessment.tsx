@@ -98,9 +98,14 @@ export function TaskThreeScoreBar({ result }: { readonly result: TaskThreeScore 
 
 export function TaskThreeAssessment({ assessmentView }: { readonly assessmentView: AssessmentView }) {
   const instructor = assessmentView === 'instructor';
-  const traceView = instructor ? 'instructor' : 'student';
+  const assessmentMode = typeof window === 'undefined'
+    ? 'practice'
+    : new URLSearchParams(window.location.search).get('assessmentMode') ?? 'practice';
   const [responses, setResponses] = useState<TaskThreeResponses>(createEmptyTaskThreeResponses);
   const [result, setResult] = useState<TaskThreeScore | null>(null);
+  const traceView = instructor || (assessmentMode === 'practice' && result !== null)
+    ? 'instructor'
+    : 'student';
   const [attempts, setAttempts] = useState(() => loadTaskThreeAttempts());
   const [latestAttemptId, setLatestAttemptId] = useState<string | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState('');

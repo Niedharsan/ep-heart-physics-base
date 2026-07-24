@@ -79,9 +79,14 @@ export function TaskFiveScoreBar({ result }: { readonly result: TaskFiveScore })
 
 export function TaskFiveAssessment({ assessmentView }: { readonly assessmentView: AssessmentView }) {
   const instructor = assessmentView === 'instructor';
-  const traceView = instructor ? 'instructor' : 'student';
+  const assessmentMode = typeof window === 'undefined'
+    ? 'practice'
+    : new URLSearchParams(window.location.search).get('assessmentMode') ?? 'practice';
   const [responses, setResponses] = useState<TaskFiveResponses>(createEmptyTaskFiveResponses);
   const [result, setResult] = useState<TaskFiveScore | null>(null);
+  const traceView = instructor || (assessmentMode === 'practice' && result !== null)
+    ? 'instructor'
+    : 'student';
   const [attempts, setAttempts] = useState(() => loadTaskFiveAttempts());
   const [latestAttemptId, setLatestAttemptId] = useState<string | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState('');

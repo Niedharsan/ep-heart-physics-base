@@ -423,3 +423,14 @@ textarea { min-height: 130px; width: 100%; resize: vertical; margin: 12px 0; }
   .task-five-grid { grid-template-columns: 1fr; }
   .task-five-wide { grid-column: auto; }
 }
+
+/* Task 3 wide-screen three-case balance */
+@media (min-width: 1320px) {
+  .task-three-grid[aria-label="Tachycardia ECG cases"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .task-three-grid[aria-label="Tachycardia ECG cases"] .task-three-form-row {
+    grid-template-columns: 1fr;
+  }
+}

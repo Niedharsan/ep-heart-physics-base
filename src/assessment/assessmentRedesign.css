@@ -341,3 +341,48 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 7A: practice, mock and real-exam session controls */
+.assessment-mode-panel,
+.exam-release-control,
+.exam-availability-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.assessment-timer {
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+}
+
+.assessment-timer strong {
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.assessment-timer.urgent strong {
+  color: #ff826f;
+}
+
+.assessment-timer span {
+  color: var(--assessment-muted, #aab4b9);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 720px) {
+  .assessment-mode-panel,
+  .exam-release-control,
+  .exam-availability-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .assessment-timer {
+    justify-items: start;
+  }
+}

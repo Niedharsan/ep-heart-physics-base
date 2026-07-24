@@ -2,6 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ClientModuleNav } from '../clientPreview/ClientModuleNav';
 import { clearAttempts, loadAttempts, saveAttempt } from './attemptStore';
+import {
+  assessmentSessionKey,
+  createAssessmentSession,
+  parseAssessmentSession,
+  resolveAssessmentSession,
+  submitAssessmentSession,
+} from './sessionState';
+import type { PersistedAssessmentSession } from './sessionState';
 import { EgmCaliperCanvas } from './EgmCaliperCanvas';
 import { markIntervalMeasurement } from './marking';
 import { resolveAssessmentView } from './assessmentView';
@@ -120,6 +128,27 @@ const taskLinks: ReadonlyArray<{ readonly id: AssessmentTask; readonly label: st
 ]);
 
 export type AssessmentTask = 'interval' | '1' | '2' | '3' | '4' | '5';
+export type AssessmentMode = 'practice' | 'mock' | 'exam';
+
+const ASSESSMENT_DURATION_MS = 20 * 60 * 1000;
+const REAL_EXAM_RELEASE_KEY = 'ep-heart-real-exam-visible-v1';
+
+export function resolveAssessmentMode(search: string): AssessmentMode {
+  const mode = new URLSearchParams(search).get('assessmentMode');
+  return mode === 'mock' || mode === 'exam' ? mode : 'practice';
+}
+
+function isRealExamReleased(): boolean {
+  return typeof window !== 'undefined'
+    && window.localStorage.getItem(REAL_EXAM_RELEASE_KEY) === 'true';
+}
+
+function formatRemainingTime(remainingMs: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
 
 export function resolveAssessmentTask(search: string): AssessmentTask {
   const selectedTask = new URLSearchParams(search).get('task');
@@ -139,19 +168,52 @@ export function AssessmentApp() {
   const search = window.location.search;
   const assessmentView = resolveAssessmentView(search);
   const selectedTask = resolveAssessmentTask(search);
-  if (selectedTask === '1') return <TaskOneAssessment assessmentView={assessmentView} />;
-  if (selectedTask === '2') return <TaskTwoAssessment assessmentView={assessmentView} />;
-  if (selectedTask === '3') return <TaskThreeAssessment assessmentView={assessmentView} />;
-  if (selectedTask === '4') return <TaskFourAssessment assessmentView={assessmentView} />;
-  if (selectedTask === '5') return <TaskFiveAssessment assessmentView={assessmentView} />;
-  return <IntervalAssessmentApp assessmentView={assessmentView} />;
+  const assessmentMode = resolveAssessmentMode(search);
+  const instructorView = assessmentView === 'instructor';
+  const [realExamReleased, setRealExamReleased] = useState(isRealExamReleased);
+
+  function setExamRelease(released: boolean): void {
+    window.localStorage.setItem(REAL_EXAM_RELEASE_KEY, String(released));
+    setRealExamReleased(released);
+  }
+
+  if (assessmentMode === 'exam' && !instructorView && !realExamReleased) {
+    return (
+      <main className="assessment-shell">
+        <section className="assessment-panel exam-availability-panel">
+          <span className="assessment-panel-kicker">REAL EXAM</span>
+          <h1>Exam not yet available</h1>
+          <p>The instructor has not activated this assessment.</p>
+        </section>
+      </main>
+    );
+  }
+
+  const releaseControl = assessmentMode === 'exam' && instructorView ? (
+    <section className="assessment-panel exam-release-control">
+      <span className="assessment-panel-kicker">INSTRUCTOR CONTROL</span>
+      <h2>Real exam visibility</h2>
+      <p>{realExamReleased ? 'Visible to students on this managed browser.' : 'Hidden from students.'}</p>
+      <button className="assessment-primary" onClick={() => setExamRelease(!realExamReleased)}>
+        {realExamReleased ? 'Hide real exam' : 'Activate real exam'}
+      </button>
+    </section>
+  ) : null;
+
+  if (selectedTask === '1') return <>{releaseControl}<TaskOneAssessment assessmentView={assessmentView} /></>;
+  if (selectedTask === '2') return <>{releaseControl}<TaskTwoAssessment assessmentView={assessmentView} /></>;
+  if (selectedTask === '3') return <>{releaseControl}<TaskThreeAssessment assessmentView={assessmentView} /></>;
+  if (selectedTask === '4') return <>{releaseControl}<TaskFourAssessment assessmentView={assessmentView} /></>;
+  if (selectedTask === '5') return <>{releaseControl}<TaskFiveAssessment assessmentView={assessmentView} /></>;
+  return <>{releaseControl}<IntervalAssessmentApp assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
 }
 
 interface IntervalAssessmentAppProps {
   readonly assessmentView: AssessmentView;
+  readonly assessmentMode: AssessmentMode;
 }
 
-function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
+function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAssessmentAppProps) {
   const instructorView = assessmentView === 'instructor';
   const [scenarioMode, setScenarioMode] = useState<ScenarioMode>('sinus');
   const [cycleLengthMs, setCycleLengthMs] = useState(700);
@@ -169,7 +231,73 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
   const [latestAttempt, setLatestAttempt] = useState<StoredAttempt | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [copyStatus, setCopyStatus] = useState('');
+  const timedAssessment = assessmentMode !== 'practice';
+  const sessionStorageKey = timedAssessment
+    ? assessmentSessionKey(assessmentMode, 'interval')
+    : null;
+  const [persistedSession, setPersistedSession] = useState<PersistedAssessmentSession | null>(() => {
+    if (!timedAssessment || sessionStorageKey === null) return null;
+    const stored = parseAssessmentSession(window.localStorage.getItem(sessionStorageKey));
+    return stored ? resolveAssessmentSession(stored, Date.now()) : null;
+  });
+  const [sessionStarted, setSessionStarted] = useState(
+    !timedAssessment || persistedSession !== null,
+  );
+  const [sessionLocked, setSessionLocked] = useState(
+    persistedSession !== null && persistedSession.status !== 'active',
+  );
+  const [sessionDeadlineMs, setSessionDeadlineMs] = useState<number | null>(
+    persistedSession?.status === 'active' ? persistedSession.deadlineMs : null,
+  );
+  const [remainingMs, setRemainingMs] = useState(() => (
+    persistedSession?.status === 'active'
+      ? Math.max(0, persistedSession.deadlineMs - Date.now())
+      : ASSESSMENT_DURATION_MS
+  ));
   const animationStartRef = useRef<number | null>(null);
+  const submitAttemptRef = useRef<((force: boolean) => void) | null>(null);
+
+  useEffect(() => {
+    if (!timedAssessment || !sessionStarted || sessionLocked || sessionDeadlineMs === null) return;
+    const updateTimer = (): void => {
+      const nextRemaining = Math.max(0, sessionDeadlineMs - Date.now());
+      setRemainingMs(nextRemaining);
+      if (nextRemaining <= 0) {
+        submitAttemptRef.current?.(true);
+      }
+    };
+    updateTimer();
+    const timer = window.setInterval(updateTimer, 250);
+    return () => window.clearInterval(timer);
+  }, [sessionDeadlineMs, sessionLocked, sessionStarted, timedAssessment]);
+
+  function storeSession(session: PersistedAssessmentSession): void {
+    if (sessionStorageKey !== null) {
+      window.localStorage.setItem(sessionStorageKey, JSON.stringify(session));
+    }
+    setPersistedSession(session);
+  }
+
+  function startTimedAssessment(): void {
+    if (!timedAssessment || sessionStarted || sessionStorageKey === null) return;
+    const existing = parseAssessmentSession(window.localStorage.getItem(sessionStorageKey));
+    const resolvedExisting = existing ? resolveAssessmentSession(existing, Date.now()) : null;
+    if (resolvedExisting !== null) {
+      storeSession(resolvedExisting);
+      setSessionStarted(true);
+      setSessionLocked(resolvedExisting.status !== 'active');
+      setSessionDeadlineMs(resolvedExisting.deadlineMs);
+      setRemainingMs(Math.max(0, resolvedExisting.deadlineMs - Date.now()));
+      return;
+    }
+    const session = createAssessmentSession(assessmentMode, 'interval', Date.now());
+    storeSession(session);
+    setLatestAttempt(null);
+    setSessionLocked(false);
+    setRemainingMs(ASSESSMENT_DURATION_MS);
+    setSessionDeadlineMs(session.deadlineMs);
+    setSessionStarted(true);
+  }
 
   const scenario = useMemo<EgmScenario>(() => {
     if (scenarioMode === 'retrograde') {
@@ -257,13 +385,15 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
 
   const measuredMs = Math.abs(calipers.end.timeMs - calipers.start.timeMs);
 
-  function markCurrentAttempt(): void {
-    if (!selectedInterval) return;
-    const parsedReportedValue = Number(reportedValue);
-    if (!Number.isFinite(parsedReportedValue) || reportedValue.trim() === '') {
+  function markCurrentAttempt(force = false): void {
+    if (!selectedInterval || sessionLocked || (timedAssessment && !sessionStarted)) return;
+    const enteredValue = Number(reportedValue);
+    const missingValue = reportedValue.trim() === '' || !Number.isFinite(enteredValue);
+    if (missingValue && !force) {
       setCopyStatus('Enter the interval value you measured before marking.');
       return;
     }
+    const parsedReportedValue = missingValue ? 0 : enteredValue;
     const result = markIntervalMeasurement({
       definition: selectedInterval,
       beats: scenario.beats,
@@ -286,8 +416,20 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
     });
     setLatestAttempt(attempt);
     setAttempts(saveAttempt(attempt));
-    setCopyStatus('');
+    setCopyStatus(force && missingValue ? 'Time expired. Blank responses were marked automatically.' : '');
+    if (timedAssessment) {
+      setSessionLocked(true);
+      setSessionDeadlineMs(null);
+      if (persistedSession !== null) {
+        storeSession(force
+          ? resolveAssessmentSession(persistedSession, Date.now())
+          : submitAssessmentSession(persistedSession, Date.now()));
+      }
+    }
   }
+  useEffect(() => {
+    submitAttemptRef.current = markCurrentAttempt;
+  });
 
   async function copyFeedbackPackage(): Promise<void> {
     const feedbackAttempt = latestAttempt && !instructorView
@@ -511,6 +653,37 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
             </button>
           </section>
 
+          <section className="assessment-mode-panel assessment-panel" aria-label="Assessment mode">
+            <div>
+              <span className="assessment-panel-kicker">MODE</span>
+              <h2>{assessmentMode === 'practice' ? 'Practice' : assessmentMode === 'mock' ? 'Timed mock assessment' : 'Real exam'}</h2>
+              <p>{timedAssessment ? '20 minutes. Answers lock when submitted or when time expires.' : 'Untimed with repeat attempts and immediate feedback.'}</p>
+            </div>
+            {timedAssessment && (
+              <div className={`assessment-timer ${remainingMs <= 120000 ? 'urgent' : ''}`}>
+                <strong>{sessionStarted ? formatRemainingTime(remainingMs) : '20:00'}</strong>
+                {!sessionStarted && <button className="assessment-primary" onClick={startTimedAssessment}>Start assessment</button>}
+                {sessionLocked && <span>{persistedSession?.status === 'expired' ? 'Time expired' : 'Submitted'} · answers locked</span>}
+                {instructorView && persistedSession && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (sessionStorageKey !== null) window.localStorage.removeItem(sessionStorageKey);
+                      setPersistedSession(null);
+                      setSessionStarted(false);
+                      setSessionLocked(false);
+                      setSessionDeadlineMs(null);
+                      setRemainingMs(ASSESSMENT_DURATION_MS);
+                      resetCurrentResponse();
+                    }}
+                  >
+                    Reset timed session
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+
           <section className="assessment-grid assessment-grid-redesign">
             <article className="assessment-panel trace-panel">
               <div className="assessment-panel-heading">
@@ -526,10 +699,13 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
                 calipers={calipers}
                 running={running}
                 playheadMs={playheadMs}
-                onCalipersChange={(placement) => setCaliperOverride({
-                  key: caliperStateKey,
-                  placement,
-                })}
+                onCalipersChange={(placement) => {
+                  if (sessionLocked || (timedAssessment && !sessionStarted)) return;
+                  setCaliperOverride({
+                    key: caliperStateKey,
+                    placement,
+                  });
+                }}
               />
 
               <div className="caliper-readout channel-aware-readout">
@@ -545,6 +721,7 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
                 Interval
                 <select
                   value={selectedInterval?.id ?? ''}
+                  disabled={sessionLocked || (timedAssessment && !sessionStarted)}
                   onChange={(event: ChangeEvent<HTMLSelectElement>) => (
                     updateSelectedInterval(event.target.value as IntervalId)
                   )}
@@ -573,11 +750,12 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
                   type="number"
                   inputMode="decimal"
                   value={reportedValue}
+                  disabled={sessionLocked || (timedAssessment && !sessionStarted)}
                   onChange={(event: ChangeEvent<HTMLInputElement>) => setReportedValue(event.target.value)}
                 />
               </label>
 
-              <fieldset disabled={!selectedInterval?.normalRange}>
+              <fieldset disabled={!selectedInterval?.normalRange || sessionLocked || (timedAssessment && !sessionStarted)}>
                 <legend>Interpretation</legend>
                 <label>
                   <input
@@ -601,10 +779,10 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
 
               <button
                 className="assessment-primary"
-                disabled={running}
-                onClick={markCurrentAttempt}
+                disabled={running || sessionLocked || (timedAssessment && !sessionStarted)}
+                onClick={() => markCurrentAttempt(false)}
               >
-                Mark attempt
+                {timedAssessment ? 'Submit assessment' : 'Mark attempt'}
               </button>
 
               {running && <p className="range-note">Freeze the recording before marking.</p>}
@@ -612,8 +790,16 @@ function IntervalAssessmentApp({ assessmentView }: IntervalAssessmentAppProps) {
               {latestAttempt && (
                 <div className={`marking-result ${latestAttempt.result.score === latestAttempt.result.maximumScore ? 'pass' : 'review'}`}>
                   <strong>{latestAttempt.result.score}/{latestAttempt.result.maximumScore}</strong>
-                  <span>Timing: {latestAttempt.result.timingSelectionCorrect ? 'correct' : 'incorrect'}</span>
-                  <span>Channels: {latestAttempt.result.channelSelectionCorrect ? 'correct' : 'incorrect'}</span>
+                  <span>Landmark placement: {latestAttempt.result.timingSelectionCorrect ? 'correct' : 'incorrect'}</span>
+                  <span>Channel selection: {latestAttempt.result.channelSelectionCorrect ? 'correct' : 'incorrect'}</span>
+                  <span>Measurement accuracy: {latestAttempt.result.measurementCorrect ? 'correct' : 'incorrect'}</span>
+                  {latestAttempt.result.classificationAssessed && (
+                    <span>Clinical interpretation: {latestAttempt.result.classificationCorrect ? 'correct' : 'incorrect'}</span>
+                  )}
+                  <p>
+                    Entered {latestAttempt.result.reportedValueMs} ms · expected {latestAttempt.result.expectedValueMs} ms
+                    {selectedInterval ? ` ±${selectedInterval.measurementToleranceMs} ms` : ''}
+                  </p>
                   {latestAttempt.result.feedback.map((line) => <p key={line}>{line}</p>)}
                 </div>
               )}

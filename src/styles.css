@@ -430,3 +430,118 @@ footer {
   .tissue-guidance { position: static; width: auto; margin: 10px; }
   .tissue-canvas-stage { padding-top: 1px; }
 }
+
+
+/* Phase 6: professional live pseudo-ECG integration */
+.clinical-ecg-frame {
+  overflow: hidden;
+  border: 1px solid rgba(119, 46, 46, 0.2);
+  border-radius: 14px;
+  background: #fffafa;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.clinical-ecg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid rgba(119, 46, 46, 0.14);
+  color: #704b4b;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.clinical-ecg-svg {
+  display: block;
+  width: 100%;
+  min-height: 210px;
+  max-height: 300px;
+}
+
+.clinical-ecg-paper {
+  fill: #fffdfd;
+}
+
+.clinical-grid-line {
+  vector-effect: non-scaling-stroke;
+}
+
+.clinical-grid-minor {
+  stroke: rgba(224, 153, 153, 0.32);
+  stroke-width: 0.08;
+}
+
+.clinical-grid-major {
+  stroke: rgba(190, 92, 92, 0.52);
+  stroke-width: 0.16;
+}
+
+.clinical-ecg-trace,
+.clinical-ecg-calibration {
+  fill: none;
+  stroke: #17201d;
+  vector-effect: non-scaling-stroke;
+}
+
+.clinical-ecg-trace {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.clinical-ecg-calibration {
+  stroke-width: 1.35px;
+  stroke-linejoin: miter;
+}
+
+.clinical-ecg-label,
+.clinical-ecg-time {
+  fill: #3e3535;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.clinical-ecg-label {
+  font-size: 2.5px;
+  font-weight: 700;
+}
+
+.clinical-ecg-time {
+  font-size: 2.1px;
+}
+
+.clinical-ecg-boundary {
+  margin: 0;
+  padding: 0.55rem 0.9rem 0.7rem;
+  border-top: 1px solid rgba(119, 46, 46, 0.12);
+  color: #776969;
+  background: rgba(255, 255, 255, 0.68);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.clinical-ecg-empty {
+  min-height: 210px;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  color: #806e6e;
+  text-align: center;
+  background:
+    linear-gradient(rgba(211, 126, 126, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(211, 126, 126, 0.14) 1px, transparent 1px),
+    #fffdfd;
+  background-size: 20px 20px;
+}
+
+@media (max-width: 700px) {
+  .clinical-ecg-svg {
+    min-height: 170px;
+  }
+
+  .clinical-ecg-toolbar {
+    font-size: 0.66rem;
+  }
+}

@@ -152,11 +152,11 @@ export function markIntervalMeasurement(input: IntervalMarkingInput): IntervalMa
   const measurementCorrect = caliperWithinTolerance && reportedWithinTolerance;
 
   if (measurementCorrect) {
-    feedback.push('Measurement accepted within the configured tolerance.');
+    feedback.push('Measurement accuracy is correct: the interval is within the configured tolerance.');
   } else if (!caliperWithinTolerance) {
-    feedback.push('The caliper-derived interval is outside the accepted tolerance.');
+    feedback.push('Measurement accuracy is incorrect: the caliper-derived interval is outside the accepted tolerance.');
   } else {
-    feedback.push('The typed interval does not match the accepted value range.');
+    feedback.push('Measurement accuracy is incorrect: the typed interval does not match the accepted value range.');
   }
 
   let classificationCorrect: boolean | undefined;

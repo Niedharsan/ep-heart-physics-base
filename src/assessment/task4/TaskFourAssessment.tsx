@@ -1,7 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ClientModuleNav } from '../../clientPreview/ClientModuleNav';
 import type { AssessmentView } from '../assessmentView';
+import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
+import {
+  buildAssessmentHref,
+  useAssessmentSessionController,
+} from '../sessionController';
+import type { SharedAssessmentMode } from '../sessionController';
+import {
+  clearAssessmentWorkingState,
+  loadAssessmentDraft,
+  loadAssessmentResult,
+  saveAssessmentDraft,
+  saveAssessmentResult,
+} from '../workingState';
 import { taskFourCases } from './catalog';
 import type { TaskFourCaseId } from './catalog';
 import { taskFourClinicalRubric } from './clinicalRubric';
@@ -39,10 +52,12 @@ export function createEmptyTaskFourResponses(): TaskFourResponses {
   };
 }
 
-function taskHref(task: 'interval' | '1' | '2' | '3' | '4' | '5', instructor: boolean): string {
-  const taskQuery = task === 'interval' ? '' : `&task=${task}`;
-  const viewQuery = instructor ? '&view=instructor' : '';
-  return `/?mode=assessment${taskQuery}${viewQuery}`;
+function taskHref(
+  task: 'interval' | '1' | '2' | '3' | '4' | '5',
+  instructor: boolean,
+  assessmentMode: SharedAssessmentMode,
+): string {
+  return buildAssessmentHref(task, instructor, assessmentMode);
 }
 
 function attemptIdentifier(): string {
@@ -66,13 +81,28 @@ export function TaskFourScoreBar({ result }: { readonly result: TaskFourScore })
   );
 }
 
-export function TaskFourAssessment({ assessmentView }: { readonly assessmentView: AssessmentView }) {
+export function TaskFourAssessment({
+  assessmentView,
+  assessmentMode = 'practice',
+}: {
+  readonly assessmentView: AssessmentView;
+  readonly assessmentMode?: SharedAssessmentMode;
+}) {
   const instructor = assessmentView === 'instructor';
-  const assessmentMode = typeof window === 'undefined'
-    ? 'practice'
-    : new URLSearchParams(window.location.search).get('assessmentMode') ?? 'practice';
-  const [responses, setResponses] = useState<TaskFourResponses>(createEmptyTaskFourResponses);
-  const [result, setResult] = useState<TaskFourScore | null>(null);
+  const [responses, setResponses] = useState<TaskFourResponses>(() => (
+    loadAssessmentDraft(assessmentMode, '4', createEmptyTaskFourResponses())
+  ));
+  const [result, setResult] = useState<TaskFourScore | null>(() => (
+    loadAssessmentResult<TaskFourScore>(assessmentMode, '4')
+  ));
+  useEffect(() => {
+    saveAssessmentDraft(assessmentMode, '4', responses);
+  }, [assessmentMode, responses]);
+
+  useEffect(() => {
+    saveAssessmentResult(assessmentMode, '4', result);
+  }, [assessmentMode, result]);
+
   const traceView = instructor || (assessmentMode === 'practice' && result !== null)
     ? 'instructor'
     : 'student';
@@ -97,12 +127,27 @@ export function TaskFourAssessment({ assessmentView }: { readonly assessmentView
   };
 
   const resetAnswers = (): void => {
+    clearAssessmentWorkingState(assessmentMode, '4');
     setResponses(createEmptyTaskFourResponses());
     setResult(null);
     setLatestAttemptId(null);
     setFeedbackNotes('');
     setCopyStatus('Task 4 answers reset. Saved attempt history was kept.');
   };
+
+  const session = useAssessmentSessionController({
+    mode: assessmentMode,
+    task: '4',
+    onStart: () => {
+      clearAssessmentWorkingState(assessmentMode, '4');
+      setResponses(createEmptyTaskFourResponses());
+      setResult(null);
+      setLatestAttemptId(null);
+      setFeedbackNotes('');
+      setCopyStatus('');
+    },
+    onSubmit: submit,
+  });
 
   const copyFeedbackPackage = async (): Promise<void> => {
     if (!result || !latestAttemptId) {
@@ -132,7 +177,8 @@ export function TaskFourAssessment({ assessmentView }: { readonly assessmentView
   const feedback = result ? scoreFeedback(result) : [];
 
   return (
-    <main className="assessment-shell task-four-shell">
+    <AssessmentSessionBoundary controller={session}>
+      <main className="assessment-shell task-four-shell">
       <ClientModuleNav current="assessment" />
 
       <header className="assessment-header">
@@ -150,24 +196,24 @@ export function TaskFourAssessment({ assessmentView }: { readonly assessmentView
       <div className="assessment-view-switch" aria-label="Task 4 preview view">
         {instructor ? (
           <>
-            <a href={taskHref('4', false)}>Student preview</a>
+            <a href={taskHref('4', false, assessmentMode)}>Student preview</a>
             <span className="active" aria-current="page">Instructor preview</span>
           </>
         ) : (
           <>
             <span className="active" aria-current="page">Student preview</span>
-            <a href={taskHref('4', true)}>Instructor preview</a>
+            <a href={taskHref('4', true, assessmentMode)}>Instructor preview</a>
           </>
         )}
       </div>
 
       <nav className="assessment-task-nav" aria-label="Assessment sections">
-        <a href={taskHref('interval', instructor)}>Interval trainer</a>
-        <a href={taskHref('1', instructor)}>Task 1 · Basic EP study</a>
-        <a href={taskHref('2', instructor)}>Task 2 · Sinus node, refractoriness & AV block</a>
-        <a href={taskHref('3', instructor)}>Task 3 · Tachycardia & AH change</a>
-        <a className="active" href={taskHref('4', instructor)}>Task 4 · Intracardiac manoeuvres</a>
-        <a href={taskHref('5', instructor)}>Task 5 · VT & para-Hisian pacing</a>
+        <a href={taskHref('interval', instructor, assessmentMode)}>Interval trainer</a>
+        <a href={taskHref('1', instructor, assessmentMode)}>Task 1 · Basic EP study</a>
+        <a href={taskHref('2', instructor, assessmentMode)}>Task 2 · Sinus node, refractoriness & AV block</a>
+        <a href={taskHref('3', instructor, assessmentMode)}>Task 3 · Tachycardia & AH change</a>
+        <a className="active" href={taskHref('4', instructor, assessmentMode)}>Task 4 · Intracardiac manoeuvres</a>
+        <a href={taskHref('5', instructor, assessmentMode)}>Task 5 · VT & para-Hisian pacing</a>
       </nav>
 
       <div className="prototype-warning">
@@ -222,7 +268,9 @@ export function TaskFourAssessment({ assessmentView }: { readonly assessmentView
 
       <footer className="assessment-footer task-four-footer">
         <div>
-          <button className="assessment-primary" onClick={submit}>Mark and save Task 4</button>
+          <button className="assessment-primary" onClick={() => session.submit(Date.now())}>
+            {assessmentMode === 'practice' ? 'Mark and save Task 4' : 'Submit Task 4'}
+          </button>
           <button onClick={resetAnswers}>Reset answers</button>
         </div>
         <span>{attempts.length} local Task 4 attempt{attempts.length === 1 ? '' : 's'}</span>
@@ -268,6 +316,7 @@ export function TaskFourAssessment({ assessmentView }: { readonly assessmentView
           {copyStatus && <p className="copy-status">{copyStatus}</p>}
         </aside>
       </section>
-    </main>
+      </main>
+    </AssessmentSessionBoundary>
   );
 }

@@ -1,7 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ClientModuleNav } from '../../clientPreview/ClientModuleNav';
 import type { AssessmentView } from '../assessmentView';
+import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
+import {
+  buildAssessmentHref,
+  useAssessmentSessionController,
+} from '../sessionController';
+import type { AssessmentSubmitReason, SharedAssessmentMode } from '../sessionController';
+import {
+  clearAssessmentWorkingState,
+  loadAssessmentDraft,
+  saveAssessmentDraft,
+} from '../workingState';
 import { EgmCaliperCanvas } from '../EgmCaliperCanvas';
 import { markIntervalMeasurement } from '../marking';
 import type { CaliperPlacement, IntervalId, IntervalMarkingResult } from '../types';
@@ -31,6 +42,22 @@ import type { StoredTaskOneAttempt } from './store';
 
 interface TaskOneAssessmentProps {
   readonly assessmentView: AssessmentView;
+  readonly assessmentMode?: SharedAssessmentMode;
+}
+
+interface TaskOneDraft {
+  readonly placements: CatheterPlacements;
+  readonly catheterScore: SectionScore | null;
+  readonly csAnswer: CsOneTwoPosition;
+  readonly csScore: SectionScore | null;
+  readonly selectedMeasurementId: IntervalId;
+  readonly calipers: CaliperPlacement;
+  readonly reportedValue: string;
+  readonly measurementResults: Readonly<Partial<Record<IntervalId, IntervalMarkingResult>>>;
+  readonly measurementCompletion: MeasurementCompletion;
+  readonly activationClassification: ActivationClassification;
+  readonly activationExplanation: string;
+  readonly activationScore: SectionScore | null;
 }
 
 const initialCalipers: CaliperPlacement = Object.freeze({
@@ -54,8 +81,14 @@ function taskOneMeasurementFeedback(result: IntervalMarkingResult): readonly str
   ));
 }
 
-export function TaskOneAssessment({ assessmentView }: TaskOneAssessmentProps) {
+export function TaskOneAssessment({
+  assessmentView,
+  assessmentMode = 'practice',
+}: TaskOneAssessmentProps) {
   const instructorView = assessmentView === 'instructor';
+  const initialDraft = useMemo(() => (
+    loadAssessmentDraft<Partial<TaskOneDraft>>(assessmentMode, '1', {})
+  ), [assessmentMode]);
   const scenario = useMemo(() => createSinusEgmScenario({
     cycleLengthMs: 700,
     ahMs: 80,
@@ -65,21 +98,53 @@ export function TaskOneAssessment({ assessmentView }: TaskOneAssessmentProps) {
   }), []);
 
   const [selectedCatheterId, setSelectedCatheterId] = useState<CatheterId>('hra');
-  const [placements, setPlacements] = useState<CatheterPlacements>({});
-  const [catheterScore, setCatheterScore] = useState<SectionScore | null>(null);
-  const [csAnswer, setCsAnswer] = useState<CsOneTwoPosition>('');
-  const [csScore, setCsScore] = useState<SectionScore | null>(null);
-  const [selectedMeasurementId, setSelectedMeasurementId] = useState<IntervalId>('PA');
-  const [calipers, setCalipers] = useState<CaliperPlacement>(initialCalipers);
-  const [reportedValue, setReportedValue] = useState('');
-  const [measurementResults, setMeasurementResults] = useState<Readonly<Partial<Record<IntervalId, IntervalMarkingResult>>>>({});
-  const [measurementCompletion, setMeasurementCompletion] = useState<MeasurementCompletion>({});
+  const [placements, setPlacements] = useState<CatheterPlacements>(initialDraft.placements ?? {});
+  const [catheterScore, setCatheterScore] = useState<SectionScore | null>(initialDraft.catheterScore ?? null);
+  const [csAnswer, setCsAnswer] = useState<CsOneTwoPosition>(initialDraft.csAnswer ?? '');
+  const [csScore, setCsScore] = useState<SectionScore | null>(initialDraft.csScore ?? null);
+  const [selectedMeasurementId, setSelectedMeasurementId] = useState<IntervalId>(initialDraft.selectedMeasurementId ?? 'PA');
+  const [calipers, setCalipers] = useState<CaliperPlacement>(initialDraft.calipers ?? initialCalipers);
+  const [reportedValue, setReportedValue] = useState(initialDraft.reportedValue ?? '');
+  const [measurementResults, setMeasurementResults] = useState<Readonly<Partial<Record<IntervalId, IntervalMarkingResult>>>>(initialDraft.measurementResults ?? {});
+  const [measurementCompletion, setMeasurementCompletion] = useState<MeasurementCompletion>(initialDraft.measurementCompletion ?? {});
   const [measurementMessage, setMeasurementMessage] = useState('');
-  const [activationClassification, setActivationClassification] = useState<ActivationClassification>('');
-  const [activationExplanation, setActivationExplanation] = useState('');
-  const [activationScore, setActivationScore] = useState<SectionScore | null>(null);
+  const [activationClassification, setActivationClassification] = useState<ActivationClassification>(initialDraft.activationClassification ?? '');
+  const [activationExplanation, setActivationExplanation] = useState(initialDraft.activationExplanation ?? '');
+  const [activationScore, setActivationScore] = useState<SectionScore | null>(initialDraft.activationScore ?? null);
   const [savedAttempts, setSavedAttempts] = useState<readonly StoredTaskOneAttempt[]>(() => loadTaskOneAttempts());
   const [saveMessage, setSaveMessage] = useState('');
+
+  useEffect(() => {
+    const draft: TaskOneDraft = {
+      placements,
+      catheterScore,
+      csAnswer,
+      csScore,
+      selectedMeasurementId,
+      calipers,
+      reportedValue,
+      measurementResults,
+      measurementCompletion,
+      activationClassification,
+      activationExplanation,
+      activationScore,
+    };
+    saveAssessmentDraft(assessmentMode, '1', draft);
+  }, [
+    activationClassification,
+    activationExplanation,
+    activationScore,
+    assessmentMode,
+    calipers,
+    catheterScore,
+    csAnswer,
+    csScore,
+    measurementCompletion,
+    measurementResults,
+    placements,
+    reportedValue,
+    selectedMeasurementId,
+  ]);
 
   const selectedMeasurement = scenario.intervals.find((item) => item.id === selectedMeasurementId);
   const measurementsScore = markNormalMeasurements(measurementCompletion);
@@ -118,23 +183,77 @@ export function TaskOneAssessment({ assessmentView }: TaskOneAssessmentProps) {
     setMeasurementMessage(accepted ? `${selectedMeasurementId} accepted.` : `${selectedMeasurementId} requires review.`);
   }
 
-  function saveAttempt(): void {
-    if (!allSectionsMarked || catheterScore === null || csScore === null || activationScore === null) {
+  function finaliseAttempt(force: boolean): void {
+    if (!force && (!allSectionsMarked || catheterScore === null || csScore === null || activationScore === null)) {
       setSaveMessage('Complete and mark every Task 1 section before saving.');
       return;
     }
-    const result = totalTaskOneScore(catheterScore, csScore, measurementsScore, activationScore);
+
+    const finalCatheterScore = catheterScore ?? markCatheterPlacements(placements);
+    const finalCsScore = csScore ?? markCsLabelling(csAnswer);
+    const finalCompletion = force
+      ? taskOneMeasurementIds.reduce<MeasurementCompletion>(
+          (current, id) => ({ ...current, [id]: measurementCompletion[id] ?? false }),
+          {},
+        )
+      : measurementCompletion;
+    const finalMeasurementsScore = markNormalMeasurements(finalCompletion);
+    const finalActivationScore = activationScore
+      ?? markActivationPattern(activationClassification, activationExplanation);
+    const result = totalTaskOneScore(
+      finalCatheterScore,
+      finalCsScore,
+      finalMeasurementsScore,
+      finalActivationScore,
+    );
+
+    setCatheterScore(finalCatheterScore);
+    setCsScore(finalCsScore);
+    setMeasurementCompletion(finalCompletion);
+    setActivationScore(finalActivationScore);
     const attempts = saveTaskOneAttempt({
       id: attemptId(),
       createdAtIso: new Date().toISOString(),
       result,
     });
     setSavedAttempts(attempts);
-    setSaveMessage(`Task 1 attempt saved locally: ${result.score}/15.`);
+    setSaveMessage(
+      force
+        ? `Task 1 submitted: ${result.score}/15. Incomplete answers were marked.`
+        : `Task 1 attempt saved locally: ${result.score}/15.`,
+    );
   }
 
+  function resetTimedTaskOne(): void {
+    clearAssessmentWorkingState(assessmentMode, '1');
+    setPlacements({});
+    setCatheterScore(null);
+    setCsAnswer('');
+    setCsScore(null);
+    setSelectedMeasurementId('PA');
+    setCalipers(initialCalipers);
+    setReportedValue('');
+    setMeasurementResults({});
+    setMeasurementCompletion({});
+    setMeasurementMessage('');
+    setActivationClassification('');
+    setActivationExplanation('');
+    setActivationScore(null);
+    setSaveMessage('');
+  }
+
+  const session = useAssessmentSessionController({
+    mode: assessmentMode,
+    task: '1',
+    onStart: resetTimedTaskOne,
+    onSubmit: (reason: AssessmentSubmitReason) => {
+      finaliseAttempt(assessmentMode !== 'practice' || reason === 'timeout');
+    },
+  });
+
   return (
-    <main className="assessment-shell task-one-shell">
+    <AssessmentSessionBoundary controller={session}>
+      <main className="assessment-shell task-one-shell">
       <ClientModuleNav current="assessment" />
       <header className="assessment-header">
         <div>
@@ -146,16 +265,16 @@ export function TaskOneAssessment({ assessmentView }: TaskOneAssessmentProps) {
       </header>
 
       <div className="assessment-view-switch">
-        {instructorView ? <a href="/?mode=assessment&task=1">Student preview</a> : <span className="active">Student preview</span>}
+        {instructorView ? <a href={buildAssessmentHref('1', false, assessmentMode)}>Student preview</a> : <span className="active">Student preview</span>}
         {instructorView && <span className="active">Instructor preview</span>}
       </div>
       <nav className="assessment-task-nav" aria-label="Assessment sections">
-        <a href={instructorView ? '/?mode=assessment&view=instructor' : '/?mode=assessment'}>Interval trainer</a>
-        <a className="active" href={instructorView ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
-        <a href={instructorView ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
-        <a href={instructorView ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
-        <a href={instructorView ? '/?mode=assessment&task=4&view=instructor' : '/?mode=assessment&task=4'}>Task 4 · Intracardiac manoeuvres</a>
-        <a href={instructorView ? '/?mode=assessment&task=5&view=instructor' : '/?mode=assessment&task=5'}>Task 5 · VT & para-Hisian pacing</a>
+        <a href={buildAssessmentHref('interval', instructorView, assessmentMode)}>Interval trainer</a>
+        <a className="active" href={buildAssessmentHref('1', instructorView, assessmentMode)}>Task 1 · Basic EP study</a>
+        <a href={buildAssessmentHref('2', instructorView, assessmentMode)}>Task 2 · Sinus node, refractoriness & AV block</a>
+        <a href={buildAssessmentHref('3', instructorView, assessmentMode)}>Task 3 · Tachycardia & AH change</a>
+        <a href={buildAssessmentHref('4', instructorView, assessmentMode)}>Task 4 · Intracardiac manoeuvres</a>
+        <a href={buildAssessmentHref('5', instructorView, assessmentMode)}>Task 5 · VT & para-Hisian pacing</a>
       </nav>
 
       <div className="prototype-warning">Synthetic educational assessment. The heart map is schematic and is not fluoroscopic or patient anatomy.</div>
@@ -234,12 +353,19 @@ export function TaskOneAssessment({ assessmentView }: TaskOneAssessmentProps) {
 
       <section className="task-one-final assessment-panel">
         <div><span className="assessment-panel-kicker">TASK 1 RESULT</span><h2>{currentTotal.score}/15 marks</h2><p className="prompt-copy">The attempt remains on this device only. Client review should confirm the educational workflow and expected terminology before release.</p></div>
-        <button className="assessment-primary" disabled={!allSectionsMarked} onClick={saveAttempt}>Save local attempt</button>
+        <button
+          className="assessment-primary"
+          disabled={assessmentMode === 'practice' && !allSectionsMarked}
+          onClick={() => session.submit(Date.now())}
+        >
+          {assessmentMode === 'practice' ? 'Save local attempt' : 'Submit Task 1'}
+        </button>
         {saveMessage && <p className="copy-status">{saveMessage}</p>}
         {savedAttempts.length > 0 && <div className="attempt-list">{savedAttempts.slice(0, 4).map((attempt) => <div key={attempt.id}><strong>Task 1</strong><span>{attempt.result.score}/15</span><time>{new Date(attempt.createdAtIso).toLocaleString()}</time></div>)}</div>}
       </section>
 
       <footer className="assessment-footer"><p>Task allocation: catheter positions 4, CS label 1, normal measurements 5, activation classification and explanation 5.</p><a href="/?mode=assessment#feedback">Open client feedback</a></footer>
-    </main>
+      </main>
+    </AssessmentSessionBoundary>
   );
 }

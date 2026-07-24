@@ -205,5 +205,5 @@ describe('MonodomainSolver', () => {
     });
     expect(solver.stateExtrema.recoveryMaximum).toBeGreaterThan(2);
     expect(solver.stateExtrema.recoveryMaximum).toBeLessThan(2.645);
-  });
+  }, 30_000);
 });

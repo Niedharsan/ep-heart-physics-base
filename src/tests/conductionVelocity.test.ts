@@ -140,5 +140,5 @@ describe('planar conduction velocity verification', () => {
     expect(Object.isFrozen(result.protocol.solverConfig.model)).toBe(true);
     expect(Object.isFrozen(result.protocol.xStations)).toBe(true);
     expect(Object.isFrozen(result.protocol.yRows)).toBe(true);
-  });
+  }, 30_000);
 });

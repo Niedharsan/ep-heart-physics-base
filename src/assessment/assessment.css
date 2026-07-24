@@ -434,3 +434,83 @@ textarea { min-height: 130px; width: 100%; resize: vertical; margin: 12px 0; }
     grid-template-columns: 1fr;
   }
 }
+
+/* Phase 8B1: shared Practice / Mock / Real Exam session framework */
+.shared-assessment-session-panel {
+  width: min(1180px, calc(100% - 32px));
+  margin: 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.shared-assessment-session-panel h2,
+.shared-assessment-session-panel p {
+  margin: 0;
+}
+
+.shared-assessment-session-panel p {
+  margin-top: 5px;
+  color: var(--muted, #8fa1aa);
+}
+
+.shared-assessment-session-timer {
+  display: flex;
+  min-width: 150px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.shared-assessment-session-timer strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  line-height: 1;
+  color: #d9f7ee;
+}
+
+.shared-assessment-session-timer.urgent strong {
+  color: #ffbd78;
+}
+
+.shared-assessment-session-timer span {
+  color: var(--muted, #8fa1aa);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.shared-assessment-session-content {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.shared-assessment-session-content:disabled {
+  opacity: 1;
+}
+
+.shared-assessment-session-content:disabled main {
+  filter: saturate(0.72);
+}
+
+.shared-assessment-session-content:disabled input,
+.shared-assessment-session-content:disabled select,
+.shared-assessment-session-content:disabled textarea,
+.shared-assessment-session-content:disabled button {
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .shared-assessment-session-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shared-assessment-session-timer {
+    align-items: flex-start;
+  }
+}

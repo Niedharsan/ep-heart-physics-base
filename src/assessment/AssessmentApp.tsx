@@ -200,11 +200,11 @@ export function AssessmentApp() {
     </section>
   ) : null;
 
-  if (selectedTask === '1') return <>{releaseControl}<TaskOneAssessment assessmentView={assessmentView} /></>;
-  if (selectedTask === '2') return <>{releaseControl}<TaskTwoAssessment assessmentView={assessmentView} /></>;
-  if (selectedTask === '3') return <>{releaseControl}<TaskThreeAssessment assessmentView={assessmentView} /></>;
-  if (selectedTask === '4') return <>{releaseControl}<TaskFourAssessment assessmentView={assessmentView} /></>;
-  if (selectedTask === '5') return <>{releaseControl}<TaskFiveAssessment assessmentView={assessmentView} /></>;
+  if (selectedTask === '1') return <>{releaseControl}<TaskOneAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
+  if (selectedTask === '2') return <>{releaseControl}<TaskTwoAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
+  if (selectedTask === '3') return <>{releaseControl}<TaskThreeAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
+  if (selectedTask === '4') return <>{releaseControl}<TaskFourAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
+  if (selectedTask === '5') return <>{releaseControl}<TaskFiveAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
   return <>{releaseControl}<IntervalAssessmentApp assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
 }
 

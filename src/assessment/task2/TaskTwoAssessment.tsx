@@ -1,6 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import type { AssessmentView } from '../assessmentView';
+import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
+import {
+  buildAssessmentHref,
+  useAssessmentSessionController,
+} from '../sessionController';
+import type { SharedAssessmentMode } from '../sessionController';
+import {
+  clearAssessmentWorkingState,
+  loadAssessmentDraft,
+  loadAssessmentResult,
+  saveAssessmentDraft,
+  saveAssessmentResult,
+} from '../workingState';
 import { taskTwoEcgCases, taskTwoEcgOptions, taskTwoPatternCases, taskTwoPatternOptions, wenckebachCase } from './catalog';
 import { markTaskTwo } from './marking';
 import type { PatternResponse, TaskTwoResponses, TaskTwoScore } from './marking';
@@ -20,15 +33,30 @@ const uid = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto
   ? crypto.randomUUID()
   : `${Date.now()}-${Math.random()}`;
 
-export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView: AssessmentView }) {
+export function TaskTwoAssessment({
+  assessmentView,
+  assessmentMode = 'practice',
+}: {
+  readonly assessmentView: AssessmentView;
+  readonly assessmentMode?: SharedAssessmentMode;
+}) {
   const instructor = assessmentView === 'instructor';
-  const assessmentMode = typeof window === 'undefined'
-    ? 'practice'
-    : new URLSearchParams(window.location.search).get('assessmentMode') ?? 'practice';
-  const [responses, setResponses] = useState<TaskTwoResponses>(emptyResponses);
-  const [result, setResult] = useState<TaskTwoScore | null>(null);
+  const [responses, setResponses] = useState<TaskTwoResponses>(() => (
+    loadAssessmentDraft(assessmentMode, '2', emptyResponses())
+  ));
+  const [result, setResult] = useState<TaskTwoScore | null>(() => (
+    loadAssessmentResult<TaskTwoScore>(assessmentMode, '2')
+  ));
   const [attempts, setAttempts] = useState(() => loadTaskTwoAttempts());
   const showTraceAnnotations = instructor || (assessmentMode === 'practice' && result !== null);
+  useEffect(() => {
+    saveAssessmentDraft(assessmentMode, '2', responses);
+  }, [assessmentMode, responses]);
+
+  useEffect(() => {
+    saveAssessmentResult(assessmentMode, '2', result);
+  }, [assessmentMode, result]);
+
   const updatePattern = (id: 'ARP' | 'ERP' | 'AVNRT', patch: Partial<PatternResponse>) => setResponses((current) => ({
     ...current,
     patterns: { ...current.patterns, [id]: { ...current.patterns[id], ...patch } },
@@ -39,8 +67,20 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
     setAttempts(saveTaskTwoAttempt({ id: uid(), createdAtIso: new Date().toISOString(), result: next }));
   };
 
+  const session = useAssessmentSessionController({
+    mode: assessmentMode,
+    task: '2',
+    onStart: () => {
+      clearAssessmentWorkingState(assessmentMode, '2');
+      setResponses(emptyResponses());
+      setResult(null);
+    },
+    onSubmit: submit,
+  });
+
   return (
-    <main className="assessment-shell">
+    <AssessmentSessionBoundary controller={session}>
+      <main className="assessment-shell">
       <header className="assessment-header">
         <div>
           <span className="assessment-eyebrow">TASK 2 · 22 MARKS</span>
@@ -50,12 +90,12 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
         <a className="assessment-back-link" href="/?mode=assessment">Interval trainer</a>
       </header>
       <nav className="assessment-task-nav" aria-label="Assessment sections">
-        <a href={instructor ? '/?mode=assessment&view=instructor' : '/?mode=assessment'}>Interval trainer</a>
-        <a href={instructor ? '/?mode=assessment&task=1&view=instructor' : '/?mode=assessment&task=1'}>Task 1 · Basic EP study</a>
-        <a className="active" href={instructor ? '/?mode=assessment&task=2&view=instructor' : '/?mode=assessment&task=2'}>Task 2 · Sinus node, refractoriness & AV block</a>
-        <a href={instructor ? '/?mode=assessment&task=3&view=instructor' : '/?mode=assessment&task=3'}>Task 3 · Tachycardia & AH change</a>
-        <a href={instructor ? '/?mode=assessment&task=4&view=instructor' : '/?mode=assessment&task=4'}>Task 4 · Intracardiac manoeuvres</a>
-        <a href={instructor ? '/?mode=assessment&task=5&view=instructor' : '/?mode=assessment&task=5'}>Task 5 · VT & para-Hisian pacing</a>
+        <a href={buildAssessmentHref('interval', instructor, assessmentMode)}>Interval trainer</a>
+        <a href={buildAssessmentHref('1', instructor, assessmentMode)}>Task 1 · Basic EP study</a>
+        <a className="active" href={buildAssessmentHref('2', instructor, assessmentMode)}>Task 2 · Sinus node, refractoriness & AV block</a>
+        <a href={buildAssessmentHref('3', instructor, assessmentMode)}>Task 3 · Tachycardia & AH change</a>
+        <a href={buildAssessmentHref('4', instructor, assessmentMode)}>Task 4 · Intracardiac manoeuvres</a>
+        <a href={buildAssessmentHref('5', instructor, assessmentMode)}>Task 5 · VT & para-Hisian pacing</a>
       </nav>
       {result && (
         <section className="task-two-scorebar" aria-live="polite">
@@ -153,7 +193,9 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
         </article>
       </section>
       <footer className="assessment-footer">
-        <button className="assessment-primary" onClick={submit}>Mark Task 2</button>
+        <button className="assessment-primary" onClick={() => session.submit(Date.now())}>
+          {assessmentMode === 'practice' ? 'Mark Task 2' : 'Submit Task 2'}
+        </button>
         <span>{attempts.length} local attempt{attempts.length === 1 ? '' : 's'}</span>
       </footer>
       {result && result.score < 22 && (
@@ -163,6 +205,7 @@ export function TaskTwoAssessment({ assessmentView }: { readonly assessmentView:
             .map((item, index) => <p key={`${item}-${index}`}>{item}</p>)}
         </section>
       )}
-    </main>
+      </main>
+    </AssessmentSessionBoundary>
   );
 }

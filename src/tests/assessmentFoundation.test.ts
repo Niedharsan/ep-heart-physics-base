@@ -32,7 +32,7 @@ describe('channel-aware assessment foundation', () => {
       beats: current.beats,
       calipers: {
         start: { timeMs: beat.atrialHisMs!, channelId: 'hra' },
-        end: { timeMs: beat.hisOnsetMs!, channelId: 'hbe' },
+        end: { timeMs: beat.hisOnsetMs!, channelId: 'hbe-distal' },
       },
       reportedValueMs: 80,
       classification: 'normal',
@@ -52,8 +52,8 @@ describe('channel-aware assessment foundation', () => {
       definition,
       beats: current.beats,
       calipers: {
-        start: { timeMs: beat.hisOnsetMs! + 30, channelId: 'hbe' },
-        end: { timeMs: beat.ventricularOnsetMs + 30, channelId: 'hbe' },
+        start: { timeMs: beat.hisOnsetMs! + 30, channelId: 'hbe-distal' },
+        end: { timeMs: beat.ventricularOnsetMs + 30, channelId: 'hbe-distal' },
       },
       reportedValueMs: 45,
       classification: 'normal',
@@ -72,8 +72,8 @@ describe('channel-aware assessment foundation', () => {
       definition,
       beats: current.beats,
       calipers: {
-        start: { timeMs: beat.hisOnsetMs!, channelId: 'hbe' },
-        end: { timeMs: beat.atrialHisMs!, channelId: 'hbe' },
+        start: { timeMs: beat.hisOnsetMs!, channelId: 'hbe-distal' },
+        end: { timeMs: beat.atrialHisMs!, channelId: 'hbe-distal' },
       },
       reportedValueMs: 80,
       classification: 'normal',

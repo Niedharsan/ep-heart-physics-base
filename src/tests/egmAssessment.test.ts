@@ -16,9 +16,21 @@ describe('deterministic EGM assessment', () => {
   it('generates deterministic multi-channel sinus traces and landmarks', () => {
     const first = sinusScenario();
     const second = sinusScenario();
-    expect(first.channels.map((channel) => channel.label)).toEqual(['II', 'HRA', 'HBE', 'RVA', 'CS 1-2']);
+    expect(first.channels.map((channel) => channel.label)).toEqual([
+      'II',
+      'V1',
+      'HRA',
+      'His d',
+      'His p',
+      'RVA',
+      'CS 9-10',
+      'CS 7-8',
+      'CS 5-6',
+      'CS 3-4',
+      'CS 1-2',
+    ]);
     expect(first.beats.length).toBeGreaterThanOrEqual(3);
-    expect([...first.waveformByChannel.hbe!]).toEqual([...second.waveformByChannel.hbe!]);
+    expect([...first.waveformByChannel['hbe-distal']!]).toEqual([...second.waveformByChannel['hbe-distal']!]);
     const beat = first.beats[0]!;
     expect(beat.hisOnsetMs! - beat.atrialHisMs!).toBe(80);
     expect(beat.ventricularOnsetMs - beat.hisOnsetMs!).toBe(45);
@@ -36,8 +48,8 @@ describe('deterministic EGM assessment', () => {
       definition,
       beats: scenario.beats,
       calipers: {
-        start: { timeMs: beat.atrialHisMs! + 2, channelId: 'hbe' },
-        end: { timeMs: beat.hisOnsetMs! - 1, channelId: 'hbe' },
+        start: { timeMs: beat.atrialHisMs! + 2, channelId: 'hbe-distal' },
+        end: { timeMs: beat.hisOnsetMs! - 1, channelId: 'hbe-distal' },
       },
       reportedValueMs: 79,
       classification: 'normal',
@@ -59,8 +71,8 @@ describe('deterministic EGM assessment', () => {
       definition,
       beats: scenario.beats,
       calipers: {
-        start: { timeMs: beat.atrialHisMs!, channelId: 'hbe' },
-        end: { timeMs: beat.ventricularOnsetMs, channelId: 'hbe' },
+        start: { timeMs: beat.atrialHisMs!, channelId: 'hbe-distal' },
+        end: { timeMs: beat.ventricularOnsetMs, channelId: 'hbe-distal' },
       },
       reportedValueMs: 80,
       classification: 'normal',
@@ -97,7 +109,7 @@ describe('deterministic EGM assessment', () => {
       beats: scenario.beats,
       calipers: {
         start: { timeMs: beat.ventricularOnsetMs, channelId: 'rva' },
-        end: { timeMs: beat.retrogradeAtrialOnsetMs!, channelId: 'hbe' },
+        end: { timeMs: beat.retrogradeAtrialOnsetMs!, channelId: 'hbe-distal' },
       },
       reportedValueMs: 90,
     });

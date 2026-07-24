@@ -53,7 +53,7 @@ describe('Task 5 assessment UI', () => {
     expect(markup).not.toContain('qrs-lbbb');
     expect(markup).not.toContain('qrs-rbbb');
     expect(markup).not.toContain('S-A 85 ms');
-    expect(markup).not.toContain('Retrograde sequence unchanged');
+    expect(markup).not.toContain('Distal-to-proximal sequence unchanged');
     expect(markup).not.toContain('instructor-answer-key');
   });
 
@@ -62,8 +62,9 @@ describe('Task 5 assessment UI', () => {
     expect(markup).toContain('instructor-answer-key');
     expect(markup).toContain('RVOT ventricular tachycardia');
     expect(markup).toContain('Left posterior fascicular VT');
-    expect(markup).toContain('His/RB + RV capture');
+    expect(markup).toContain('His/RB + ventricular capture');
     expect(markup).toContain('S-A 85 ms');
+    expect(markup).toContain('Distal-to-proximal sequence unchanged');
     expect(markup).toContain('/?mode=assessment&amp;task=4&amp;view=instructor');
   });
 

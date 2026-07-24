@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultAlievPanfilovParameters } from '../engine/models/AlievPanfilov';
+import { alievPanfilovPresets } from '../engine/models/AlievPanfilov';
 import { MonodomainSolver } from '../engine/numerics/MonodomainSolver';
 
 describe('reference numerical benchmark', () => {
@@ -8,8 +8,8 @@ describe('reference numerical benchmark', () => {
       grid: { width: 160, height: 104, dx: 1 },
       diffusion: 0.8,
       requestedDt: 0.08,
-      stepsPerFrame: 8,
-      model: defaultAlievPanfilovParameters,
+      statePrecision: 'float32',
+      model: alievPanfilovPresets.goktepeKuhl2009Figure4Generalized,
     });
     solver.applyStimulus({ x: 20, y: 52, radius: 4, amplitude: 1 });
 
@@ -21,5 +21,5 @@ describe('reference numerical benchmark', () => {
 
     console.info(`Reference CPU throughput: ${stepsPerSecond.toFixed(0)} solver steps/s on ${solver.tissue.width}x${solver.tissue.height}.`);
     expect(stepsPerSecond).toBeGreaterThan(0);
-  });
+  }, 30_000);
 });

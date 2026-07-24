@@ -7,28 +7,34 @@
  */
 export class PseudoEcg {
   private readonly weights: Float32Array;
-  private previousVoltage: Float32Array;
+  private previousVoltage: FloatingPointState;
 
-  constructor(width: number, height: number) {
+  constructor(
+    width: number,
+    height: number,
+    precision: StatePrecision,
+    electrode: ElectrodeDefinitionV1,
+  ) {
     const size = width * height;
     this.weights = new Float32Array(size);
-    this.previousVoltage = new Float32Array(size);
+    this.previousVoltage = createStateArray(precision, size);
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const nx = x / Math.max(width - 1, 1);
         const ny = y / Math.max(height - 1, 1);
-        this.weights[y * width + x] = (nx - 0.5) * 1.4 + (ny - 0.5) * 0.35;
+        this.weights[y * width + x] = (nx - 0.5) * electrode.normalizedXWeight
+          + (ny - 0.5) * electrode.normalizedYWeight;
       }
     }
   }
 
-  reset(voltage?: Float32Array): void {
+  reset(voltage?: FloatingPointState): void {
     this.previousVoltage.fill(0);
     if (voltage) this.previousVoltage.set(voltage);
   }
 
-  sample(voltage: Float32Array, mask: Uint8Array): number {
+  sample(voltage: FloatingPointState, mask: Uint8Array): number {
     if (voltage.length !== this.previousVoltage.length || mask.length !== voltage.length) {
       throw new Error('Pseudo-ECG arrays must have matching lengths.');
     }
@@ -47,3 +53,6 @@ export class PseudoEcg {
     return conductiveCount > 0 ? sum / conductiveCount : 0;
   }
 }
+import { createStateArray, type FloatingPointState } from '../numerics/FloatingPointState';
+import type { StatePrecision } from '../core/types';
+import type { ElectrodeDefinitionV1 } from '../definitions/types';

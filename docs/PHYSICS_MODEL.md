@@ -25,8 +25,11 @@ The model is embedded in a reduced monodomain-style equation
 \frac{du}{dt}=D\nabla^2u+f(u,v),\qquad \frac{dv}{dt}=g(u,v),
 \]
 
-using a five-point finite-difference Laplacian and centre-value substitution at
-domain and obstacle faces (a discrete no-flux treatment).
+using a five-point finite-difference Laplacian. The nodal outer boundary uses
+an even reflected ghost node (`u[-1]=u[1]`) to impose homogeneous Neumann data;
+a face adjacent to a non-conductive obstacle substitutes the conductive centre
+value. These are distinct discrete no-flux treatments for the documented nodal
+domain and the cell mask, respectively.
 
 Space and time are uncalibrated normalized model coordinates. `dx` is the
 distance between adjacent grid samples in model-length units, and `D` has the
@@ -60,6 +63,141 @@ does not mean generally or scientifically validated. A clipped value
 characterizes only the safeguard-modified implementation; it is not evidence
 about the unconstrained equation or physiological conduction.
 
+## Spatial and temporal refinement trends
+
+PR 3 holds the normalized physical domain, stimulus, probes, diffusion,
+parameters and activation threshold fixed while varying one discretization
+axis at a time. A physical nodal coordinate must satisfy
+
+\[
+i = x / \Delta x
+\]
+
+as an integer grid index, and a grid with `N` nodes has extent
+`(N - 1) × dx`. The planar stimulus is therefore specified as the physical
+strip `x ∈ [0,2]`, rather than as a fixed number of cells.
+
+For a three-level scalar sequence `q₀, q₁, q₂` with refinement ratio `r = 2`,
+the reported quantities are
+
+\[
+\rho=\frac{|q_2-q_1|}{|q_1-q_0|},\qquad
+p_{app}=\frac{\log(|q_1-q_0|/|q_2-q_1|)}{\log r},
+\]
+
+and the descriptive Richardson estimate
+
+\[
+q_R=q_2+\frac{q_2-q_1}{r^{p_{app}}-1}.
+\]
+
+These are observed quantity-of-interest refinement trends for propagation
+speed. They are not formal verification of the solver's theoretical order.
+Formal order evidence is now provided separately by Float64 analytic-diffusion
+and manufactured reaction–diffusion protocols. The rebaselined planar runs
+have zero clipping, denominator guards and non-finite states.
+
+The contraction, apparent-order, finest-pair-change, radial-deviation and
+activation-spread thresholds are project-defined regression/characterization
+gates for these protocols. They are not literature-derived physiological
+tolerances or validation criteria.
+
+## Radial grid-isotropy measurement
+
+The radial protocol initializes a centered physical circle and records nodal
+first-crossing activation times. At 32 equal polar angles, activation time at
+each continuous sample position is bilinearly interpolated from its four nodal
+activation times. Directional apparent speed between radii `r₁` and `r₂` is
+
+\[
+c_\theta=\frac{r_2-r_1}{T(r_2,\theta)-T(r_1,\theta)}.
+\]
+
+The signed relative speed error at angle `θ` is `(cθ-c̄)/c̄`. The implementation
+reports the complete angle-indexed errors, their RMS and their maximum absolute
+value. It likewise reports centred activation-time errors, RMS error and range
+at both radii. “Angular error” here means deviation from the sampled angular
+mean, not error against a known physical truth.
+
+The strengthened radial study repeats this measurement at
+`dx=[1,0.5,0.25]` with fixed `dt=0.005`, using both a node-centred stimulus and
+a diagonally half-cell-shifted stimulus for each grid. Fractional stimulus
+centres are valid because the circular stimulus operator evaluates geometric
+distance to each grid node. The coarse cases exceed the retained outer-spread
+characterization gate; their results remain reportable. All six cases complete
+without safeguard activation, but that fact alone does not establish equation
+verification, physiological calibration or general scientific validity.
+
+Planar activation-threshold sensitivity is measured separately at dimensionless
+thresholds `[0.3,0.5,0.7]` on the finest reference discretization. These values
+probe the numerical measurement definition and are not physiological voltage
+thresholds.
+
+## Paired-stimulus propagated-capture characterization
+
+The strengthened PR 4 protocol adds a rectangular monophasic source to the
+voltage equation:
+
+\[
+\frac{du}{dt}=D\nabla^2u+f(u,v)+I_{stim}(x,t).
+\]
+
+Inside the full-height strip `x ∈ [0,2]`, the square pulse has dimensionless
+current amplitude 5 for duration 0.20 model-time unit; elsewhere and outside
+the endpoint-exclusive pulse interval it is zero. Its integrated numerical
+strength is 1 dimensionless-voltage unit. These are chosen protocol values,
+not calibrated electrode strength or a literature-derived strength-duration
+pair. Unlike the superseded operator, the pulse does not directly assign
+voltage.
+
+Three S1 pulses are applied at a configurable basic cycle length, default 40,
+before S2. The coupling interval is measured from the final S1 onset to the S2
+onset. Three pulses are a minimal conditioning train and do not demonstrate a
+periodic steady state.
+
+The verification protocol instead observes the rising `u=0.5` crossing at
+nine unforced probes: physical stations `x=[6,12,18]` and transverse rows
+`y=[3,6,9]`. Each probe must first record its S1 rising crossing and subsequent
+falling crossing. An S2 activation is only the next rising crossing after both
+S2 and that falling crossing. A trial is classified as propagated capture only
+when all nine S2 crossings exist, each station's transverse spread is no more
+than one timestep, and station-mean activation times are strictly ordered
+downstream. This guards against confusing forced local excitation, partial
+propagation, or a residual S1 wave with S2 capture.
+
+For the fixed `dx=0.5`, `dt=0.02` protocol, every coupling interval from 20 to
+22 is evaluated at one-timestep resolution. A cached integer-step bisection
+must return the same boundary as this 101-trial exhaustive reference. The full
+outcome sequence is retained even if it is nonmonotone. A matched no-S2 control
+must show the final S1 rise and fall at every probe and no subsequent rising
+crossing.
+
+All times and distances remain normalized model units. The output is a
+normalized paired-stimulus propagated-capture transition and implementation
+characterization. It is not a physiological or effective refractory period.
+The sourced-preset result has zero clipping, which does not alter that claim
+boundary.
+
+## Reference precision and formal numerical verification
+
+The runtime state-storage mode is explicit: browser scenarios use
+`statePrecision='float32'`, while formal verification uses
+`statePrecision='float64'`. JavaScript arithmetic remains IEEE-754 binary64 in
+both modes; Float64 is a higher-precision state-storage reference, not
+arbitrary precision or an independent solver implementation.
+
+The pure-diffusion check uses
+`u=0.4+0.1 exp(-2π²Dt) cos(πx)cos(πy)` on `[0,1]²`, whose normal derivative is
+zero on every outer face. Verification-only source arrays cancel the local
+reaction at each explicit step. A separate manufactured problem uses
+`u=0.4+0.1 exp(-t)cos(πx)cos(πy)` and
+`v=0.1+0.02 exp(-t)cos(πx)cos(πy)` with forcing obtained by substituting those
+fields into the implemented reaction–diffusion equations. Its spatial study
+holds `dt` proportional to `dx²`; its spatially constant temporal study removes
+spatial truncation error. Analysis always returns the measured errors and
+orders, including divergent or oscillatory sequences. A separate acceptance
+layer applies CI gates.
+
 ## Variant and provenance
 
 Aliev and Panfilov introduced the two-variable lineage in 1996:
@@ -76,25 +214,26 @@ generalized structure appears, for example, in:
   electrophysiology: a novel finite element approach*, International Journal
   for Numerical Methods in Engineering, 2009,
   <https://doi.org/10.1002/nme.2571>.
-That source supports the equation family, not the complete parameter tuple in
-this project. The current defaults mix values seen in different generalized
-examples. No primary source was located for the exact six-value combination.
+The active default is now the complete generalized Figure 4 preset from that
+source. A separately named classic preset uses `a=b=0.15`, reducing the
+generalized recovery equation to the original single-threshold form.
 
 | Parameter | Meaning | Current value | Source | Status | Notes |
 |---|---|---:|---|---|---|
 | `a` | excitation threshold in the fast cubic | 0.05 | Göktepe & Kuhl 2009 | exact value/role in cited generalized preset | not the original 1996 threshold preset |
 | `b` | recovery-nullcline shift | 0.15 | Göktepe & Kuhl 2009 | exact value/role in cited generalized preset | separate `b` is a later generalization |
 | `k` | fast reaction scale | 8 | Aliev & Panfilov 1996; Göktepe & Kuhl 2009 | exact published value | value overlap does not validate this tuple |
-| `epsilon` | baseline recovery rate \(\epsilon_0\) | 0.01 | no exact source located for this project tuple | adapted/unverified | the cited generalized preset uses 0.002 |
+| `epsilon` | baseline recovery rate \(\epsilon_0\) | 0.002 | Göktepe & Kuhl 2009 | exact value in cited generalized preset | dimensionless |
 | `mu1` | state-dependent recovery numerator scale | 0.2 | Aliev & Panfilov 1996; Göktepe & Kuhl 2009 | exact published value | dimensionless |
 | `mu2` | recovery denominator offset | 0.3 | Aliev & Panfilov 1996; Göktepe & Kuhl 2009 | exact published value | provides margin above the supported voltage floor |
 
-**Complete default tuple:** Current project configuration; physiological and
-numerical calibration not yet established.
+**Complete default tuple:** `goktepeKuhl2009Figure4Generalized`. The immutable
+`alievPanfilov1996Classic` alternative is also exposed. Source consistency is
+not physiological calibration.
 
 The optional voltage/time mappings reported with the original canine
-calibration must not be applied to this hybrid project tuple. Simulation time
-is therefore not yet validated physiological milliseconds.
+calibration must not be applied to the generalized preset. Simulation time is
+therefore not validated physiological milliseconds.
 
 ## Project-supported parameter domain
 
@@ -122,7 +261,7 @@ The reaction Jacobian at rest is
 J(0,0)=\begin{bmatrix}-ka&0\\ \epsilon k(b+1)&-\epsilon\end{bmatrix},
 \]
 
-whose default eigenvalues are `-0.4` and `-0.01`. A small positive
+whose default eigenvalues are `-0.4` and `-0.002`. A small positive
 subthreshold perturbation therefore initially decreases in `u` while `v`
 increases. Larger excitation can cross the fast threshold, rise, and recover;
 quantitative action-potential duration and refractory calibration remain
@@ -130,28 +269,27 @@ unestablished.
 
 ## Numerical safeguards and diagnostics
 
-The mathematical equations above do **not** include the following defensive
-modifications. Their unchanged values are named in `numericalSafeguards`:
+The mathematical equations above do **not** include the remaining defensive
+modifications named in `numericalSafeguards`:
 
 - the recovery denominator uses `max(u + mu2, 1e-6)`;
 - voltage is clipped to `[-0.2, 1.5]` after each solver update;
-- recovery is clipped to `[0, 2]` after each solver update.
 
 Accepted parameters make the denominator floor unreachable for solver-produced
 states, but a direct out-of-domain model call can still activate it as a
 defensive failure mechanism. Activation is counted. Clipping changes the
 unconstrained PDE/ODE solution and must not be treated as evidence of numerical
-stability. The engine exposes copied diagnostics for denominator guarding, all
-four clip directions, and non-finite state detection. Reset clears them
+stability. The former unsourced recovery clamp `[0,2]` was removed because the
+positive recovery nullcline reaches `2.645` for the active preset and finite
+unconstrained trajectories exceed 2. The engine exposes copied diagnostics,
+including compatibility recovery-clip counters that now remain zero, plus
+proposed-state extrema and non-finite detection. Reset clears them
 deterministically. In development, the worker warns once per initialization or
 reset if clipping occurs.
 
-The deterministic default focal-scenario regression records 99,714 recovery
-upper clips over its first 500 solver steps (with zero denominator guards,
-voltage clips, recovery-low clips, or non-finite states). This is an audit
-baseline for the unchanged current behavior, not a validation target; later
-equation/parameter/timestep review must determine its cause before interpreting
-the bounded trajectory scientifically.
+The sourced-preset default focal scenario completes its first 500 steps with
+zero denominator guards, clips and non-finite states. Its finite recovery range
+extends above 2 and is recorded rather than silently altered.
 
 ## Limitations
 

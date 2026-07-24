@@ -62,11 +62,28 @@ function validateParameters(parameters: ModelParameters): void {
   }
 }
 
-export const defaultAlievPanfilovParameters: ModelParameters = Object.freeze({
+const goktepeKuhl2009Figure4Generalized: ModelParameters = Object.freeze({
   a: 0.05,
   b: 0.15,
   k: 8,
-  epsilon: 0.01,
+  epsilon: 0.002,
   mu1: 0.2,
   mu2: 0.3,
 });
+
+const alievPanfilov1996Classic: ModelParameters = Object.freeze({
+  a: 0.15,
+  b: 0.15,
+  k: 8,
+  epsilon: 0.002,
+  mu1: 0.2,
+  mu2: 0.3,
+});
+
+export const alievPanfilovPresets = Object.freeze({
+  goktepeKuhl2009Figure4Generalized,
+  alievPanfilov1996Classic,
+});
+
+/** @deprecated Use a named entry from alievPanfilovPresets. */
+export const defaultAlievPanfilovParameters = goktepeKuhl2009Figure4Generalized;

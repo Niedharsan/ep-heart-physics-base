@@ -11,3 +11,6 @@ export * from './waveformValidation';
 export * from './acquisitionContracts';
 export * from './acquisitionProcessing';
 export * from './acquisitionValidation';
+export * from './renderingContracts';
+export * from './renderingEngine';
+export * from './renderingValidation';

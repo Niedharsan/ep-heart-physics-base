@@ -8,3 +8,6 @@ export * from './validation';
 export * from './waveformContracts';
 export * from './waveformSynthesis';
 export * from './waveformValidation';
+export * from './acquisitionContracts';
+export * from './acquisitionProcessing';
+export * from './acquisitionValidation';

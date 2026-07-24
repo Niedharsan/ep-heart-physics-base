@@ -60,12 +60,12 @@ export function mapVoltageToRgba(
     const distance = Math.abs(normalized - centre);
     const core = 1 - smoothstep(width * 0.15, width, distance);
     const halo = 1 - smoothstep(width, width * 2.8, distance);
-    const plateau = smoothstep(0.72, 1, normalized) * 0.08;
+    const plateau = smoothstep(0.68, 0.96, normalized);
 
     return [
-      scaleChannel(0.015 + core * 0.70 + halo * 0.04 + plateau * 0.08, brightness),
-      scaleChannel(0.035 + core * 0.94 + halo * 0.44 + plateau * 0.12, brightness),
-      scaleChannel(0.090 + core * 0.98 + halo * 0.84 + plateau * 0.28, brightness),
+      scaleChannel(0.035 + core * 0.70 + halo * 0.05 + plateau * 0.70, brightness),
+      scaleChannel(0.090 + core * 0.90 + halo * 0.40 + plateau * 0.26, brightness),
+      scaleChannel(0.160 + core * 0.84 + halo * 0.72 + plateau * 0.08, brightness),
       255,
     ];
   }

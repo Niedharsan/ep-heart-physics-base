@@ -19,7 +19,52 @@ interface VoltageCanvasProps {
   readonly brightness: number;
   readonly frontWidth: number;
   readonly pacingSites: readonly PacingSiteMarker[];
+  readonly pacingSitesPulsing: boolean;
   readonly onPoint: (x: number, y: number) => void;
+}
+
+function resizeCanvas(canvas: HTMLCanvasElement): readonly [CanvasRenderingContext2D, number] | null {
+  const cssWidth = Math.max(1, canvas.clientWidth);
+  const cssHeight = Math.max(1, canvas.clientHeight);
+  const devicePixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  const targetWidth = Math.round(cssWidth * devicePixelRatio);
+  const targetHeight = Math.round(cssHeight * devicePixelRatio);
+
+  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+  }
+
+  const context = canvas.getContext('2d');
+  return context ? [context, devicePixelRatio] as const : null;
+}
+
+function drawInitializingField(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+): void {
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#071823');
+  gradient.addColorStop(0.55, '#0a2230');
+  gradient.addColorStop(1, '#06131d');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, width, height);
+
+  context.strokeStyle = 'rgba(132, 181, 192, 0.08)';
+  context.lineWidth = 1;
+  for (let x = 0; x <= width; x += width / 8) {
+    context.beginPath();
+    context.moveTo(x, 0);
+    context.lineTo(x, height);
+    context.stroke();
+  }
+  for (let y = 0; y <= height; y += height / 6) {
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(width, y);
+    context.stroke();
+  }
 }
 
 export function VoltageCanvas({
@@ -30,6 +75,7 @@ export function VoltageCanvas({
   brightness,
   frontWidth,
   pacingSites,
+  pacingSitesPulsing,
   onPoint,
 }: VoltageCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,21 +85,16 @@ export function VoltageCanvas({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !snapshot) return;
+    if (!canvas) return;
 
-    const cssWidth = Math.max(1, canvas.clientWidth);
-    const cssHeight = Math.max(1, canvas.clientHeight);
-    const devicePixelRatio = Math.max(1, window.devicePixelRatio || 1);
-    const targetWidth = Math.round(cssWidth * devicePixelRatio);
-    const targetHeight = Math.round(cssHeight * devicePixelRatio);
+    const resized = resizeCanvas(canvas);
+    if (!resized) return;
+    const [context, devicePixelRatio] = resized;
 
-    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
+    if (!snapshot) {
+      drawInitializingField(context, canvas.width, canvas.height);
+      return;
     }
-
-    const context = canvas.getContext('2d');
-    if (!context) return;
 
     const image = context.createImageData(snapshot.width, snapshot.height);
     for (let index = 0; index < snapshot.voltage.length; index += 1) {
@@ -86,7 +127,7 @@ export function VoltageCanvas({
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#03070d';
+    context.fillStyle = '#07131d';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(buffer, 0, 0, canvas.width, canvas.height);
 
@@ -110,23 +151,42 @@ export function VoltageCanvas({
     pacingSites.forEach((site, index) => {
       const markerX = (site.x / Math.max(snapshot.width - 1, 1)) * canvas.width;
       const markerY = (site.y / Math.max(snapshot.height - 1, 1)) * canvas.height;
-      const markerRadius = 8 * devicePixelRatio;
+      const markerRadius = 12 * devicePixelRatio;
+
+      if (pacingSitesPulsing) {
+        context.beginPath();
+        context.arc(markerX, markerY, 23 * devicePixelRatio, 0, Math.PI * 2);
+        context.strokeStyle = 'rgba(255, 205, 105, 0.92)';
+        context.lineWidth = 3 * devicePixelRatio;
+        context.stroke();
+      }
 
       context.beginPath();
       context.arc(markerX, markerY, markerRadius, 0, Math.PI * 2);
-      context.fillStyle = 'rgba(2, 8, 13, 0.82)';
+      context.fillStyle = pacingSitesPulsing
+        ? 'rgba(45, 224, 154, 0.96)'
+        : 'rgba(2, 12, 18, 0.90)';
       context.fill();
-      context.strokeStyle = '#55edb1';
-      context.lineWidth = 2 * devicePixelRatio;
+      context.strokeStyle = pacingSitesPulsing ? '#fff2bd' : '#55edb1';
+      context.lineWidth = 2.5 * devicePixelRatio;
       context.stroke();
 
-      context.fillStyle = '#dffff2';
-      context.font = `700 ${10 * devicePixelRatio}px ui-sans-serif, system-ui`;
+      context.strokeStyle = 'rgba(218, 255, 242, 0.72)';
+      context.lineWidth = 1.2 * devicePixelRatio;
+      context.beginPath();
+      context.moveTo(markerX - 18 * devicePixelRatio, markerY);
+      context.lineTo(markerX + 18 * devicePixelRatio, markerY);
+      context.moveTo(markerX, markerY - 18 * devicePixelRatio);
+      context.lineTo(markerX, markerY + 18 * devicePixelRatio);
+      context.stroke();
+
+      context.fillStyle = pacingSitesPulsing ? '#04130d' : '#dffff2';
+      context.font = `800 ${12 * devicePixelRatio}px ui-sans-serif, system-ui`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
       context.fillText(String(index + 1), markerX, markerY);
     });
-  }, [snapshot, displayMode, showGrid, brightness, frontWidth, pacingSites]);
+  }, [snapshot, displayMode, showGrid, brightness, frontWidth, pacingSites, pacingSitesPulsing]);
 
   return (
     <canvas
@@ -147,7 +207,7 @@ export function VoltageCanvas({
         );
         onPoint(point.x, point.y);
       }}
-      aria-label="Cardiac tissue voltage field"
+      aria-label="Interactive cardiac tissue voltage field"
     />
   );
 }

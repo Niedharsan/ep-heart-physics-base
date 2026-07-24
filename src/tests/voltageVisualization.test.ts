@@ -21,6 +21,18 @@ describe('voltage visualization mapping', () => {
     }
   });
 
+  it('keeps resting tissue visibly blue instead of nearly black', () => {
+    const resting = mapVoltageToRgba(0, {
+      mode: 'wavefront',
+      brightness: 1,
+      frontWidth: 0.14,
+    });
+
+    expect(resting[2]).toBeGreaterThan(30);
+    expect(resting[2]).toBeGreaterThan(resting[1]!);
+    expect(resting[1]).toBeGreaterThan(resting[0]!);
+  });
+
   it('emphasizes the mid-voltage activation front', () => {
     const options = { mode: 'wavefront' as const, brightness: 1, frontWidth: 0.14 };
     const resting = mapVoltageToRgba(0, options);
@@ -30,6 +42,17 @@ describe('voltage visualization mapping', () => {
 
     expect(intensity(front)).toBeGreaterThan(intensity(resting));
     expect(intensity(front)).toBeGreaterThan(intensity(plateau));
+  });
+
+  it('shows high-voltage tissue as a warm plateau behind the front', () => {
+    const plateau = mapVoltageToRgba(1, {
+      mode: 'wavefront',
+      brightness: 1,
+      frontWidth: 0.14,
+    });
+
+    expect(plateau[0]).toBeGreaterThan(plateau[1]!);
+    expect(plateau[1]).toBeGreaterThan(plateau[2]!);
   });
 
   it('clamps voltage outside the supported display range', () => {

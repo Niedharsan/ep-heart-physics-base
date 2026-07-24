@@ -28,7 +28,7 @@ function biphasic(timeMs: number, pulse: Pulse): number {
   );
 }
 
-function surfaceQrs(timeMs: number, centerMs: number, amplitude = 1): number {
+function surfaceQrsII(timeMs: number, centerMs: number, amplitude = 1): number {
   return amplitude * (
     -0.24 * gaussian(timeMs, centerMs - 10, 5)
     + 1.0 * gaussian(timeMs, centerMs, 7)
@@ -36,11 +36,19 @@ function surfaceQrs(timeMs: number, centerMs: number, amplitude = 1): number {
   );
 }
 
+function surfaceQrsV1(timeMs: number, centerMs: number, amplitude = 1): number {
+  return amplitude * (
+    0.22 * gaussian(timeMs, centerMs - 11, 5)
+    - 0.92 * gaussian(timeMs, centerMs + 1, 8)
+    + 0.36 * gaussian(timeMs, centerMs + 18, 9)
+  );
+}
+
 function deterministicNoise(index: number, channelIndex: number): number {
   return (
     Math.sin(index * 0.173 + channelIndex * 1.37)
     + 0.45 * Math.sin(index * 0.071 + channelIndex * 0.63)
-  ) * 0.008;
+  ) * 0.006;
 }
 
 function createChannelSamples(
@@ -59,9 +67,15 @@ function createChannelSamples(
 
 const channels = Object.freeze([
   { id: 'surface-ii', label: 'II', kind: 'surface' },
+  { id: 'surface-v1', label: 'V1', kind: 'surface' },
   { id: 'hra', label: 'HRA', kind: 'intracardiac' },
-  { id: 'hbe', label: 'HBE', kind: 'intracardiac' },
+  { id: 'hbe-distal', label: 'His d', kind: 'intracardiac' },
+  { id: 'hbe-proximal', label: 'His p', kind: 'intracardiac' },
   { id: 'rva', label: 'RVA', kind: 'intracardiac' },
+  { id: 'cs-proximal', label: 'CS 9-10', kind: 'intracardiac' },
+  { id: 'cs-78', label: 'CS 7-8', kind: 'intracardiac' },
+  { id: 'cs-56', label: 'CS 5-6', kind: 'intracardiac' },
+  { id: 'cs-34', label: 'CS 3-4', kind: 'intracardiac' },
   { id: 'cs-distal', label: 'CS 1-2', kind: 'intracardiac' },
 ] satisfies readonly EgmChannelDefinition[]);
 
@@ -128,73 +142,97 @@ function sinusBeats(parameters: SinusScenarioParameters, durationMs: number): re
 }
 
 function sinusIntervals(parameters: SinusScenarioParameters): readonly IntervalDefinition[] {
+  const hisChannels = Object.freeze(['hbe-distal', 'hbe-proximal']);
   return Object.freeze([
     Object.freeze({
       id: 'PA',
       title: 'PA interval',
       startReference: Object.freeze({
         landmark: 'p-onset',
-        allowedChannelIds: Object.freeze(['surface-ii']),
+        allowedChannelIds: Object.freeze(['surface-ii', 'surface-v1']),
       }),
       endReference: Object.freeze({
         landmark: 'atrial-his',
-        allowedChannelIds: Object.freeze(['hbe']),
+        allowedChannelIds: hisChannels,
       }),
       expectedValueMs: parameters.prMs - parameters.ahMs - parameters.hvMs,
       measurementToleranceMs: parameters.measurementToleranceMs,
       landmarkToleranceMs: 12,
       normalRange: paNormalRange,
-      studentPrompt: 'Place the start handle at surface P-wave onset and the end handle at the atrial electrogram on the His channel.',
+      studentPrompt: 'Place the start handle at surface P-wave onset and the end handle at the atrial electrogram on a His channel.',
       referencePrompt: 'PA is measured from earliest atrial activation, usually surface P-wave onset, to atrial activation at the AV-node/His region.',
     }),
     Object.freeze({
       id: 'AH',
       title: 'AH interval',
-      startReference: Object.freeze({ landmark: 'atrial-his', allowedChannelIds: Object.freeze(['hbe']) }),
-      endReference: Object.freeze({ landmark: 'his-onset', allowedChannelIds: Object.freeze(['hbe']) }),
+      startReference: Object.freeze({ landmark: 'atrial-his', allowedChannelIds: hisChannels }),
+      endReference: Object.freeze({ landmark: 'his-onset', allowedChannelIds: hisChannels }),
       expectedValueMs: parameters.ahMs,
       measurementToleranceMs: parameters.measurementToleranceMs,
       landmarkToleranceMs: 12,
       normalRange: ahNormalRange,
-      studentPrompt: 'Place both calipers to measure the AH interval.',
+      studentPrompt: 'Measure from the atrial electrogram to the His electrogram on the same His channel.',
       referencePrompt: 'Measure from the intrinsic atrial deflection on the His channel to the earliest onset of the His electrogram.',
     }),
     Object.freeze({
       id: 'HV',
       title: 'HV interval',
-      startReference: Object.freeze({ landmark: 'his-onset', allowedChannelIds: Object.freeze(['hbe']) }),
-      endReference: Object.freeze({ landmark: 'ventricular-onset', allowedChannelIds: Object.freeze(['hbe']) }),
+      startReference: Object.freeze({ landmark: 'his-onset', allowedChannelIds: hisChannels }),
+      endReference: Object.freeze({
+        landmark: 'ventricular-onset',
+        allowedChannelIds: Object.freeze(['hbe-distal', 'hbe-proximal', 'surface-ii', 'surface-v1']),
+      }),
       expectedValueMs: parameters.hvMs,
       measurementToleranceMs: parameters.measurementToleranceMs,
       landmarkToleranceMs: 12,
       normalRange: hvNormalRange,
-      studentPrompt: 'Place both calipers to measure the HV interval.',
+      studentPrompt: 'Measure from the earliest His electrogram to the earliest ventricular activation.',
       referencePrompt: 'Measure from the earliest onset of the His electrogram to the earliest recorded ventricular activation.',
     }),
     Object.freeze({
       id: 'PR',
       title: 'PR interval',
-      startReference: Object.freeze({ landmark: 'p-onset', allowedChannelIds: Object.freeze(['surface-ii']) }),
-      endReference: Object.freeze({ landmark: 'ventricular-onset', allowedChannelIds: Object.freeze(['surface-ii']) }),
+      startReference: Object.freeze({
+        landmark: 'p-onset',
+        allowedChannelIds: Object.freeze(['surface-ii', 'surface-v1']),
+      }),
+      endReference: Object.freeze({
+        landmark: 'ventricular-onset',
+        allowedChannelIds: Object.freeze(['surface-ii', 'surface-v1']),
+      }),
       expectedValueMs: parameters.prMs,
       measurementToleranceMs: parameters.measurementToleranceMs,
       landmarkToleranceMs: 12,
-      studentPrompt: 'Place both calipers to measure the PR interval.',
+      studentPrompt: 'Measure from surface P-wave onset to surface QRS onset.',
       referencePrompt: 'Measure from surface P-wave onset to the earliest ventricular activation.',
     }),
     Object.freeze({
       id: 'RR',
       title: 'RR / cycle length',
-      startReference: Object.freeze({ landmark: 'ventricular-onset', allowedChannelIds: Object.freeze(['surface-ii']) }),
-      endReference: Object.freeze({ landmark: 'ventricular-onset', allowedChannelIds: Object.freeze(['surface-ii']) }),
+      startReference: Object.freeze({
+        landmark: 'ventricular-onset',
+        allowedChannelIds: Object.freeze(['surface-ii', 'surface-v1']),
+      }),
+      endReference: Object.freeze({
+        landmark: 'ventricular-onset',
+        allowedChannelIds: Object.freeze(['surface-ii', 'surface-v1']),
+      }),
       expectedValueMs: parameters.cycleLengthMs,
       measurementToleranceMs: parameters.measurementToleranceMs,
       landmarkToleranceMs: 12,
-      studentPrompt: 'Place both calipers to measure the RR / cycle length.',
+      studentPrompt: 'Measure between equivalent ventricular onsets in consecutive cycles.',
       referencePrompt: 'Measure between equivalent ventricular onsets in consecutive cycles.',
     }),
   ]);
 }
+
+const sinusCsOffsets: Readonly<Record<string, number>> = Object.freeze({
+  'cs-proximal': 18,
+  'cs-78': 22,
+  'cs-56': 26,
+  'cs-34': 30,
+  'cs-distal': 34,
+});
 
 function buildSinusWaveforms(
   durationMs: number,
@@ -215,29 +253,51 @@ function buildSinusWaveforms(
         switch (channel.id) {
           case 'surface-ii':
             value += 0.22 * gaussian(timeMs, p + 18, 18);
-            value += surfaceQrs(timeMs, v, 0.95);
+            value += surfaceQrsII(timeMs, v, 0.95);
             value += 0.12 * gaussian(timeMs, v + 210, 45);
             break;
-          case 'hra':
-            value += biphasic(timeMs, { centerMs: p + 12, amplitude: 0.74, widthMs: 7 });
-            value += 0.08 * surfaceQrs(timeMs, v, 1);
+          case 'surface-v1':
+            value += 0.12 * gaussian(timeMs, p + 16, 16);
+            value += surfaceQrsV1(timeMs, v, 0.88);
+            value -= 0.08 * gaussian(timeMs, v + 205, 42);
             break;
-          case 'hbe':
-            value += biphasic(timeMs, { centerMs: a, amplitude: 0.62, widthMs: 6 });
-            value += biphasic(timeMs, { centerMs: h, amplitude: 0.34, widthMs: 3.5, polarity: -1 });
-            value += biphasic(timeMs, { centerMs: v, amplitude: 0.88, widthMs: 8 });
+          case 'hra':
+            value += biphasic(timeMs, { centerMs: p + 12, amplitude: 0.76, widthMs: 7 });
+            value += 0.06 * surfaceQrsII(timeMs, v, 1);
+            break;
+          case 'hbe-distal':
+            value += biphasic(timeMs, { centerMs: a, amplitude: 0.64, widthMs: 6 });
+            value += biphasic(timeMs, { centerMs: h, amplitude: 0.36, widthMs: 3.5, polarity: -1 });
+            value += biphasic(timeMs, { centerMs: v, amplitude: 0.90, widthMs: 8 });
+            break;
+          case 'hbe-proximal':
+            value += biphasic(timeMs, { centerMs: a + 4, amplitude: 0.54, widthMs: 6.5 });
+            value += biphasic(timeMs, { centerMs: h + 2, amplitude: 0.28, widthMs: 3.8, polarity: -1 });
+            value += biphasic(timeMs, { centerMs: v + 2, amplitude: 0.70, widthMs: 8.5 });
             break;
           case 'rva':
             value += biphasic(timeMs, { centerMs: v + 6, amplitude: 1.02, widthMs: 8, polarity: -1 });
             break;
-          case 'cs-distal':
-            value += biphasic(timeMs, { centerMs: p + 28, amplitude: 0.58, widthMs: 7 });
-            value += biphasic(timeMs, { centerMs: v + 12, amplitude: 0.21, widthMs: 9 });
+          case 'cs-proximal':
+          case 'cs-78':
+          case 'cs-56':
+          case 'cs-34':
+          case 'cs-distal': {
+            const offset = sinusCsOffsets[channel.id];
+            value += biphasic(timeMs, {
+              centerMs: p + (offset ?? 26),
+              amplitude: 0.62 - channelIndex * 0.012,
+              widthMs: 7,
+            });
+            value += biphasic(timeMs, {
+              centerMs: v + 10 + channelIndex * 0.5,
+              amplitude: 0.16,
+              widthMs: 9,
+            });
             break;
-          default: {
-            const neverChannel: never = channel.id as never;
-            value += neverChannel;
           }
+          default:
+            break;
         }
       });
       return value;
@@ -254,7 +314,7 @@ export function createSinusEgmScenario(parameters: SinusScenarioParameters): Egm
   return Object.freeze({
     id: 'baseline-sinus-intervals',
     title: 'Baseline sinus conduction',
-    description: 'Synthetic educational EGM with surface ECG, HRA, His, RVA and distal CS channels.',
+    description: 'Synthetic educational EGM with two surface leads, paired His channels, RVA and a five-bipole coronary-sinus catheter.',
     mechanismLabel: 'Antegrade A → H → V activation',
     cycleLengthMs: parameters.cycleLengthMs,
     durationMs,
@@ -271,6 +331,14 @@ export interface RetrogradeScenarioParameters {
   readonly measurementToleranceMs: number;
 }
 
+const retrogradeCsOffsets: Readonly<Record<string, number>> = Object.freeze({
+  'cs-proximal': 2,
+  'cs-78': 6,
+  'cs-56': 10,
+  'cs-34': 14,
+  'cs-distal': 18,
+});
+
 export function createRetrogradeEgmScenario(parameters: RetrogradeScenarioParameters): EgmScenario {
   Object.entries(parameters).forEach(([name, value]) => {
     if (!Number.isFinite(value) || value <= 0) {
@@ -280,6 +348,7 @@ export function createRetrogradeEgmScenario(parameters: RetrogradeScenarioParame
   if (!(parameters.cycleLengthMs > parameters.vaMs + 180)) {
     throw new Error('Retrograde cycle length must exceed VA by at least 180 ms.');
   }
+
   const durationMs = Math.max(2400, parameters.cycleLengthMs * 4 + 300);
   const beats: EgmBeatLandmarks[] = [];
   for (
@@ -304,29 +373,47 @@ export function createRetrogradeEgmScenario(parameters: RetrogradeScenarioParame
         const h = beat.hisOnsetMs;
         const a = beat.retrogradeAtrialOnsetMs;
         if (h === undefined || a === undefined) return;
+
         switch (channel.id) {
           case 'surface-ii':
-            value += surfaceQrs(timeMs, v, 0.95);
+            value += surfaceQrsII(timeMs, v, 0.96);
             value += 0.16 * gaussian(timeMs, a + 16, 16);
+            break;
+          case 'surface-v1':
+            value += surfaceQrsV1(timeMs, v, 0.92);
+            value -= 0.11 * gaussian(timeMs, a + 18, 17);
             break;
           case 'hra':
             value += biphasic(timeMs, { centerMs: a + 8, amplitude: 0.64, widthMs: 7 });
             break;
-          case 'hbe':
-            value += biphasic(timeMs, { centerMs: v, amplitude: 0.83, widthMs: 8 });
-            value += biphasic(timeMs, { centerMs: h, amplitude: 0.32, widthMs: 3.5, polarity: -1 });
-            value += biphasic(timeMs, { centerMs: a, amplitude: 0.58, widthMs: 6 });
+          case 'hbe-distal':
+            value += biphasic(timeMs, { centerMs: v, amplitude: 0.84, widthMs: 8 });
+            value += biphasic(timeMs, { centerMs: h, amplitude: 0.34, widthMs: 3.5, polarity: -1 });
+            value += biphasic(timeMs, { centerMs: a, amplitude: 0.60, widthMs: 6 });
+            break;
+          case 'hbe-proximal':
+            value += biphasic(timeMs, { centerMs: v + 2, amplitude: 0.72, widthMs: 8 });
+            value += biphasic(timeMs, { centerMs: h + 2, amplitude: 0.28, widthMs: 3.8, polarity: -1 });
+            value += biphasic(timeMs, { centerMs: a + 2, amplitude: 0.54, widthMs: 6.5 });
             break;
           case 'rva':
             value += biphasic(timeMs, { centerMs: v, amplitude: 1.04, widthMs: 8, polarity: -1 });
             break;
-          case 'cs-distal':
-            value += biphasic(timeMs, { centerMs: a - 14, amplitude: 0.72, widthMs: 7 });
+          case 'cs-proximal':
+          case 'cs-78':
+          case 'cs-56':
+          case 'cs-34':
+          case 'cs-distal': {
+            const offset = retrogradeCsOffsets[channel.id];
+            value += biphasic(timeMs, {
+              centerMs: a + (offset ?? 10),
+              amplitude: 0.72 - channelIndex * 0.012,
+              widthMs: 7,
+            });
             break;
-          default: {
-            const neverChannel: never = channel.id as never;
-            value += neverChannel;
           }
+          default:
+            break;
         }
       });
       return value;
@@ -337,23 +424,35 @@ export function createRetrogradeEgmScenario(parameters: RetrogradeScenarioParame
     Object.freeze({
       id: 'VA',
       title: 'VA interval',
-      startReference: Object.freeze({ landmark: 'ventricular-onset', allowedChannelIds: Object.freeze(['rva']) }),
-      endReference: Object.freeze({ landmark: 'retrograde-atrial-onset', allowedChannelIds: Object.freeze(['hbe']) }),
+      startReference: Object.freeze({
+        landmark: 'ventricular-onset',
+        allowedChannelIds: Object.freeze(['rva', 'surface-ii', 'surface-v1']),
+      }),
+      endReference: Object.freeze({
+        landmark: 'retrograde-atrial-onset',
+        allowedChannelIds: Object.freeze(['hbe-distal', 'hbe-proximal', 'cs-proximal']),
+      }),
       expectedValueMs: parameters.vaMs,
       measurementToleranceMs: parameters.measurementToleranceMs,
       landmarkToleranceMs: 12,
-      studentPrompt: 'Place both calipers to measure the VA interval.',
+      studentPrompt: 'Measure from ventricular onset to the earliest retrograde atrial electrogram.',
       referencePrompt: 'Measure from the earliest ventricular onset to the earliest retrograde atrial onset.',
     }),
     Object.freeze({
       id: 'RR',
       title: 'RR / pacing cycle length',
-      startReference: Object.freeze({ landmark: 'ventricular-onset', allowedChannelIds: Object.freeze(['surface-ii']) }),
-      endReference: Object.freeze({ landmark: 'ventricular-onset', allowedChannelIds: Object.freeze(['surface-ii']) }),
+      startReference: Object.freeze({
+        landmark: 'ventricular-onset',
+        allowedChannelIds: Object.freeze(['surface-ii', 'surface-v1']),
+      }),
+      endReference: Object.freeze({
+        landmark: 'ventricular-onset',
+        allowedChannelIds: Object.freeze(['surface-ii', 'surface-v1']),
+      }),
       expectedValueMs: parameters.cycleLengthMs,
       measurementToleranceMs: parameters.measurementToleranceMs,
       landmarkToleranceMs: 12,
-      studentPrompt: 'Place both calipers to measure the paced RR / cycle length.',
+      studentPrompt: 'Measure the paced RR / cycle length.',
       referencePrompt: 'Measure between equivalent ventricular onsets in consecutive paced cycles.',
     }),
   ]);
@@ -361,7 +460,7 @@ export function createRetrogradeEgmScenario(parameters: RetrogradeScenarioParame
   return Object.freeze({
     id: 'retrograde-va-study',
     title: 'Retrograde VA study',
-    description: 'Synthetic ventricular-paced EGM for measuring retrograde VA conduction.',
+    description: 'Synthetic ventricular-paced EGM with two surface leads and a complete five-bipole coronary-sinus activation sequence.',
     mechanismLabel: 'Retrograde V → H → A activation',
     cycleLengthMs: parameters.cycleLengthMs,
     durationMs,

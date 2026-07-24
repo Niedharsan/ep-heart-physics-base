@@ -38,24 +38,34 @@ const WIDTH = 760;
 const LEFT = 48;
 const RIGHT = 742;
 const TOP = 54;
-const CHANNEL_GAP = 42;
+const CHANNEL_GAP = 38;
 
 const SHAPES: Readonly<Record<TaskFiveTraceEventKind, readonly (readonly [number, number])[]>> = Object.freeze({
-  'qrs-positive': Object.freeze([[-12, 0], [-8, -4], [-5, -28], [-1, -8], [3, 24], [7, 7], [12, 0]] as const),
-  'qrs-negative': Object.freeze([[-12, 0], [-8, 4], [-5, 27], [-1, 8], [3, -18], [7, -5], [12, 0]] as const),
-  'qrs-lbbb': Object.freeze([[-14, 0], [-10, 4], [-6, 22], [-1, 30], [5, 12], [10, -5], [14, 0]] as const),
-  'qrs-rbbb': Object.freeze([[-14, 0], [-9, 5], [-5, -18], [-1, 5], [3, -9], [7, -27], [11, 8], [15, 0]] as const),
-  'qrs-narrow': Object.freeze([[-7, 0], [-3, -3], [-1, -20], [2, 22], [5, -7], [8, 0]] as const),
-  'qrs-wide': Object.freeze([[-14, 0], [-10, -5], [-6, -24], [-1, -31], [5, 20], [10, 9], [15, 0]] as const),
-  atrial: Object.freeze([[-8, 0], [-4, -3], [0, -11], [4, -3], [8, 0]] as const),
-  his: Object.freeze([[-3, 0], [0, -16], [3, 0]] as const),
-  ventricular: Object.freeze([[-7, 0], [-3, -4], [-1, -21], [2, 20], [5, -8], [8, 0]] as const),
-  stimulus: Object.freeze([[-2, 0], [0, -24], [2, 0]] as const),
+  'qrs-positive': Object.freeze([[-18, 0], [-14, -2], [-10, -8], [-7, -25], [-3, -34], [0, -12], [4, 22], [8, 12], [13, 3], [18, 0]] as const),
+  'qrs-negative': Object.freeze([[-18, 0], [-13, 2], [-9, 9], [-5, 28], [-1, 35], [3, 12], [7, -17], [11, -8], [16, -2], [18, 0]] as const),
+  'qrs-lbbb': Object.freeze([[-20, 0], [-15, 3], [-11, 13], [-6, 28], [-1, 34], [5, 24], [10, 10], [14, -7], [18, -3], [22, 0]] as const),
+  'qrs-rbbb': Object.freeze([[-20, 0], [-15, 3], [-11, 11], [-7, -16], [-3, -7], [1, 8], [5, -10], [9, -29], [13, -14], [17, 9], [22, 0]] as const),
+  'qrs-narrow': Object.freeze([[-10, 0], [-6, -3], [-3, -18], [0, -26], [3, 24], [7, -8], [10, 0]] as const),
+  'qrs-wide': Object.freeze([[-22, 0], [-17, -3], [-12, -13], [-7, -28], [-1, -35], [5, -19], [11, 20], [16, 13], [22, 0]] as const),
+  atrial: Object.freeze([[-10, 0], [-6, -2], [-2, -8], [2, -12], [6, -4], [10, 0]] as const),
+  his: Object.freeze([[-4, 0], [-1, -6], [0, -17], [2, 5], [4, 0]] as const),
+  ventricular: Object.freeze([[-10, 0], [-6, -4], [-2, -18], [1, -25], [4, 20], [8, -7], [11, 0]] as const),
+  stimulus: Object.freeze([[-2, 0], [0, -25], [2, 0]] as const),
 });
 
-function eventPath(kind: TaskFiveTraceEventKind, x: number, baseline: number): string {
+function eventPath(
+  kind: TaskFiveTraceEventKind,
+  x: number,
+  baseline: number,
+  widthScale = 1,
+  amplitudeScale = 1,
+): string {
   return SHAPES[kind]
-    .map(([dx, dy], index) => `${index === 0 ? 'M' : 'L'} ${x + dx} ${baseline + dy}`)
+    .map(([dx, dy], index) => {
+      const nextX = x + dx * widthScale;
+      const nextY = baseline + dy * amplitudeScale;
+      return `${index === 0 ? 'M' : 'L'} ${nextX} ${nextY}`;
+    })
     .join(' ');
 }
 
@@ -85,12 +95,20 @@ export function buildTaskFiveTraceRenderModel(
       events: Object.freeze(traceChannel.events.map((traceEvent) => Object.freeze({
         id: traceEvent.id,
         className: publicEventClass(traceEvent.kind),
-        path: eventPath(traceEvent.kind, traceEvent.x, baseline),
+        path: eventPath(
+          traceEvent.kind,
+          traceEvent.x,
+          baseline,
+          traceEvent.widthScale,
+          traceEvent.amplitudeScale,
+        ),
       }))),
     });
   });
 
-  const baselineByChannel = new Map(channels.map((renderedChannel) => [renderedChannel.id, renderedChannel.baseline]));
+  const baselineByChannel = new Map(
+    channels.map((renderedChannel) => [renderedChannel.id, renderedChannel.baseline]),
+  );
   const visibleAnnotations = definition.annotations.filter((item) => (
     item.visibility === 'student' || view === 'instructor'
   ));
@@ -100,7 +118,7 @@ export function buildTaskFiveTraceRenderModel(
     x: traceAnnotation.x,
     ...(traceAnnotation.endX === undefined ? {} : { endX: traceAnnotation.endX }),
     y: traceAnnotation.channelId
-      ? (baselineByChannel.get(traceAnnotation.channelId) ?? TOP) - 25
+      ? (baselineByChannel.get(traceAnnotation.channelId) ?? TOP) - 22
       : 20 + index * 12,
   }));
 

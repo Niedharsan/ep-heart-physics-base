@@ -11,16 +11,16 @@ const navigationItems: ReadonlyArray<{
   readonly href: string;
 }> = Object.freeze([
   Object.freeze({ id: 'home', label: 'Overview', href: '/' }),
-  Object.freeze({ id: 'simulator', label: 'Tissue simulator', href: '/?mode=simulator' }),
-  Object.freeze({ id: 'assessment', label: 'EGM assessment', href: '/?mode=assessment' }),
+  Object.freeze({ id: 'simulator', label: 'Simulator', href: '/?mode=simulator' }),
+  Object.freeze({ id: 'assessment', label: 'Assessments', href: '/?mode=assessment' }),
 ]);
 
 export function ClientModuleNav({ current }: ClientModuleNavProps) {
   return (
-    <nav className="client-module-nav" aria-label="Client preview modules">
-      <a className="client-preview-brand" href="/" aria-label="EP Heart client preview home">
+    <nav className="client-module-nav" aria-label="EP Heart modules">
+      <a className="client-preview-brand" href="/" aria-label="EP Heart home">
         <span aria-hidden="true">EP</span>
-        <strong>Heart preview</strong>
+        <strong>EP Heart</strong>
       </a>
       <div className="client-module-links">
         {navigationItems.map((item) => (
@@ -33,7 +33,6 @@ export function ClientModuleNav({ current }: ClientModuleNavProps) {
             {item.label}
           </a>
         ))}
-        <a href="/?mode=assessment#feedback">Feedback</a>
       </div>
     </nav>
   );

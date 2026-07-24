@@ -5,3 +5,6 @@ export * from './conductionValidation';
 export * from './deterministic';
 export * from './sampling';
 export * from './validation';
+export * from './waveformContracts';
+export * from './waveformSynthesis';
+export * from './waveformValidation';

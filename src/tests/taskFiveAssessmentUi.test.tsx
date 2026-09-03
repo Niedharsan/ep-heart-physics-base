@@ -1,11 +1,13 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { resolveAssessmentTask } from '../assessment/AssessmentApp';
+import { resolveAssessmentTask } from '../assessment/assessmentRouting';
 import { taskFiveClinicalRubric } from '../assessment/task5/clinicalRubric';
-import { markTaskFive } from '../assessment/task5/marking';
-import type { TaskFiveResponses } from '../assessment/task5/marking';
 import {
   createEmptyTaskFiveResponses,
+  markTaskFive,
+} from '../assessment/task5/marking';
+import type { TaskFiveResponses } from '../assessment/task5/marking';
+import {
   TaskFiveAssessment,
   TaskFiveScoreBar,
 } from '../assessment/task5/TaskFiveAssessment';

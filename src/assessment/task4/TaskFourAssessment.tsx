@@ -19,7 +19,10 @@ import { taskFourCases } from './catalog';
 import type { TaskFourCaseId } from './catalog';
 import { taskFourClinicalRubric } from './clinicalRubric';
 import { buildTaskFourFeedbackPackage } from './feedback';
-import { markTaskFour } from './marking';
+import {
+  createEmptyTaskFourResponses,
+  markTaskFour,
+} from './marking';
 import type { TaskFourResponses, TaskFourScore } from './marking';
 import {
   clearTaskFourAttempts,
@@ -42,15 +45,6 @@ const studentTraceTitles: Readonly<Record<TaskFourCaseId, string>> = Object.free
   'vaav-pattern': 'Ventricular pacing EGM case 3',
   'vav-pattern': 'Ventricular pacing EGM case 4',
 });
-
-export function createEmptyTaskFourResponses(): TaskFourResponses {
-  return {
-    'avrt-concentric': '',
-    'avrt-eccentric': '',
-    'vaav-pattern': '',
-    'vav-pattern': '',
-  };
-}
 
 function taskHref(
   task: 'interval' | '1' | '2' | '3' | '4' | '5',

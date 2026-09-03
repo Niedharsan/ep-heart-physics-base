@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAssessmentMode } from '../assessment/AssessmentApp';
+import {
+  resolveAssessmentMode,
+  resolveAssessmentTask,
+} from '../assessment/assessmentRouting';
+import { buildAssessmentHref } from '../assessment/sessionController';
 
 describe('assessment mode routing', () => {
   it('defaults to practice mode', () => {
@@ -13,5 +17,17 @@ describe('assessment mode routing', () => {
 
   it('rejects unknown values by returning practice mode', () => {
     expect(resolveAssessmentMode('?mode=assessment&assessmentMode=other')).toBe('practice');
+  });
+
+  it('preserves timed mode and instructor view in assessment navigation', () => {
+    expect(buildAssessmentHref('1', false, 'mock'))
+      .toBe('/?mode=assessment&task=1&assessmentMode=mock');
+    expect(buildAssessmentHref('interval', true, 'exam'))
+      .toBe('/?mode=assessment&view=instructor&assessmentMode=exam');
+  });
+
+  it('resolves known tasks and defaults unknown tasks to the interval trainer', () => {
+    expect(resolveAssessmentTask('?mode=assessment&task=5')).toBe('5');
+    expect(resolveAssessmentTask('?mode=assessment&task=unknown')).toBe('interval');
   });
 });

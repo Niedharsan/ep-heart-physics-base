@@ -6,6 +6,14 @@ import type { TaskFiveCaseId } from './catalog';
 
 export type TaskFiveResponses = Readonly<Record<TaskFiveCaseId, string>>;
 
+export function createEmptyTaskFiveResponses(): TaskFiveResponses {
+  return {
+    'vt-rvot': '',
+    'vt-fascicular': '',
+    'para-hisian': '',
+  };
+}
+
 export interface TaskFiveCriterion {
   readonly id: string;
   readonly label: string;

@@ -28,7 +28,11 @@ import type {
 } from './catalog';
 import { taskThreeClinicalRubric } from './clinicalRubric';
 import { buildTaskThreeFeedbackPackage } from './feedback';
-import { countWords, markTaskThree } from './marking';
+import {
+  countWords,
+  createEmptyTaskThreeResponses,
+  markTaskThree,
+} from './marking';
 import type {
   AhJumpResponse,
   AtrialTachycardiaResponse,
@@ -61,23 +65,6 @@ const avnrtDiagnosisOptions = Object.freeze([
 function attemptIdentifier(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-export function createEmptyTaskThreeResponses(): TaskThreeResponses {
-  return {
-    atrialTachycardia: {
-      'at-1': { diagnosis: '', side: '' },
-      'at-2': { diagnosis: '', side: '' },
-      'at-3': { diagnosis: '', side: '' },
-    },
-    ahJump: {
-      'ah-jump-below-50': { identifiesAhJump: null, thresholdClass: '' },
-      'ah-jump-above-50': { identifiesAhJump: null, thresholdClass: '' },
-    },
-    cannonWave: '',
-    adenosine: '',
-    avnrtEcg: { diagnosis: '', pathway: '', explanation: '' },
-  };
 }
 
 function taskHref(

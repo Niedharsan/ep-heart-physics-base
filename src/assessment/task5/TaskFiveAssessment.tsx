@@ -19,7 +19,10 @@ import { taskFiveCases } from './catalog';
 import type { TaskFiveCaseId } from './catalog';
 import { taskFiveClinicalRubric } from './clinicalRubric';
 import { buildTaskFiveFeedbackPackage } from './feedback';
-import { markTaskFive } from './marking';
+import {
+  createEmptyTaskFiveResponses,
+  markTaskFive,
+} from './marking';
 import type { TaskFiveResponses, TaskFiveScore } from './marking';
 import {
   clearTaskFiveAttempts,
@@ -55,14 +58,6 @@ const taskLinks = Object.freeze([
   Object.freeze({ id: '4', label: 'Task 4 · Intracardiac manoeuvres' }),
   Object.freeze({ id: '5', label: 'Task 5 · VT & para-Hisian pacing' }),
 ] as const);
-
-export function createEmptyTaskFiveResponses(): TaskFiveResponses {
-  return {
-    'vt-rvot': '',
-    'vt-fascicular': '',
-    'para-hisian': '',
-  };
-}
 
 function taskHref(
   task: 'interval' | '1' | '2' | '3' | '4' | '5',

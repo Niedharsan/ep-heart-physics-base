@@ -12,8 +12,17 @@ import {
 import type { PersistedAssessmentSession } from './sessionState';
 import { EgmCaliperCanvas } from './EgmCaliperCanvas';
 import { markIntervalMeasurement } from './marking';
+import {
+  resolveAssessmentMode,
+  resolveAssessmentTask,
+} from './assessmentRouting';
+import type {
+  AssessmentMode,
+  AssessmentTask,
+} from './assessmentRouting';
 import { resolveAssessmentView } from './assessmentView';
 import type { AssessmentView } from './assessmentView';
+import { buildAssessmentHref } from './sessionController';
 import { TaskOneAssessment } from './task1/TaskOneAssessment';
 import { TaskTwoAssessment } from './task2/TaskTwoAssessment';
 import { TaskThreeAssessment } from './task3/TaskThreeAssessment';
@@ -112,12 +121,6 @@ function defaultCalipersFor(
   }
 }
 
-function taskHref(task: AssessmentTask, instructor: boolean): string {
-  const taskQuery = task === 'interval' ? '' : `&task=${task}`;
-  const viewQuery = instructor ? '&view=instructor' : '';
-  return `/?mode=assessment${taskQuery}${viewQuery}`;
-}
-
 const taskLinks: ReadonlyArray<{ readonly id: AssessmentTask; readonly label: string }> = Object.freeze([
   Object.freeze({ id: 'interval', label: 'Interval trainer' }),
   Object.freeze({ id: '1', label: 'Task 1 · Basic EP study' }),
@@ -127,16 +130,8 @@ const taskLinks: ReadonlyArray<{ readonly id: AssessmentTask; readonly label: st
   Object.freeze({ id: '5', label: 'Task 5 · VT & para-Hisian pacing' }),
 ]);
 
-export type AssessmentTask = 'interval' | '1' | '2' | '3' | '4' | '5';
-export type AssessmentMode = 'practice' | 'mock' | 'exam';
-
 const ASSESSMENT_DURATION_MS = 20 * 60 * 1000;
 const REAL_EXAM_RELEASE_KEY = 'ep-heart-real-exam-visible-v1';
-
-export function resolveAssessmentMode(search: string): AssessmentMode {
-  const mode = new URLSearchParams(search).get('assessmentMode');
-  return mode === 'mock' || mode === 'exam' ? mode : 'practice';
-}
 
 function isRealExamReleased(): boolean {
   return typeof window !== 'undefined'
@@ -148,20 +143,6 @@ function formatRemainingTime(remainingMs: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-export function resolveAssessmentTask(search: string): AssessmentTask {
-  const selectedTask = new URLSearchParams(search).get('task');
-  if (
-    selectedTask === '1'
-    || selectedTask === '2'
-    || selectedTask === '3'
-    || selectedTask === '4'
-    || selectedTask === '5'
-  ) {
-    return selectedTask;
-  }
-  return 'interval';
 }
 
 export function AssessmentApp() {
@@ -499,7 +480,7 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
                 <a
                   key={item.id}
                   className={item.id === 'interval' ? 'active' : undefined}
-                  href={taskHref(item.id, instructorView)}
+                  href={buildAssessmentHref(item.id, instructorView, assessmentMode)}
                 >
                   {item.label}
                 </a>
@@ -512,13 +493,13 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
             <div className="assessment-view-switch assessment-view-switch-stacked">
               {instructorView ? (
                 <>
-                  <a href={taskHref('interval', false)}>Student</a>
+                  <a href={buildAssessmentHref('interval', false, assessmentMode)}>Student</a>
                   <span className="active">Instructor</span>
                 </>
               ) : (
                 <>
                   <span className="active">Student</span>
-                  <a href={taskHref('interval', true)}>Instructor</a>
+                  <a href={buildAssessmentHref('interval', true, assessmentMode)}>Instructor</a>
                 </>
               )}
             </div>

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { taskThreeClinicalRubric } from '../assessment/task3/clinicalRubric';
 import { buildTaskThreeFeedbackPackage } from '../assessment/task3/feedback';
-import { markTaskThree } from '../assessment/task3/marking';
-import { createEmptyTaskThreeResponses } from '../assessment/task3/TaskThreeAssessment';
+import {
+  createEmptyTaskThreeResponses,
+  markTaskThree,
+} from '../assessment/task3/marking';
 import {
   clearTaskThreeAttempts,
   loadTaskThreeAttempts,

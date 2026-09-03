@@ -37,6 +37,23 @@ export interface TaskThreeResponses {
   readonly avnrtEcg: AvnrtEcgResponse;
 }
 
+export function createEmptyTaskThreeResponses(): TaskThreeResponses {
+  return {
+    atrialTachycardia: {
+      'at-1': { diagnosis: '', side: '' },
+      'at-2': { diagnosis: '', side: '' },
+      'at-3': { diagnosis: '', side: '' },
+    },
+    ahJump: {
+      'ah-jump-below-50': { identifiesAhJump: null, thresholdClass: '' },
+      'ah-jump-above-50': { identifiesAhJump: null, thresholdClass: '' },
+    },
+    cannonWave: '',
+    adenosine: '',
+    avnrtEcg: { diagnosis: '', pathway: '', explanation: '' },
+  };
+}
+
 export interface TextCriterion {
   readonly id: string;
   readonly label: string;

@@ -6,6 +6,15 @@ import type { TaskFourCaseId } from './catalog';
 
 export type TaskFourResponses = Readonly<Record<TaskFourCaseId, string>>;
 
+export function createEmptyTaskFourResponses(): TaskFourResponses {
+  return {
+    'avrt-concentric': '',
+    'avrt-eccentric': '',
+    'vaav-pattern': '',
+    'vav-pattern': '',
+  };
+}
+
 export interface TaskFourCriterion {
   readonly id: string;
   readonly label: string;

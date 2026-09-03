@@ -22,6 +22,8 @@ describe('shared assessment sessions', () => {
       expect(markup).toContain('20:00');
       expect(markup).toContain('<fieldset');
       expect(markup).toContain('disabled=""');
+      expect(markup).toContain('assessmentMode=mock');
+      expect(markup).not.toContain('view=instructor');
     }
   });
 

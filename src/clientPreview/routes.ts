@@ -1,3 +1,5 @@
+import { appHref } from '../appHref';
+
 export type ClientPreviewRoute = 'home' | 'simulator' | 'assessment';
 
 export interface ClientLocation {
@@ -20,7 +22,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
     id: 'simulator',
     title: '2D tissue simulator',
     summary: 'Explore deterministic excitation, finite-current pacing and signal-derived pseudo-ECG in a homogeneous two-dimensional sheet.',
-    href: '/?mode=simulator',
+    href: appHref('mode=simulator'),
     status: 'Available',
     capabilities: Object.freeze([
       'Manual multi-site finite-current pacing',
@@ -33,7 +35,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
     id: 'assessment',
     title: 'EP assessment workspace',
     summary: 'Review channel-aware EGM measurements plus complete Tasks 1-5, including VT ECG and para-Hisian pacing assessment, without an account.',
-    href: '/?mode=assessment',
+    href: appHref('mode=assessment'),
     status: 'Available',
     capabilities: Object.freeze([
       'Channel-aware PA, AH, HV, PR, RR and VA measurements',

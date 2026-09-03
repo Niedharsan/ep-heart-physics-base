@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveAssessmentMode,
   resolveAssessmentTask,
+  resolveAssessmentViewForMode,
 } from '../assessment/assessmentRouting';
 import { buildAssessmentHref } from '../assessment/sessionController';
 
@@ -29,5 +30,11 @@ describe('assessment mode routing', () => {
   it('resolves known tasks and defaults unknown tasks to the interval trainer', () => {
     expect(resolveAssessmentTask('?mode=assessment&task=5')).toBe('5');
     expect(resolveAssessmentTask('?mode=assessment&task=unknown')).toBe('interval');
+  });
+
+  it('never exposes instructor answers from timed-mode URL parameters', () => {
+    expect(resolveAssessmentViewForMode('practice', 'instructor')).toBe('instructor');
+    expect(resolveAssessmentViewForMode('mock', 'instructor')).toBe('student');
+    expect(resolveAssessmentViewForMode('exam', 'instructor')).toBe('student');
   });
 });

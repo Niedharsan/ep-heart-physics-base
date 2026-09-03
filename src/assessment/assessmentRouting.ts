@@ -1,6 +1,13 @@
 export type AssessmentTask = 'interval' | '1' | '2' | '3' | '4' | '5';
 export type AssessmentMode = 'practice' | 'mock' | 'exam';
 
+export function resolveAssessmentViewForMode(
+  mode: AssessmentMode,
+  requestedView: 'student' | 'instructor',
+): 'student' | 'instructor' {
+  return mode === 'practice' ? requestedView : 'student';
+}
+
 export function resolveAssessmentMode(search: string): AssessmentMode {
   const mode = new URLSearchParams(search).get('assessmentMode');
   return mode === 'mock' || mode === 'exam' ? mode : 'practice';

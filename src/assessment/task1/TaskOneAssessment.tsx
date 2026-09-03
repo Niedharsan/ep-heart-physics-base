@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ClientModuleNav } from '../../clientPreview/ClientModuleNav';
+import { appHref } from '../../appHref';
 import type { AssessmentView } from '../assessmentView';
 import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
 import {
@@ -85,7 +86,7 @@ export function TaskOneAssessment({
   assessmentView,
   assessmentMode = 'practice',
 }: TaskOneAssessmentProps) {
-  const instructorView = assessmentView === 'instructor';
+  const instructorView = assessmentMode === 'practice' && assessmentView === 'instructor';
   const initialDraft = useMemo(() => (
     loadAssessmentDraft<Partial<TaskOneDraft>>(assessmentMode, '1', {})
   ), [assessmentMode]);
@@ -261,7 +262,7 @@ export function TaskOneAssessment({
           <h1>Basic EP study assessment</h1>
           <p>Position four standard diagnostic catheters, label the coronary-sinus catheter, measure five baseline intervals and interpret the normal activation pattern.</p>
         </div>
-        <a className="return-link" href="/">All modules</a>
+        <a className="return-link" href={appHref()}>All modules</a>
       </header>
 
       <div className="assessment-view-switch">
@@ -364,7 +365,7 @@ export function TaskOneAssessment({
         {savedAttempts.length > 0 && <div className="attempt-list">{savedAttempts.slice(0, 4).map((attempt) => <div key={attempt.id}><strong>Task 1</strong><span>{attempt.result.score}/15</span><time>{new Date(attempt.createdAtIso).toLocaleString()}</time></div>)}</div>}
       </section>
 
-      <footer className="assessment-footer"><p>Task allocation: catheter positions 4, CS label 1, normal measurements 5, activation classification and explanation 5.</p><a href="/?mode=assessment#feedback">Open client feedback</a></footer>
+      <footer className="assessment-footer"><p>Task allocation: catheter positions 4, CS label 1, normal measurements 5, activation classification and explanation 5.</p><a href={appHref('mode=assessment', 'feedback')}>Open client feedback</a></footer>
       </main>
     </AssessmentSessionBoundary>
   );

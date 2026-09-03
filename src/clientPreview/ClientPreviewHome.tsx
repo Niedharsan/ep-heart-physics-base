@@ -1,4 +1,5 @@
 import { ClientModuleNav } from './ClientModuleNav';
+import { appHref } from '../appHref';
 import { clientModules } from './routes';
 
 const moduleLabels = Object.freeze({
@@ -26,8 +27,8 @@ export function ClientPreviewHome() {
             structured electrophysiology assessments.
           </p>
           <div className="client-preview-actions">
-            <a className="client-module-open primary" href="/?mode=simulator">Launch simulator</a>
-            <a className="client-module-open" href="/?mode=assessment">Open assessments</a>
+            <a className="client-module-open primary" href={appHref('mode=simulator')}>Launch simulator</a>
+            <a className="client-module-open" href={appHref('mode=assessment')}>Open assessments</a>
           </div>
         </div>
         <div className="client-preview-hero-mark" aria-hidden="true">

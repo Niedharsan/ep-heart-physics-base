@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ClientModuleNav } from '../../clientPreview/ClientModuleNav';
+import { appHref } from '../../appHref';
 import type { AssessmentView } from '../assessmentView';
 import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
 import {
@@ -94,7 +95,7 @@ export function TaskFiveAssessment({
   readonly assessmentView: AssessmentView;
   readonly assessmentMode?: SharedAssessmentMode;
 }) {
-  const instructor = assessmentView === 'instructor';
+  const instructor = assessmentMode === 'practice' && assessmentView === 'instructor';
   const [responses, setResponses] = useState<TaskFiveResponses>(() => (
     loadAssessmentDraft(assessmentMode, '5', createEmptyTaskFiveResponses())
   ));
@@ -193,11 +194,13 @@ export function TaskFiveAssessment({
           <h1>Ventricular tachycardia and para-Hisian pacing</h1>
           <p>Interpret two VT ECG patterns and compare paired para-Hisian pacing states.</p>
         </div>
-        <a className="return-link" href="/">All modules</a>
+        <a className="return-link" href={appHref()}>All modules</a>
       </header>
 
       <div className="assessment-view-switch" aria-label="Task 5 preview view">
-        {instructor ? (
+        {assessmentMode !== 'practice' ? (
+          <span className="active" aria-current="page">Student preview</span>
+        ) : instructor ? (
           <>
             <a href={taskHref('5', false, assessmentMode)}>Student preview</a>
             <span className="active" aria-current="page">Instructor preview</span>

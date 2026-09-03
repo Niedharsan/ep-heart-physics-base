@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { appHref } from '../../appHref';
 import type { AssessmentView } from '../assessmentView';
 import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
 import {
@@ -40,7 +41,7 @@ export function TaskTwoAssessment({
   readonly assessmentView: AssessmentView;
   readonly assessmentMode?: SharedAssessmentMode;
 }) {
-  const instructor = assessmentView === 'instructor';
+  const instructor = assessmentMode === 'practice' && assessmentView === 'instructor';
   const [responses, setResponses] = useState<TaskTwoResponses>(() => (
     loadAssessmentDraft(assessmentMode, '2', emptyResponses())
   ));
@@ -87,7 +88,7 @@ export function TaskTwoAssessment({
           <h1>Sinus-node recovery, refractoriness and AV block</h1>
           <p>Interpret live deterministic ECG/EGM recordings and explain the defining findings.</p>
         </div>
-        <a className="assessment-back-link" href="/?mode=assessment">Interval trainer</a>
+        <a className="assessment-back-link" href={appHref('mode=assessment')}>Interval trainer</a>
       </header>
       <nav className="assessment-task-nav" aria-label="Assessment sections">
         <a href={buildAssessmentHref('interval', instructor, assessmentMode)}>Interval trainer</a>

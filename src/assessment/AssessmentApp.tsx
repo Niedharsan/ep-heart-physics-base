@@ -15,6 +15,7 @@ import { markIntervalMeasurement } from './marking';
 import {
   resolveAssessmentMode,
   resolveAssessmentTask,
+  resolveAssessmentViewForMode,
 } from './assessmentRouting';
 import type {
   AssessmentMode,
@@ -131,13 +132,6 @@ const taskLinks: ReadonlyArray<{ readonly id: AssessmentTask; readonly label: st
 ]);
 
 const ASSESSMENT_DURATION_MS = 20 * 60 * 1000;
-const REAL_EXAM_RELEASE_KEY = 'ep-heart-real-exam-visible-v1';
-
-function isRealExamReleased(): boolean {
-  return typeof window !== 'undefined'
-    && window.localStorage.getItem(REAL_EXAM_RELEASE_KEY) === 'true';
-}
-
 function formatRemainingTime(remainingMs: number): string {
   const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -147,46 +141,29 @@ function formatRemainingTime(remainingMs: number): string {
 
 export function AssessmentApp() {
   const search = window.location.search;
-  const assessmentView = resolveAssessmentView(search);
   const selectedTask = resolveAssessmentTask(search);
   const assessmentMode = resolveAssessmentMode(search);
-  const instructorView = assessmentView === 'instructor';
-  const [realExamReleased, setRealExamReleased] = useState(isRealExamReleased);
+  const requestedView = resolveAssessmentView(search);
+  const assessmentView = resolveAssessmentViewForMode(assessmentMode, requestedView);
 
-  function setExamRelease(released: boolean): void {
-    window.localStorage.setItem(REAL_EXAM_RELEASE_KEY, String(released));
-    setRealExamReleased(released);
-  }
-
-  if (assessmentMode === 'exam' && !instructorView && !realExamReleased) {
+  if (assessmentMode === 'exam') {
     return (
       <main className="assessment-shell">
         <section className="assessment-panel exam-availability-panel">
           <span className="assessment-panel-kicker">REAL EXAM</span>
-          <h1>Exam not yet available</h1>
-          <p>The instructor has not activated this assessment.</p>
+          <h1>Secure exam mode is not available</h1>
+          <p>Real examinations require authenticated instructor access, server-controlled release and server-recorded submissions.</p>
         </section>
       </main>
     );
   }
 
-  const releaseControl = assessmentMode === 'exam' && instructorView ? (
-    <section className="assessment-panel exam-release-control">
-      <span className="assessment-panel-kicker">INSTRUCTOR CONTROL</span>
-      <h2>Real exam visibility</h2>
-      <p>{realExamReleased ? 'Visible to students on this managed browser.' : 'Hidden from students.'}</p>
-      <button className="assessment-primary" onClick={() => setExamRelease(!realExamReleased)}>
-        {realExamReleased ? 'Hide real exam' : 'Activate real exam'}
-      </button>
-    </section>
-  ) : null;
-
-  if (selectedTask === '1') return <>{releaseControl}<TaskOneAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
-  if (selectedTask === '2') return <>{releaseControl}<TaskTwoAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
-  if (selectedTask === '3') return <>{releaseControl}<TaskThreeAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
-  if (selectedTask === '4') return <>{releaseControl}<TaskFourAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
-  if (selectedTask === '5') return <>{releaseControl}<TaskFiveAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
-  return <>{releaseControl}<IntervalAssessmentApp assessmentView={assessmentView} assessmentMode={assessmentMode} /></>;
+  if (selectedTask === '1') return <TaskOneAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  if (selectedTask === '2') return <TaskTwoAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  if (selectedTask === '3') return <TaskThreeAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  if (selectedTask === '4') return <TaskFourAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  if (selectedTask === '5') return <TaskFiveAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  return <IntervalAssessmentApp assessmentView={assessmentView} assessmentMode={assessmentMode} />;
 }
 
 interface IntervalAssessmentAppProps {

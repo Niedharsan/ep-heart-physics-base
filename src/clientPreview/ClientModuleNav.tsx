@@ -1,4 +1,5 @@
 import type { ClientPreviewRoute } from './routes';
+import { appHref } from '../appHref';
 import './clientPreview.css';
 
 interface ClientModuleNavProps {
@@ -8,17 +9,17 @@ interface ClientModuleNavProps {
 const navigationItems: ReadonlyArray<{
   readonly id: ClientPreviewRoute;
   readonly label: string;
-  readonly href: string;
+  readonly search: string;
 }> = Object.freeze([
-  Object.freeze({ id: 'home', label: 'Overview', href: '/' }),
-  Object.freeze({ id: 'simulator', label: 'Simulator', href: '/?mode=simulator' }),
-  Object.freeze({ id: 'assessment', label: 'Assessments', href: '/?mode=assessment' }),
+  Object.freeze({ id: 'home', label: 'Overview', search: '' }),
+  Object.freeze({ id: 'simulator', label: 'Simulator', search: 'mode=simulator' }),
+  Object.freeze({ id: 'assessment', label: 'Assessments', search: 'mode=assessment' }),
 ]);
 
 export function ClientModuleNav({ current }: ClientModuleNavProps) {
   return (
     <nav className="client-module-nav" aria-label="EP Heart modules">
-      <a className="client-preview-brand" href="/" aria-label="EP Heart home">
+      <a className="client-preview-brand" href={appHref()} aria-label="EP Heart home">
         <span aria-hidden="true">EP</span>
         <strong>EP Heart</strong>
       </a>
@@ -27,7 +28,7 @@ export function ClientModuleNav({ current }: ClientModuleNavProps) {
           <a
             key={item.id}
             className={item.id === current ? 'active' : undefined}
-            href={item.href}
+            href={appHref(item.search)}
             aria-current={item.id === current ? 'page' : undefined}
           >
             {item.label}

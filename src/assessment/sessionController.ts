@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { appHref } from '../appHref';
 import {
   ASSESSMENT_SESSION_DURATION_MS,
   assessmentSessionKey,
@@ -101,7 +102,7 @@ export function buildAssessmentHref(
   const taskQuery = task === 'interval' ? '' : `&task=${task}`;
   const viewQuery = instructor ? '&view=instructor' : '';
   const modeQuery = mode === 'practice' ? '' : `&assessmentMode=${mode}`;
-  return `/?mode=assessment${taskQuery}${viewQuery}${modeQuery}`;
+  return appHref(`mode=assessment${taskQuery}${viewQuery}${modeQuery}`);
 }
 
 export function useAssessmentSessionController({

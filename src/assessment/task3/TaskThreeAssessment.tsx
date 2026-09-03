@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ClientModuleNav } from '../../clientPreview/ClientModuleNav';
+import { appHref } from '../../appHref';
 import type { AssessmentView } from '../assessmentView';
 import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
 import {
@@ -105,7 +106,7 @@ export function TaskThreeAssessment({
   readonly assessmentView: AssessmentView;
   readonly assessmentMode?: SharedAssessmentMode;
 }) {
-  const instructor = assessmentView === 'instructor';
+  const instructor = assessmentMode === 'practice' && assessmentView === 'instructor';
   const [responses, setResponses] = useState<TaskThreeResponses>(() => (
     loadAssessmentDraft(assessmentMode, '3', createEmptyTaskThreeResponses())
   ));
@@ -238,11 +239,13 @@ export function TaskThreeAssessment({
             adenosine questions using the approved educational rubric.
           </p>
         </div>
-        <a className="return-link" href="/">All modules</a>
+        <a className="return-link" href={appHref()}>All modules</a>
       </header>
 
       <div className="assessment-view-switch" aria-label="Task 3 preview view">
-        {instructor ? (
+        {assessmentMode !== 'practice' ? (
+          <span className="active" aria-current="page">Student preview</span>
+        ) : instructor ? (
           <>
             <a href={taskHref('3', false, assessmentMode)}>Student preview</a>
             <span className="active" aria-current="page">Instructor preview</span>

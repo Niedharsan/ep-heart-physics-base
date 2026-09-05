@@ -1,25 +1,54 @@
 # Roadmap
 
-## Milestone 1 — verify the base
+## Current foundation
 
-Audit equations, parameters, stability, convergence, boundary handling and signal calculation. Establish credible planar/radial propagation tests.
+Implemented and under active verification:
 
-## Milestone 2 — electrodes and electrograms
+- deterministic 2D reaction–diffusion simulation
+- finite-current pacing and lesion/obstacle experiments
+- Web Worker numerical runtime separated from the React UI
+- voltage-field and derived signal visualisation
+- equation, reference-solver, conduction-velocity, refinement, symmetry and refractory-capture verification
+- versioned scenarios, measurements and learning definitions
+- EP assessment workspace with Tasks 1–5 and domain-approved rubric requirements
+- local attempt/session handling and structured feedback packages
+- continuous integration and GitHub Pages deployment
 
-Multiple surface leads, unipolar electrodes, bipolar pairs, catheter movement and position-dependent timing/morphology.
+## Next — richer electrophysiology
 
-## Milestone 3 — physiological structures
+- additional electrode and catheter models
+- improved unipolar/bipolar EGM derivation
+- position-dependent timing and morphology
+- more explicit S1/S2 and entrainment protocols
+- deterministic lesion-gap and re-entry demonstrations
 
-Atrial geometry, AV node and His–Purkinje network coupling, regional refractory and conduction properties.
+## Next — educational product
 
-## Milestone 4 — pacing and ablation
+- case-authoring workflow
+- richer calipers and annotations
+- instructor publishing and shared result review
+- authenticated persistence where required
+- expanded validated assessment content
 
-S1/S2 protocols, capture thresholds, physical lesions, gaps and arrhythmia termination by mechanism interruption.
+## Planned — AI tutor and scenario interpreter
 
-## Milestone 5 — GPU and 3D
+AI should sit above the deterministic simulator rather than replace it.
 
-WebGPU or WASM acceleration, licensed heart mesh, fibre orientation and Three.js visualisation.
+The intended boundary is:
 
-## Milestone 6 — education product
+1. deterministic code produces simulation state, measurements, events and assessment evidence;
+2. a typed context builder exposes only structured, bounded evidence to the AI service;
+3. AI explains mechanisms, answers learner questions and can propose validated scenario actions;
+4. schema validation and deterministic code decide what can actually be executed or scored.
 
-Case authoring, calipers, deterministic annotations, scoring, instructor dashboard and approximately 200 concurrent browser users.
+AI must not directly modify numerical state, invent measurements, change approved rubrics or provide patient-specific clinical advice.
+
+## Longer term — geometry and performance
+
+- WASM/WebGPU acceleration where profiling justifies it
+- licensed anatomical geometry
+- regional conduction/refractory properties
+- specialised conduction-system coupling
+- 3D visualisation and fibre orientation
+
+These extensions remain subordinate to numerical verification and explicit scientific assumptions.

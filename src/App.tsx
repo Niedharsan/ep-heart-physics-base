@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildTutorEvidence } from './ai/buildTutorEvidence';
+import { TutorPanel } from './ai/TutorPanel';
 import type {
   CurrentStimulus,
   EngineSnapshot,
@@ -79,6 +81,24 @@ export default function App() {
     () => summarizeTissueActivity(snapshot),
     [snapshot],
   );
+
+  const tutorEvidence = useMemo(() => buildTutorEvidence({
+    scenario,
+    running,
+    stableDt,
+    snapshot,
+    tissueActivity,
+    pacingSiteCount: pacingSites.length,
+    ecgSamples,
+  }), [
+    scenario,
+    running,
+    stableDt,
+    snapshot,
+    tissueActivity,
+    pacingSites.length,
+    ecgSamples,
+  ]);
 
   const simulatorGuidance = useMemo(() => resolveSimulatorGuidance({
     scenario,
@@ -448,6 +468,8 @@ export default function App() {
         </div>
         <EcgCanvas samples={ecgSamples} />
       </section>
+
+      <TutorPanel evidence={tutorEvidence} />
 
       <footer>
         Manual multi-site pacing uses simultaneous finite-duration current pulses. Anatomical geometry, fibres and regional conduction remain later phases.

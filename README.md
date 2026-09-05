@@ -4,6 +4,8 @@ Browser-based cardiac electrophysiology simulation and learning platform built w
 
 **Live demo:** https://niedharsan.github.io/ep-heart-physics/
 
+The GitHub Pages demo hosts the browser application. The Gemini tutor requires the server-side `/api/tutor` function (or a configured external tutor endpoint) because the API key is never exposed to the frontend.
+
 ## What it does
 
 EP Heart Physics combines a deterministic 2D cardiac-tissue simulation with interactive pacing, lesion experiments, signal interpretation, structured electrophysiology assessment and an AI-assisted EP tutor.
@@ -56,7 +58,7 @@ Web Worker → reaction–diffusion solver → simulation state
              └── never controlled directly by the model
 ```
 
-The AI integration therefore demonstrates API integration, structured model I/O, evidence grounding, tool whitelisting, human-in-the-loop execution and separation between probabilistic AI reasoning and deterministic scientific computation. It is intentionally a focused single-assistant design rather than a multi-agent system.
+The AI integration demonstrates API integration, structured model I/O, evidence grounding, tool whitelisting, human-in-the-loop execution and separation between probabilistic AI reasoning and deterministic scientific computation. It is intentionally a focused single-assistant design rather than a multi-agent system.
 
 ### Simulation
 

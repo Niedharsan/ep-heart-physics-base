@@ -47,17 +47,17 @@ export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
   }
 
   return (
-    <section className="panel tutor-panel" aria-label="Ask EP tutor">
+    <section className="panel tutor-panel" aria-label="EP tutor">
       <div className="tutor-panel-heading">
         <div>
-          <span className="panel-kicker">AI TUTOR · VALIDATED TOOLS</span>
-          <h2>Ask EP</h2>
+          <span className="panel-kicker">EP TUTOR</span>
+          <h2>Ask the EP tutor</h2>
         </div>
         <span className="tutor-evidence-label">{evidenceLabel}</span>
       </div>
 
       <p className="tutor-boundary">
-        The tutor can explain structured simulation evidence and propose only four validated actions: start, pause, reset or load a built-in scenario. Nothing executes until you approve the action button.
+        Ask about the current simulation. The tutor can also suggest start, pause, reset or a built-in scenario. Suggested actions only run when you choose to run them.
       </p>
 
       <div className="tutor-question-row">
@@ -79,7 +79,7 @@ export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
           disabled={loading || question.trim().length === 0}
           onClick={() => void submitQuestion()}
         >
-          {loading ? 'Thinking…' : 'Ask tutor'}
+          {loading ? 'Answering…' : 'Ask tutor'}
         </button>
       </div>
 
@@ -95,7 +95,7 @@ export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
         <div className="tutor-error" role="alert">
           <strong>Tutor unavailable</strong>
           <span>{error}</span>
-          <small>The simulator remains fully functional because AI is isolated from the numerical engine.</small>
+          <small>The simulator will continue to work normally.</small>
         </div>
       )}
 
@@ -106,18 +106,18 @@ export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
           {response.proposedActions.map((action) => (
             <div className="tutor-tool-proposal" key={`${action.type}-${action.scenario ?? 'none'}`}>
               <div>
-                <strong>Suggested simulator action</strong>
+                <strong>Suggested action</strong>
                 <span>{tutorActionLabel(action)}</span>
               </div>
               <button className="primary" type="button" onClick={() => onAction(action)}>
-                Approve & run
+                Run action
               </button>
             </div>
           ))}
 
           {response.evidenceUsed.length > 0 && (
             <div>
-              <strong>Evidence used</strong>
+              <strong>Simulation data used</strong>
               <ul>{response.evidenceUsed.map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
           )}

@@ -42,8 +42,8 @@ export function tutorActionLabel(action: TutorActionV1): string {
   const labels: Readonly<Record<ScenarioId, string>> = Object.freeze({
     'manual-pacing': 'Manual pacing',
     'planar-wave': 'Planar wave',
-    'focal-rhythm': 'Automatic focal rhythm',
-    'obstacle-reentry': 'Obstacle / re-entry scaffold',
+    'focal-rhythm': 'Focal rhythm',
+    'obstacle-reentry': 'Obstacle propagation',
   });
   return `Load ${labels[action.scenario]}`;
 }

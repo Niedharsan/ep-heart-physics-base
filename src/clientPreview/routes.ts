@@ -21,12 +21,12 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
   Object.freeze({
     id: 'simulator',
     title: '2D tissue simulator',
-    summary: 'Explore deterministic excitation, finite-current pacing and signal-derived pseudo-ECG in a homogeneous two-dimensional sheet.',
+    summary: 'Explore wave propagation in a 2D cardiac tissue model using pacing, lesions and a derived pseudo-ECG.',
     href: appHref('mode=simulator'),
     status: 'Available',
     capabilities: Object.freeze([
-      'Manual multi-site finite-current pacing',
-      'Planar, focal and obstacle scenarios',
+      'Manual multi-site pacing',
+      'Planar, focal and obstacle-propagation scenarios',
       'Activation-wave and voltage-map displays',
     ]),
     limitation: 'Educational/research prototype; not anatomical whole-heart propagation.',
@@ -34,7 +34,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
   Object.freeze({
     id: 'assessment',
     title: 'EP assessment workspace',
-    summary: 'Review channel-aware EGM measurements plus complete Tasks 1-5, including VT ECG and para-Hisian pacing assessment, without an account.',
+    summary: 'Review channel-aware EGM measurements and complete Tasks 1-5, including VT ECG and para-Hisian pacing assessment, without an account.',
     href: appHref('mode=assessment'),
     status: 'Available',
     capabilities: Object.freeze([
@@ -44,7 +44,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
       'Task 3 atrial tachycardia, AH-threshold, cannon-wave, adenosine and AVNRT assessment',
       'Task 4 AVRT activation, VAAV/VAV response and pacing-manoeuvre interpretation',
       'Task 5 ventricular-tachycardia ECG and para-Hisian pacing interpretation',
-      'Local attempt history and structured client feedback packages',
+      'Local attempt history and structured feedback',
     ]),
     limitation: 'Synthetic educational traces; not patient data or a diagnostic device.',
   }),

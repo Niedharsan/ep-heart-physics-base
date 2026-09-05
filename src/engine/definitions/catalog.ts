@@ -54,8 +54,8 @@ const scenarios = [
     schemaVersion: 1,
     id: 'obstacle-reentry',
     definitionVersion: 1,
-    title: 'Obstacle / re-entry scaffold',
-    description: 'A focal wave encounters a central non-conductive circular obstacle.',
+    title: 'Obstacle propagation',
+    description: 'A focal wave propagates around a central non-conductive circular obstacle.',
     setup: [
       {
         type: 'circular-obstacle',

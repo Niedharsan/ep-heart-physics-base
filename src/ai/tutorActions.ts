@@ -2,10 +2,9 @@ import type { ScenarioId } from '../engine/core/types';
 
 export type TutorActionType = 'start' | 'pause' | 'reset' | 'load_scenario';
 
-export interface TutorActionV1 {
-  readonly type: TutorActionType;
-  readonly scenario: ScenarioId | null;
-}
+export type TutorActionV1 =
+  | Readonly<{ type: 'start' | 'pause' | 'reset'; scenario: null }>
+  | Readonly<{ type: 'load_scenario'; scenario: ScenarioId }>;
 
 const allowedScenarios: readonly ScenarioId[] = Object.freeze([
   'manual-pacing',

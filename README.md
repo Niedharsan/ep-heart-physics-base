@@ -1,28 +1,76 @@
-# EP Heart Physics Base
+# EP Heart Physics
 
-A GitHub-ready starting repository for a browser-based cardiac electrophysiology simulator. It is designed to be opened in Codex and improved in staged, reviewable milestones.
+Browser-based cardiac electrophysiology simulation and learning platform built with TypeScript, React and Web Workers.
 
-## What is implemented
+**Live demo:** https://niedharsan.github.io/ep-heart-physics/
 
-- TypeScript/Vite/React shell
-- Engine separated from React UI
-- Web Worker simulation loop
-- Reduced Aliev–Panfilov reaction–diffusion model
-- Explicit 2D five-point diffusion operator with a calculated stability limit
-- No-flux boundaries
-- Typed-array voltage/recovery state
-- Physical stimulation and non-conductive circular lesions
-- Planar-wave and focal-rhythm scenarios
-- Obstacle/re-entry development scaffold
-- Signal-derived pseudo-ECG lead
-- Voltage-field canvas
-- Unit tests and benchmark scaffold
-- GitHub Actions and Pages deployment
-- Architecture, physics, validation and roadmap documents
+## What it does
 
-## Scientific status
+EP Heart Physics combines a deterministic 2D cardiac-tissue simulation with interactive pacing, lesion experiments, signal interpretation and structured electrophysiology assessment.
 
-This is an **education/research prototype**, not a digital twin, medical device, diagnostic system or clinically validated simulator. The reduced model is useful for excitable-wave dynamics, but it is not a calibrated human ionic model. The pseudo-ECG is an approximation, not a torso-conduction forward solution.
+The simulator is not driven by prerecorded animations. Tissue state evolves through a reduced Aliev–Panfilov reaction–diffusion model, and displayed signals are derived from the evolving simulation state.
+
+### Simulation
+
+- reduced Aliev–Panfilov excitable-tissue model
+- explicit 2D five-point diffusion with stability constraints
+- no-flux boundary handling
+- Web Worker numerical runtime separated from React rendering
+- typed-array voltage and recovery state
+- focal and planar stimulation
+- programmable pacing sites
+- non-conductive lesions and obstacle experiments
+- voltage-field visualization
+- pseudo-ECG / intracardiac-style signal derivation
+- deterministic, versioned scenarios
+
+### Verification
+
+The repository includes scientific and numerical verification work covering:
+
+- equation and parameter checks
+- reference-solver comparison
+- planar conduction velocity
+- grid/time-step refinement
+- radial propagation symmetry
+- refractory capture behaviour
+- runtime determinism and scenario versioning
+
+Detailed reports are available in [`docs/`](docs/).
+
+### Learning and assessment
+
+The browser application also includes a separate educational layer with:
+
+- simulator and assessment routes
+- structured EP interpretation tasks
+- versioned scenario and measurement definitions
+- deterministic session control
+- domain-approved rubric requirements for scored free-text tasks
+- live clinical-trace assessment support where configured
+
+The numerical engine, learning content and assessment logic are deliberately separated so educational features cannot silently alter the physics model.
+
+## Architecture
+
+```text
+React UI / assessment experience
+            │
+            ▼
+    typed application state
+            │
+            ▼
+      Web Worker runtime
+            │
+            ▼
+reaction–diffusion solver
+            │
+      ┌─────┴──────────┐
+      ▼                ▼
+field rendering   derived signals
+```
+
+The engine is framework-independent and runs outside the React render loop. Simulation, signal sampling and UI publication operate on separate clocks.
 
 ## Run locally
 
@@ -31,25 +79,39 @@ npm install
 npm run dev
 ```
 
-Open the URL shown by Vite.
-
-## Full verification command
+Run the complete verification suite with:
 
 ```bash
 npm run check
 ```
 
-## Open the prebuilt version without npm
+This performs TypeScript checking, linting, tests and a production build.
 
-After a production build:
+## Technology
 
-```bash
-cd dist
-python3 -m http.server 5173
-```
+- TypeScript
+- React
+- Vite
+- Web Workers
+- Vitest
+- GitHub Actions
+- GitHub Pages
 
-Then open `http://localhost:5173`.
+## Scientific scope
 
-## Recommended first Codex task
+EP Heart Physics is an **educational and research prototype**. It is not a medical device, diagnostic system, patient-specific digital twin or clinically validated simulator.
 
-Ask Codex High mode to audit the code against `docs/VALIDATION_PLAN.md`, correct numerical/scientific weaknesses, and create a sequence of small pull requests. It should not begin 3D work until the 2D propagation tests are credible.
+The reduced electrophysiology model is intended for studying excitable-wave behaviour and teaching electrophysiology concepts. The pseudo-ECG/EGM signals are simplified derived measurements rather than a validated torso-conduction forward model.
+
+## Documentation
+
+- [`docs/PHYSICS_MODEL.md`](docs/PHYSICS_MODEL.md) — model equations, numerical assumptions and limitations
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — software boundaries and runtime design
+- [`docs/VALIDATION_PLAN.md`](docs/VALIDATION_PLAN.md) — scientific verification strategy
+- [`docs/PERFORMANCE_BUDGET.md`](docs/PERFORMANCE_BUDGET.md) — performance targets and constraints
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — planned scientific and product extensions
+- [`docs/adr/`](docs/adr/) — architecture decision records
+
+## License and attribution
+
+See [`LICENSE-NOTICE.md`](LICENSE-NOTICE.md) for repository licensing and third-party attribution notes.

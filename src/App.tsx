@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildTutorEvidence } from './ai/buildTutorEvidence';
 import { TutorPanel } from './ai/TutorPanel';
+import type { TutorActionV1 } from './ai/tutorActions';
 import type {
   CurrentStimulus,
   EngineSnapshot,
@@ -237,6 +238,32 @@ export default function App() {
     }
   }
 
+  function executeTutorAction(action: TutorActionV1): void {
+    if (action.type === 'start') {
+      if (!running) {
+        send({ type: 'start' });
+        setRunning(true);
+      }
+      return;
+    }
+
+    if (action.type === 'pause') {
+      if (running) {
+        send({ type: 'pause' });
+        setRunning(false);
+      }
+      return;
+    }
+
+    if (action.type === 'reset') {
+      reset();
+      return;
+    }
+
+    setScenario(action.scenario);
+    reset(action.scenario, true);
+  }
+
   return (
     <main className="app-shell simulator-shell">
       <ClientModuleNav current="simulator" />
@@ -469,7 +496,7 @@ export default function App() {
         <EcgCanvas samples={ecgSamples} />
       </section>
 
-      <TutorPanel evidence={tutorEvidence} />
+      <TutorPanel evidence={tutorEvidence} onAction={executeTutorAction} />
 
       <footer>
         Manual multi-site pacing uses simultaneous finite-duration current pulses. Anatomical geometry, fibres and regional conduction remain later phases.

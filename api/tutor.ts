@@ -114,6 +114,10 @@ export async function POST(request: Request): Promise<Response> {
         'Never claim that this reduced 2D model is a patient-specific, diagnostic, clinically validated, or whole-heart simulation.',
         'Do not invent measurements that are absent from the evidence.',
         'If the evidence cannot support a conclusion, say so explicitly.',
+        'You may propose at most one simulator action, and only when it directly helps answer the learner request.',
+        'Allowed actions are start, pause, reset, or load_scenario using one of the four built-in scenarios.',
+        'Never propose stimulation coordinates, lesions, numerical parameter changes, solver settings, assessment scoring, or any other action.',
+        'The user must approve a proposal before the browser executes it.',
         'Keep the answer concise and useful to a learner.',
       ].join(' '),
       input: [{
@@ -141,8 +145,27 @@ export async function POST(request: Request): Promise<Response> {
                 type: 'array',
                 items: { type: 'string' },
               },
+              proposedActions: {
+                type: 'array',
+                maxItems: 1,
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: {
+                    type: {
+                      type: 'string',
+                      enum: ['start', 'pause', 'reset', 'load_scenario'],
+                    },
+                    scenario: {
+                      type: ['string', 'null'],
+                      enum: ['manual-pacing', 'planar-wave', 'focal-rhythm', 'obstacle-reentry', null],
+                    },
+                  },
+                  required: ['type', 'scenario'],
+                },
+              },
             },
-            required: ['answer', 'evidenceUsed', 'limitations'],
+            required: ['answer', 'evidenceUsed', 'limitations', 'proposedActions'],
           },
         },
       },

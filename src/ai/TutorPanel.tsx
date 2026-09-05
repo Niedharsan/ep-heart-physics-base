@@ -1,19 +1,22 @@
 import { useMemo, useState } from 'react';
 import { askTutor } from './tutorClient';
+import { tutorActionLabel } from './tutorActions';
+import type { TutorActionV1 } from './tutorActions';
 import type { TutorEvidenceV1, TutorResponseV1 } from './types';
 import './TutorPanel.css';
 
 interface TutorPanelProps {
   readonly evidence: TutorEvidenceV1;
+  readonly onAction: (action: TutorActionV1) => void;
 }
 
 const exampleQuestions = Object.freeze([
   'What is happening in the tissue right now?',
   'Why might propagation stop near a lesion?',
-  'What should I look for in the pseudo-ECG?',
+  'Show me a planar wave and explain what to watch for.',
 ]);
 
-export function TutorPanel({ evidence }: TutorPanelProps) {
+export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<TutorResponseV1 | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,14 +50,14 @@ export function TutorPanel({ evidence }: TutorPanelProps) {
     <section className="panel tutor-panel" aria-label="Ask EP tutor">
       <div className="tutor-panel-heading">
         <div>
-          <span className="panel-kicker">AI TUTOR · READ ONLY</span>
+          <span className="panel-kicker">AI TUTOR · VALIDATED TOOLS</span>
           <h2>Ask EP</h2>
         </div>
         <span className="tutor-evidence-label">{evidenceLabel}</span>
       </div>
 
       <p className="tutor-boundary">
-        The tutor receives a structured summary of the current simulation. It cannot modify the solver, pacing, lesions or assessment scores.
+        The tutor can explain structured simulation evidence and propose only four validated actions: start, pause, reset or load a built-in scenario. Nothing executes until you approve the action button.
       </p>
 
       <div className="tutor-question-row">
@@ -99,6 +102,18 @@ export function TutorPanel({ evidence }: TutorPanelProps) {
       {response && (
         <div className="tutor-response" aria-live="polite">
           <p>{response.answer}</p>
+
+          {response.proposedActions.map((action) => (
+            <div className="tutor-tool-proposal" key={`${action.type}-${action.scenario ?? 'none'}`}>
+              <div>
+                <strong>Suggested simulator action</strong>
+                <span>{tutorActionLabel(action)}</span>
+              </div>
+              <button className="primary" type="button" onClick={() => onAction(action)}>
+                Approve & run
+              </button>
+            </div>
+          ))}
 
           {response.evidenceUsed.length > 0 && (
             <div>

@@ -16,6 +16,13 @@ const exampleQuestions = Object.freeze([
   'Show me a planar wave and explain what to watch for.',
 ]);
 
+const scenarioLabels = Object.freeze({
+  'manual-pacing': 'Manual pacing',
+  'planar-wave': 'Planar wave',
+  'focal-rhythm': 'Focal rhythm',
+  'obstacle-reentry': 'Obstacle propagation',
+} as const);
+
 export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<TutorResponseV1 | null>(null);
@@ -24,7 +31,8 @@ export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
 
   const evidenceLabel = useMemo(() => {
     const activity = evidence.tissue.state.replaceAll('-', ' ');
-    return `${evidence.scenario} · ${activity} · ${evidence.lesionCount} lesion${evidence.lesionCount === 1 ? '' : 's'}`;
+    const scenario = scenarioLabels[evidence.scenario];
+    return `${scenario} · ${activity} · ${evidence.lesionCount} lesion${evidence.lesionCount === 1 ? '' : 's'}`;
   }, [evidence]);
 
   async function submitQuestion(nextQuestion = question): Promise<void> {

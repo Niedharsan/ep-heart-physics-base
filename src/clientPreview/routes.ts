@@ -21,7 +21,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
   Object.freeze({
     id: 'assessment',
     title: 'EP assessment workspace',
-    summary: 'Review channel-aware EGM measurements plus complete Tasks 1-5, including VT ECG and para-Hisian pacing assessment, without an account.',
+    summary: 'Review channel-aware EGM measurements plus complete Tasks 1-8, including VT/PVC ECG localisation and para-Hisian pacing assessment, without an account.',
     href: appHref('mode=assessment'),
     status: 'Available',
     capabilities: Object.freeze([
@@ -31,6 +31,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
       'Task 3 atrial tachycardia, AH-threshold, cannon-wave, adenosine and AVNRT assessment',
       'Task 4 AVRT activation, VAAV/VAV response and pacing-manoeuvre interpretation',
       'Task 5 ventricular-tachycardia ECG and para-Hisian pacing interpretation',
+      'Tasks 6-8 Class 6 VT/PVC ECG localisation with four marks per case',
       'Local attempt history and structured client feedback packages',
     ]),
     limitation: 'Synthetic educational traces; not patient data or a diagnostic device.',

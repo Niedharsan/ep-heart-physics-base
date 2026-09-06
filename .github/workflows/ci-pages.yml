@@ -30,12 +30,16 @@ jobs:
       - run: npm run test
       - run: npm run build:pages
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/ai-tutor-tools')
+        if: >-
+          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'pull_request' && github.head_ref == 'feat/ai-tutor-tools')
         with:
           path: dist
 
   deploy:
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/ai-tutor-tools')
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.head_ref == 'feat/ai-tutor-tools')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

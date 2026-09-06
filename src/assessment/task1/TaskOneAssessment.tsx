@@ -18,12 +18,7 @@ import { EgmCaliperCanvas } from '../EgmCaliperCanvas';
 import { markIntervalMeasurement } from '../marking';
 import type { CaliperPlacement, IntervalId, IntervalMarkingResult } from '../types';
 import { createSinusEgmScenario } from '../waveform';
-import {
-  catheterDefinitions,
-  catheterTargets,
-  taskOneMeasurementIds,
-} from './catalog';
-import type { CatheterId, CatheterTargetId } from './catalog';
+import { taskOneMeasurementIds } from './catalog';
 import {
   markActivationPattern,
   markCatheterPlacements,
@@ -98,7 +93,6 @@ export function TaskOneAssessment({
     measurementToleranceMs: 5,
   }), []);
 
-  const [selectedCatheterId, setSelectedCatheterId] = useState<CatheterId>('hra');
   const [placements, setPlacements] = useState<CatheterPlacements>(initialDraft.placements ?? {});
   const [catheterScore, setCatheterScore] = useState<SectionScore | null>(initialDraft.catheterScore ?? null);
   const [csAnswer, setCsAnswer] = useState<CsOneTwoPosition>(initialDraft.csAnswer ?? '');
@@ -157,11 +151,6 @@ export function TaskOneAssessment({
   );
   const allSectionsMarked = taskOneMeasurementIds.every((id) => measurementCompletion[id] !== undefined)
     && activationScore !== null;
-
-  function placeCatheter(targetId: CatheterTargetId): void {
-    setPlacements((current) => ({ ...current, [selectedCatheterId]: targetId }));
-    setCatheterScore(null);
-  }
 
   function markMeasurement(): void {
     if (!selectedMeasurement) return;

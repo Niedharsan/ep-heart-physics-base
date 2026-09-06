@@ -8,9 +8,9 @@ export function VtLocalizationPractice({ instructor = false }: { readonly instru
       <div className="assessment-panel-heading vt-localization-heading">
         <div>
           <span>CLASS 6 · PAGES 19-21 · 12 ADDITIONAL MARKS</span>
-          <h2 id="vt-localization-practice-title">VT/PVC localisation continues as Tasks 6-8</h2>
+          <h2 id="vt-localization-practice-title">Continue with Tasks 6-8</h2>
           <p>
-            The three Class 6 ECG examples are now separate scored assessment tasks rather than an unscored Task 5 extension.
+            The three Class 6 ECG examples are separate scored assessment tasks, not part of Task 5.
           </p>
         </div>
       </div>

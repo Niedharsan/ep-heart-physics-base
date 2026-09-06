@@ -55,7 +55,7 @@ export function EgmCaliperCanvas({
   running,
   playheadMs,
   onCalipersChange,
-  playbackRate = 1,
+  playbackRate = 0.5,
   onPlaybackRateChange,
   allowExpand = true,
 }: EgmCaliperCanvasProps) {

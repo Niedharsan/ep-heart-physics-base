@@ -158,7 +158,7 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
   const [classification, setClassification] = useState<IntervalClassification | ''>('');
   const [running, setRunning] = useState(true);
   const [playheadMs, setPlayheadMs] = useState(0);
-  const [playbackRate, setPlaybackRate] = useState(1);
+  const [playbackRate, setPlaybackRate] = useState(0.5);
   const [attempts, setAttempts] = useState<readonly StoredAttempt[]>(() => loadAttempts());
   const [latestAttempt, setLatestAttempt] = useState<StoredAttempt | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState('');

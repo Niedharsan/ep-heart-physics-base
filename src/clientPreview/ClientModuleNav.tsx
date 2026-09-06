@@ -18,7 +18,7 @@ const navigationItems: ReadonlyArray<{
 ]);
 
 export function ClientModuleNav({ current }: ClientModuleNavProps) {
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(0.5);
   function updateSpeed(event: ChangeEvent<HTMLInputElement>): void {
     const next = Number(event.target.value);
     setSpeed(next);

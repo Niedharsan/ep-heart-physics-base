@@ -43,7 +43,7 @@ export function RunningEgmStrip({
   const [running, setRunning] = useState(autoPlay);
   const [replayKey, setReplayKey] = useState(0);
   const [expanded, setExpanded] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
+  const [playbackRate, setPlaybackRate] = useState(0.5);
   const [measuring, setMeasuring] = useState(false);
   const [calipers, setCalipers] = useState([0.2, 0.6]);
   const reactId = safeId(useId());

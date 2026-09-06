@@ -218,8 +218,8 @@ export function TaskOneAssessment({
     setSavedAttempts(attempts);
     setSaveMessage(
       force
-        ? `Task 1 submitted: ${result.score}/15. Incomplete answers were marked.`
-        : `Task 1 attempt saved locally: ${result.score}/15.`,
+        ? `Task 1 submitted: ${result.score}/10. Incomplete answers were marked.`
+        : `Task 1 attempt saved locally: ${result.score}/10.`,
     );
   }
 
@@ -349,7 +349,7 @@ export function TaskOneAssessment({
       </section>
 
       <section className="task-one-final assessment-panel">
-        <div><span className="assessment-panel-kicker">TASK 1 RESULT</span><h2>{currentTotal.score}/15 marks</h2><p className="prompt-copy">The attempt remains on this device only. Client review should confirm the educational workflow and expected terminology before release.</p></div>
+        <div><span className="assessment-panel-kicker">TASK 1 RESULT</span><h2>{currentTotal.score - (currentTotal.catheterPlacement?.score ?? 0) - (currentTotal.csLabelling?.score ?? 0)}/10 marks</h2><p className="prompt-copy">The attempt remains on this device only. Client review should confirm the educational workflow and expected terminology before release.</p></div>
         <button
           className="assessment-primary"
           disabled={assessmentMode === 'practice' && !allSectionsMarked}
@@ -358,7 +358,7 @@ export function TaskOneAssessment({
           {assessmentMode === 'practice' ? 'Save local attempt' : 'Submit Task 1'}
         </button>
         {saveMessage && <p className="copy-status">{saveMessage}</p>}
-        {savedAttempts.length > 0 && <div className="attempt-list">{savedAttempts.slice(0, 4).map((attempt) => <div key={attempt.id}><strong>Task 1</strong><span>{attempt.result.score}/15</span><time>{new Date(attempt.createdAtIso).toLocaleString()}</time></div>)}</div>}
+        {savedAttempts.length > 0 && <div className="attempt-list">{savedAttempts.slice(0, 4).map((attempt) => <div key={attempt.id}><strong>Task 1</strong><span>{attempt.result.score - attempt.result.catheterPlacement.score - attempt.result.csLabelling.score}/10</span><time>{new Date(attempt.createdAtIso).toLocaleString()}</time></div>)}</div>}
       </section>
 
       <footer className="assessment-footer"><p>Task allocation: normal measurements 5, activation classification and explanation 5.</p><a href={appHref('mode=assessment', 'feedback')}>Open client feedback</a></footer>

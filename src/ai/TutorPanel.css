@@ -1,0 +1,130 @@
+.tutor-panel {
+  margin-top: 14px;
+  padding: 18px;
+}
+
+.tutor-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tutor-evidence-label {
+  max-width: 420px;
+  padding: 7px 10px;
+  border: 1px solid #285044;
+  border-radius: 999px;
+  color: #8eddbd;
+  background: rgba(24, 73, 57, 0.18);
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+.tutor-boundary {
+  max-width: 900px;
+  margin: 10px 0 14px;
+  color: #8ea3a2;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.tutor-question-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.tutor-question-row textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 82px;
+  border: 1px solid #28414b;
+  border-radius: 12px;
+  padding: 12px 13px;
+  color: #edf7f3;
+  background: #071119;
+  line-height: 1.45;
+}
+
+.tutor-question-row textarea:focus {
+  outline: 2px solid rgba(63, 222, 163, 0.32);
+  border-color: #3d8a70;
+}
+
+.tutor-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tutor-examples button {
+  padding: 7px 10px;
+  color: #a8bbb8;
+  background: #07141b;
+  font-size: 0.74rem;
+}
+
+.tutor-response,
+.tutor-error {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.tutor-response {
+  border: 1px solid #275343;
+  background: rgba(11, 48, 36, 0.24);
+}
+
+.tutor-response > p {
+  margin: 0;
+  color: #edf8f3;
+  line-height: 1.58;
+}
+
+.tutor-response > div {
+  margin-top: 12px;
+}
+
+.tutor-response strong,
+.tutor-error strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #80e9bd;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tutor-response ul {
+  margin: 5px 0 0;
+  padding-left: 20px;
+  color: #9eb0ae;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.tutor-error {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #744048;
+  background: rgba(91, 31, 41, 0.22);
+  color: #f0b5be;
+}
+
+.tutor-error strong { color: #ffc1ca; }
+.tutor-error small { color: #a98288; }
+
+@media (max-width: 720px) {
+  .tutor-panel-heading,
+  .tutor-question-row {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .tutor-question-row { display: grid; }
+  .tutor-evidence-label { text-align: left; }
+}

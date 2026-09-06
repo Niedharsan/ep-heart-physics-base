@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 import type { ClientPreviewRoute } from './routes';
 import { appHref } from '../appHref';
 import './clientPreview.css';
@@ -16,6 +18,12 @@ const navigationItems: ReadonlyArray<{
 ]);
 
 export function ClientModuleNav({ current }: ClientModuleNavProps) {
+  const [speed, setSpeed] = useState(1);
+  function updateSpeed(event: ChangeEvent<HTMLInputElement>): void {
+    const next = Number(event.target.value);
+    setSpeed(next);
+    window.dispatchEvent(new CustomEvent('ep-heart-playback-rate', { detail: next }));
+  }
   return (
     <nav className="client-module-nav" aria-label="EP Heart modules">
       <a className="client-preview-brand" href={appHref()} aria-label="EP Heart home">
@@ -34,6 +42,7 @@ export function ClientModuleNav({ current }: ClientModuleNavProps) {
           </a>
         ))}
       </div>
+      <label className="global-egm-speed"><span>EGM speed {speed.toFixed(2)}×</span><input type="range" min="0.25" max="1.5" step="0.05" value={speed} onChange={updateSpeed} aria-label="Global EGM playback speed" /></label>
     </nav>
   );
 }

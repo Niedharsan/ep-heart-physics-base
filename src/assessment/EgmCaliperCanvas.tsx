@@ -78,6 +78,15 @@ export function EgmCaliperCanvas({
   }, [expanded]);
 
   useEffect(() => {
+    const syncRate = (event: Event): void => {
+      const rate = (event as CustomEvent<number>).detail;
+      if (Number.isFinite(rate)) onPlaybackRateChange?.(rate);
+    };
+    window.addEventListener('ep-heart-playback-rate', syncRate);
+    return () => window.removeEventListener('ep-heart-playback-rate', syncRate);
+  }, [onPlaybackRateChange]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const canvasElement = canvas;

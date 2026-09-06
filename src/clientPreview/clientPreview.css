@@ -76,6 +76,8 @@
   color: var(--ep-accent);
   background: rgba(84, 214, 179, 0.10);
 }
+.global-egm-speed { display: flex; align-items: center; gap: 8px; margin-left: auto; color: #a9bcc2; font-size: 0.72rem; white-space: nowrap; }
+.global-egm-speed input { width: 92px; accent-color: var(--ep-accent); cursor: pointer; }
 
 .client-preview-shell {
   width: min(1320px, calc(100% - 32px));
@@ -253,6 +255,7 @@
     align-items: stretch;
     flex-direction: column;
   }
+  .global-egm-speed { margin-left: 0; justify-content: space-between; }
 
   .client-module-links {
     display: grid;

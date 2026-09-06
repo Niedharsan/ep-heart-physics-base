@@ -285,40 +285,6 @@ export function TaskOneAssessment({
         <div className="task-one-total"><span>Total</span><strong>{currentTotal.score - (currentTotal.catheterPlacement?.score ?? 0) - (currentTotal.csLabelling?.score ?? 0)}/10</strong></div>
       </section>
 
-      <section className="task-one-grid">
-        <article className="assessment-panel task-one-card task-one-removed-section" aria-hidden="true">
-          <div className="assessment-panel-heading"><div><span>SECTION A · 4 MARKS</span><h2>Position the four catheters</h2></div></div>
-          <p className="prompt-copy">Select a catheter, then select its intended recording location on the schematic. The location selectors provide the same keyboard-accessible workflow.</p>
-          <div className="catheter-chip-row">
-            {catheterDefinitions.map((catheter) => <button key={catheter.id} className={selectedCatheterId === catheter.id ? 'active' : ''} onClick={() => setSelectedCatheterId(catheter.id)}>{catheter.shortLabel}</button>)}
-          </div>
-          <div className="heart-placement-map" role="group" aria-label="Schematic cardiac catheter target map">
-            <div className="heart-outline" aria-hidden="true"><span className="ra-shape"/><span className="rv-shape"/><span className="la-shape"/><span className="lv-shape"/><span className="septum-line"/><span className="cs-track"/></div>
-            {catheterTargets.map((target) => <button key={target.id} className="heart-target" style={{ left: `${target.xPercent}%`, top: `${target.yPercent}%` }} onClick={() => placeCatheter(target.id)} title={target.label}>{target.label}</button>)}
-            {catheterDefinitions.map((catheter) => {
-              const target = catheterTargets.find((item) => item.id === placements[catheter.id]);
-              if (!target) return null;
-              return <span key={catheter.id} className="placed-catheter" style={{ left: `${target.xPercent}%`, top: `${target.yPercent}%` }}>{catheter.shortLabel}</span>;
-            })}
-          </div>
-          <div className="placement-select-grid">
-            {catheterDefinitions.map((catheter) => <label key={catheter.id}>{catheter.shortLabel}<select value={placements[catheter.id] ?? ''} onChange={(event: ChangeEvent<HTMLSelectElement>) => setPlacements((current) => ({ ...current, [catheter.id]: event.target.value as CatheterTargetId }))}><option value="">Not placed</option>{catheterTargets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}</select></label>)}
-          </div>
-          {instructorView && <div className="instructor-answer-key"><strong>Reference positions</strong>{catheterDefinitions.map((catheter) => <span key={catheter.id}>{catheter.shortLabel}: {catheterTargets.find((target) => target.id === catheter.correctTargetId)?.label}</span>)}</div>}
-          <button className="assessment-primary" onClick={() => setCatheterScore(markCatheterPlacements(placements))}>Mark catheter positions</button>
-          {catheterScore && <div className={`marking-result ${scoreClass(catheterScore)}`}><strong>{catheterScore.score}/4 marks</strong>{catheterScore.feedback.map((line) => <p key={line}>{line}</p>)}</div>}
-        </article>
-
-        <article className="assessment-panel task-one-card task-one-removed-section" aria-hidden="true">
-          <div className="assessment-panel-heading"><div><span>SECTION B · 1 MARK</span><h2>Label the CS catheter</h2></div></div>
-          <div className="cs-electrode-strip" aria-label="Coronary sinus electrode pairs">{['1–2','3–4','5–6','7–8','9–10'].map((pair) => <span key={pair}>CS {pair}</span>)}</div>
-          <label>CS 1–2 represents the<select value={csAnswer} onChange={(event: ChangeEvent<HTMLSelectElement>) => { setCsAnswer(event.target.value as CsOneTwoPosition); setCsScore(null); }}><option value="">Choose</option><option value="distal">Distal pair</option><option value="proximal">Proximal pair</option></select></label>
-          {instructorView && <div className="instructor-answer-key"><strong>Reference</strong><span>CS 1–2 distal; CS 9–10 proximal at the ostium.</span></div>}
-          <button className="assessment-primary" onClick={() => setCsScore(markCsLabelling(csAnswer))}>Mark CS label</button>
-          {csScore && <div className={`marking-result ${scoreClass(csScore)}`}><strong>{csScore.score}/1 mark</strong>{csScore.feedback.map((line) => <p key={line}>{line}</p>)}</div>}
-        </article>
-      </section>
-
       <section className="assessment-panel task-one-measurements">
         <div className="assessment-panel-heading"><div><span>SECTION C · 5 MARKS</span><h2>Take five normal baseline measurements</h2></div><strong>{measurementsScore.score}/5</strong></div>
         <div className="measurement-tabs">{taskOneMeasurementIds.map((id) => <button key={id} className={selectedMeasurementId === id ? 'active' : ''} onClick={() => { setSelectedMeasurementId(id); setCalipers(initialCalipers); setReportedValue(''); setMeasurementMessage(''); }}>{id}<span>{measurementCompletion[id] === true ? '✓' : measurementCompletion[id] === false ? '×' : '—'}</span></button>)}</div>

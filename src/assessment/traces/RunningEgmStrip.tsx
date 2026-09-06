@@ -99,6 +99,15 @@ export function RunningEgmStrip({
     };
   }, [expanded]);
 
+  useEffect(() => {
+    const syncRate = (event: Event): void => {
+      const rate = (event as CustomEvent<number>).detail;
+      if (Number.isFinite(rate)) setPlaybackRate(rate);
+    };
+    window.addEventListener('ep-heart-playback-rate', syncRate);
+    return () => window.removeEventListener('ep-heart-playback-rate', syncRate);
+  }, []);
+
   function annotationY(annotation: ClinicalTraceAnnotation): number {
     const channelIndex = Math.max(
       0,
@@ -135,7 +144,7 @@ export function RunningEgmStrip({
   }
 
   return (
-    <figure className={`running-egm-strip ${className}`.trim()} data-running-egm={definition.id}>
+    <figure className={`running-egm-strip ${compact ? 'running-egm-strip-compact' : ''} ${className}`.trim()} data-running-egm={definition.id}>
       <div className="running-egm-toolbar">
         <div className="running-egm-status">
           <span className={`running-egm-live-dot ${running ? 'active' : ''}`} aria-hidden="true" />

@@ -19,6 +19,8 @@
   border-bottom: 1px solid rgba(116, 160, 176, 0.18);
   background: rgba(12, 22, 28, 0.94);
 }
+.running-egm-strip-compact .running-egm-toolbar { display: grid; grid-template-columns: 1fr; align-items: stretch; }
+.running-egm-strip-compact .running-egm-actions { justify-content: flex-end; flex-wrap: wrap; }
 
 .running-egm-status,
 .running-egm-actions {

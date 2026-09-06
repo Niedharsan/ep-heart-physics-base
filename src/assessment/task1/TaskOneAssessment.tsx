@@ -155,9 +155,7 @@ export function TaskOneAssessment({
     measurementsScore,
     activationScore ?? markActivationPattern('', ''),
   );
-  const allSectionsMarked = catheterScore !== null
-    && csScore !== null
-    && taskOneMeasurementIds.every((id) => measurementCompletion[id] !== undefined)
+  const allSectionsMarked = taskOneMeasurementIds.every((id) => measurementCompletion[id] !== undefined)
     && activationScore !== null;
 
   function placeCatheter(targetId: CatheterTargetId): void {
@@ -185,7 +183,7 @@ export function TaskOneAssessment({
   }
 
   function finaliseAttempt(force: boolean): void {
-    if (!force && (!allSectionsMarked || catheterScore === null || csScore === null || activationScore === null)) {
+    if (!force && (!allSectionsMarked || activationScore === null)) {
       setSaveMessage('Complete and mark every Task 1 section before saving.');
       return;
     }
@@ -258,9 +256,9 @@ export function TaskOneAssessment({
       <ClientModuleNav current="assessment" />
       <header className="assessment-header">
         <div>
-          <p className="assessment-eyebrow">EP HEART · TASK 1 · 15 MARKS</p>
+          <p className="assessment-eyebrow">EP HEART · TASK 1 · 10 MARKS</p>
           <h1>Basic EP study assessment</h1>
-          <p>Position four standard diagnostic catheters, label the coronary-sinus catheter, measure five baseline intervals and interpret the normal activation pattern.</p>
+          <p>Measure five baseline intervals and interpret the normal activation pattern.</p>
         </div>
         <a className="return-link" href={appHref()}>All modules</a>
       </header>
@@ -282,15 +280,13 @@ export function TaskOneAssessment({
       {instructorView && <div className="instructor-warning">Instructor preview displays answer references. The login-free static build is not secure examination infrastructure.</div>}
 
       <section className="task-one-scorebar" aria-label="Task 1 score">
-        <div><span>Catheters</span><strong>{catheterScore?.score ?? 0}/4</strong></div>
-        <div><span>CS label</span><strong>{csScore?.score ?? 0}/1</strong></div>
         <div><span>Measurements</span><strong>{measurementsScore.score}/5</strong></div>
         <div><span>Activation</span><strong>{activationScore?.score ?? 0}/5</strong></div>
-        <div className="task-one-total"><span>Total</span><strong>{currentTotal.score}/15</strong></div>
+        <div className="task-one-total"><span>Total</span><strong>{currentTotal.score - (currentTotal.catheterPlacement?.score ?? 0) - (currentTotal.csLabelling?.score ?? 0)}/10</strong></div>
       </section>
 
       <section className="task-one-grid">
-        <article className="assessment-panel task-one-card">
+        <article className="assessment-panel task-one-card task-one-removed-section" aria-hidden="true">
           <div className="assessment-panel-heading"><div><span>SECTION A · 4 MARKS</span><h2>Position the four catheters</h2></div></div>
           <p className="prompt-copy">Select a catheter, then select its intended recording location on the schematic. The location selectors provide the same keyboard-accessible workflow.</p>
           <div className="catheter-chip-row">
@@ -313,7 +309,7 @@ export function TaskOneAssessment({
           {catheterScore && <div className={`marking-result ${scoreClass(catheterScore)}`}><strong>{catheterScore.score}/4 marks</strong>{catheterScore.feedback.map((line) => <p key={line}>{line}</p>)}</div>}
         </article>
 
-        <article className="assessment-panel task-one-card">
+        <article className="assessment-panel task-one-card task-one-removed-section" aria-hidden="true">
           <div className="assessment-panel-heading"><div><span>SECTION B · 1 MARK</span><h2>Label the CS catheter</h2></div></div>
           <div className="cs-electrode-strip" aria-label="Coronary sinus electrode pairs">{['1–2','3–4','5–6','7–8','9–10'].map((pair) => <span key={pair}>CS {pair}</span>)}</div>
           <label>CS 1–2 represents the<select value={csAnswer} onChange={(event: ChangeEvent<HTMLSelectElement>) => { setCsAnswer(event.target.value as CsOneTwoPosition); setCsScore(null); }}><option value="">Choose</option><option value="distal">Distal pair</option><option value="proximal">Proximal pair</option></select></label>
@@ -365,7 +361,7 @@ export function TaskOneAssessment({
         {savedAttempts.length > 0 && <div className="attempt-list">{savedAttempts.slice(0, 4).map((attempt) => <div key={attempt.id}><strong>Task 1</strong><span>{attempt.result.score}/15</span><time>{new Date(attempt.createdAtIso).toLocaleString()}</time></div>)}</div>}
       </section>
 
-      <footer className="assessment-footer"><p>Task allocation: catheter positions 4, CS label 1, normal measurements 5, activation classification and explanation 5.</p><a href={appHref('mode=assessment', 'feedback')}>Open client feedback</a></footer>
+      <footer className="assessment-footer"><p>Task allocation: normal measurements 5, activation classification and explanation 5.</p><a href={appHref('mode=assessment', 'feedback')}>Open client feedback</a></footer>
       </main>
     </AssessmentSessionBoundary>
   );

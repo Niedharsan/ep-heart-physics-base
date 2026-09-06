@@ -61,6 +61,7 @@ input[type="range"] { padding: 0; accent-color: #40dca0; }
 .assessment-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; }
 .lower-grid { margin-top: 16px; grid-template-columns: minmax(0, 1fr) 420px; }
 .assessment-panel { border: 1px solid #1d3139; border-radius: 18px; background: #071119; padding: 16px; min-width: 0; }
+.task-one-removed-section { display: none; }
 .assessment-panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
 .assessment-panel-heading h2, .assessment-panel h2 { margin: 4px 0 0; font-size: 1.1rem; }
 .assessment-panel-heading p { margin: 0; color: #81979a; font-size: 0.82rem; }

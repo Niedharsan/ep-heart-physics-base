@@ -44,6 +44,8 @@ export function RunningEgmStrip({
   const [replayKey, setReplayKey] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [measuring, setMeasuring] = useState(false);
+  const [calipers, setCalipers] = useState([0.2, 0.6]);
   const reactId = safeId(useId());
   const prefix = `running-egm-${safeId(definition.id)}-${reactId}`;
   const smallGridId = `${prefix}-small-grid`;
@@ -117,7 +119,7 @@ export function RunningEgmStrip({
   }
 
   function renderAnnotations(offsetX: number) {
-    return visibleAnnotations.map((annotation) => {
+    return visibleAnnotations.map((annotation, index) => {
       const x = offsetX + (annotation.timeMs / definition.durationMs) * plotWidth;
       const endX = annotation.endTimeMs === undefined
         ? undefined
@@ -128,14 +130,14 @@ export function RunningEgmStrip({
           {endX === undefined ? (
             <>
               <line x1={x} y1={y + 4} x2={x} y2={y + rowHeight - 14} />
-              <text x={x + 5} y={y}>{annotation.label}</text>
+              <text x={x + 5} y={y}>{index + 1}</text>
             </>
           ) : (
             <>
               <line x1={x} y1={y + 10} x2={endX} y2={y + 10} />
               <line x1={x} y1={y + 4} x2={x} y2={y + 16} />
               <line x1={endX} y1={y + 4} x2={endX} y2={y + 16} />
-              <text x={(x + endX) / 2} y={y + 2} textAnchor="middle">{annotation.label}</text>
+              <text x={(x + endX) / 2} y={y + 2} textAnchor="middle">{index + 1}</text>
             </>
           )}
         </g>
@@ -153,6 +155,10 @@ export function RunningEgmStrip({
           <span>10 mm/mV</span>
         </div>
         <div className="running-egm-actions">
+          <button type="button" aria-pressed={measuring} onClick={() => {
+            setMeasuring(!measuring);
+            setRunning(false);
+          }}>{measuring ? 'Hide calipers' : 'Measure'}</button>
           <label className="running-egm-speed" title="Slow down or speed up the tracing">
             <span>Speed {playbackRate.toFixed(2)}×</span>
             <input
@@ -170,13 +176,14 @@ export function RunningEgmStrip({
               Enlarge tracing
             </button>
           )}
-          <button type="button" onClick={() => setRunning((current) => !current)}>
+          <button type="button" onClick={() => { setMeasuring(false); setRunning((current) => !current); }}>
             {running ? 'Freeze' : 'Run'}
           </button>
           <button
             type="button"
             onClick={() => {
               setReplayKey((current) => current + 1);
+              setMeasuring(false);
               setRunning(true);
             }}
           >
@@ -185,9 +192,11 @@ export function RunningEgmStrip({
         </div>
       </div>
 
+      <div className="running-egm-measurement-area">
       <svg
         className={`running-egm-svg ${svgClassName}`.trim()}
         viewBox={`0 0 ${labelWidth + plotWidth} ${height}`}
+        preserveAspectRatio="none"
         role="img"
         aria-labelledby={`${titleId} ${descriptionId}`}
       >
@@ -273,11 +282,42 @@ export function RunningEgmStrip({
           </text>
         </g>
       </svg>
+      {measuring && <div className="running-egm-calipers" style={{ left: `${100 * labelWidth / (labelWidth + plotWidth)}%` }}>
+        {calipers.map((position, index) => <button
+          key={index}
+          type="button"
+          className={`running-egm-caliper caliper-${index}`}
+          style={{ left: `${position * 100}%` }}
+          aria-label={`${index === 0 ? 'Start' : 'End'} caliper`}
+          onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); }}
+          onPointerMove={(event) => {
+            if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+            const bounds = event.currentTarget.parentElement!.getBoundingClientRect();
+            const next = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+            setCalipers((current) => current.map((value, i) => i === index ? next : value));
+          }}
+          onPointerUp={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            event.preventDefault();
+            const delta = (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? 10 : 1) / definition.durationMs;
+            setCalipers((current) => current.map((value, i) => i === index ? Math.max(0, Math.min(1, value + delta)) : value));
+          }}
+        ><span>{index === 0 ? 'Start' : 'End'}</span></button>)}
+      </div>}
+      </div>
+      {measuring && <div className="running-egm-measurement-readout">
+        <strong>{Math.round(Math.abs(calipers[1]! - calipers[0]!) * definition.durationMs)} ms</strong>
+        <span>Drag the handles or use arrow keys. Shift + arrow moves 10 ms.</span>
+      </div>}
 
       <figcaption>
         {definition.teachingLabel}
         {visibleAnnotations.length > 0 ? ' Teaching overlays visible.' : ''}
       </figcaption>
+      {visibleAnnotations.length > 0 && <ol className="running-egm-answer-notes" aria-label="Tracing explanations">
+        {visibleAnnotations.map((annotation) => <li key={annotation.id}>{annotation.label}</li>)}
+      </ol>}
 
       {expanded && (
         <div

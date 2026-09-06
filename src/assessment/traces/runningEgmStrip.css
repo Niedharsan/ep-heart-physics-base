@@ -11,6 +11,7 @@
 }
 
 .running-egm-toolbar {
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -24,10 +25,24 @@
 
 .running-egm-status,
 .running-egm-actions {
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
+.running-egm-measurement-area { position: relative; }
+.running-egm-answer-notes { margin: 0; padding: 12px 16px 12px 38px; background: #101e25; border-top: 1px solid #34505b; color: #e3eee9; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.running-egm-answer-notes li { padding: 4px 0 4px 4px; }
+.running-egm-answer-notes li::marker { color: #f4c989; font-weight: 800; }
+.running-egm-calipers { position: absolute; top: 0; right: 0; bottom: 24px; pointer-events: none; }
+.running-egm-caliper { position: absolute; top: 0; bottom: 0; width: 28px; padding: 0; transform: translateX(-50%); border: 0; background: transparent; color: #54d7b0; pointer-events: auto; touch-action: none; cursor: ew-resize; }
+.running-egm-caliper::after { content: ''; position: absolute; top: 24px; bottom: 0; left: 13px; border-left: 2px solid currentColor; }
+.running-egm-caliper span { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); padding: 2px 4px; background: #071015; font-size: 11px; }
+.running-egm-caliper.caliper-1 { color: #ffb76b; }
+.running-egm-caliper:focus-visible { outline: 2px solid currentColor; }
+.running-egm-measurement-readout { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px; color: #a9bcc2; font-size: 12px; }
+.running-egm-measurement-readout strong { color: #fff; font-size: 18px; }
 
 .running-egm-speed {
   display: flex;

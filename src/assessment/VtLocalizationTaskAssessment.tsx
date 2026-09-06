@@ -5,6 +5,7 @@ import { ClientModuleNav } from '../clientPreview/ClientModuleNav';
 import { AssessmentSessionBoundary } from './AssessmentSessionBoundary';
 import { useAssessmentSessionController } from './sessionController';
 import type { SharedAssessmentMode } from './sessionController';
+import { VtLocalizationLiveTrace } from './VtLocalizationLiveTrace';
 import {
   clearAssessmentWorkingState,
   loadAssessmentDraft,
@@ -12,27 +13,17 @@ import {
   saveAssessmentDraft,
   saveAssessmentResult,
 } from './workingState';
-import class6Case19 from './task5/assets/class6-vt-case-19.svg';
-import class6Case20 from './task5/assets/class6-vt-case-20.svg';
-import class6Case21 from './task5/assets/class6-vt-case-21.svg';
 import {
   EMPTY_VT_LOCALIZATION_RESPONSE,
   findVtLocalizationCase,
   markVtLocalizationResponse,
 } from './task5/vtLocalizationPractice';
 import type {
-  VtLocalizationCase,
   VtLocalizationMark,
   VtLocalizationResponse,
   VtLocalizationTaskId,
 } from './task5/vtLocalizationPractice';
 import './task5/vtLocalizationPractice.css';
-
-const caseImages: Readonly<Record<VtLocalizationCase['id'], string>> = Object.freeze({
-  'class6-page19': class6Case19,
-  'class6-page20': class6Case20,
-  'class6-page21': class6Case21,
-});
 
 const taskLabels = Object.freeze([
   Object.freeze({ id: '1', label: 'Task 1 · Basic EP study' }),
@@ -130,7 +121,6 @@ export function VtLocalizationTaskAssessment({
   };
 
   const showWorkedAnswer = instructor || (assessmentMode === 'practice' && result !== null);
-  const image = caseImages[item.id];
 
   return (
     <AssessmentSessionBoundary controller={session}>
@@ -197,9 +187,7 @@ export function VtLocalizationTaskAssessment({
             </div>
           </div>
 
-          <div className="vt-localization-image-shell">
-            <img src={image} alt={`ECG tracing for ${item.title}`} />
-          </div>
+          <VtLocalizationLiveTrace taskId={taskId} instructor={instructor} />
 
           <div className="vt-localization-fields">
             <label data-status={fieldStatus(result, result?.fields.morphology ?? false)}>

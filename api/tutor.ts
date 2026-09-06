@@ -1,3 +1,5 @@
+import { classSixVtLocalizationTeachingRules } from '../src/assessment/task5/vtLocalizationPractice';
+
 const GEMINI_GENERATE_CONTENT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 const MAX_QUESTION_LENGTH = 1000;
@@ -8,6 +10,11 @@ const ALLOWED_SCENARIOS = Object.freeze([
   'focal-rhythm',
   'obstacle-reentry',
 ] as const);
+
+const CLASS_SIX_VT_LOCALIZATION_TUTOR_GUIDANCE = [
+  'When the learner specifically asks about Class 6 VT/PVC ECG localisation, use the following course-specific teaching framework and identify it as the course framework rather than a complete clinical diagnostic algorithm.',
+  ...classSixVtLocalizationTeachingRules,
+].join(' ');
 
 type AllowedScenario = typeof ALLOWED_SCENARIOS[number];
 
@@ -160,10 +167,11 @@ export async function POST(request: Request): Promise<Response> {
           parts: [{
             text: [
               'You are the educational EP tutor for a cardiac electrophysiology simulation.',
-              'Answer only from the structured simulator evidence and stable electrophysiology principles.',
+              'Answer only from the structured simulator evidence, the explicitly supplied course framework, and stable electrophysiology principles.',
               'Never claim that this reduced 2D model is a patient-specific, diagnostic, clinically validated, or whole-heart simulation.',
               'Do not invent measurements that are absent from the evidence.',
               'If the evidence cannot support a conclusion, say so explicitly.',
+              CLASS_SIX_VT_LOCALIZATION_TUTOR_GUIDANCE,
               'You may propose at most one simulator action, and only when it directly helps answer the learner request.',
               'Allowed actions are start, pause, reset, or load_scenario using one of the four built-in scenarios.',
               'Never propose stimulation coordinates, lesions, numerical parameter changes, solver settings, assessment scoring, or any other action.',

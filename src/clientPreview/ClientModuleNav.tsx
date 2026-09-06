@@ -17,8 +17,34 @@ const navigationItems: ReadonlyArray<{
   Object.freeze({ id: 'assessment', label: 'Assessments', search: 'mode=assessment' }),
 ]);
 
+function assessmentTaskHref(task: '6' | '7' | '8'): string {
+  if (typeof window === 'undefined') return appHref(`mode=assessment&task=${task}`);
+  const current = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams();
+  params.set('mode', 'assessment');
+  params.set('task', task);
+  const assessmentMode = current.get('assessmentMode');
+  if (assessmentMode === 'mock' || assessmentMode === 'exam') {
+    params.set('assessmentMode', assessmentMode);
+  } else if (current.get('view') === 'instructor') {
+    params.set('view', 'instructor');
+  }
+  return appHref(params.toString());
+}
+
+function currentAssessmentTask(): string | null {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get('task');
+}
+
+function isNewLocalizationTask(task: string | null): task is '6' | '7' | '8' {
+  return task === '6' || task === '7' || task === '8';
+}
+
 export function ClientModuleNav({ current }: ClientModuleNavProps) {
   const [speed, setSpeed] = useState(0.5);
+  const selectedAssessmentTask = current === 'assessment' ? currentAssessmentTask() : null;
+  const localizationTaskSelected = isNewLocalizationTask(selectedAssessmentTask);
   function updateSpeed(event: ChangeEvent<HTMLInputElement>): void {
     const next = Number(event.target.value);
     setSpeed(next);
@@ -31,14 +57,27 @@ export function ClientModuleNav({ current }: ClientModuleNavProps) {
         <strong>EP Heart</strong>
       </a>
       <div className="client-module-links">
-        {navigationItems.map((item) => (
+        {navigationItems.map((item) => {
+          const active = item.id === current && !(item.id === 'assessment' && localizationTaskSelected);
+          return (
+            <a
+              key={item.id}
+              className={active ? 'active' : undefined}
+              href={appHref(item.search)}
+              aria-current={active ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          );
+        })}
+        {current === 'assessment' && (['6', '7', '8'] as const).map((task) => (
           <a
-            key={item.id}
-            className={item.id === current ? 'active' : undefined}
-            href={appHref(item.search)}
-            aria-current={item.id === current ? 'page' : undefined}
+            key={task}
+            className={selectedAssessmentTask === task ? 'active' : undefined}
+            href={assessmentTaskHref(task)}
+            aria-current={selectedAssessmentTask === task ? 'page' : undefined}
           >
-            {item.label}
+            Task {task}
           </a>
         ))}
       </div>

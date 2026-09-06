@@ -30,13 +30,14 @@ describe('client preview integration', () => {
     expect(clientModules.every((module) => module.href.startsWith('/?mode='))).toBe(true);
   });
 
-  it('keeps Tasks 1-5 delivered while authentication remains planned', () => {
+  it('keeps Tasks 1-8 delivered while authentication remains planned', () => {
     const assessment = clientModules.find((module) => module.id === 'assessment');
     const delivered = assessment?.capabilities.join(' ') ?? '';
     const planned = plannedClientCapabilities.join(' ');
-    for (const task of ['Task 1', 'Task 2', 'Task 3', 'Task 4', 'Task 5']) {
+    for (const task of ['Task 1', 'Task 2', 'Task 3', 'Task 4', 'Task 5', 'Tasks 6-8']) {
       expect(delivered).toContain(task);
     }
+    expect(assessment?.summary).toContain('Tasks 1-8');
     expect(planned).toContain('User login');
   });
 

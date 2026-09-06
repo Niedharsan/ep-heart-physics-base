@@ -43,6 +43,9 @@ describe('Gemini tutor API', () => {
       'x-goog-api-key': 'unit-test-key',
     }));
     expect(request.body).not.toContain('unit-test-key');
+    expect(request.body).toContain('Class 6 VT/PVC ECG localisation');
+    expect(request.body).toContain('V3 or later favours RVOT');
+    expect(request.body).toContain('maximum deflection index');
   });
 
   it('rejects unsupported actions and more than one proposed action', () => {

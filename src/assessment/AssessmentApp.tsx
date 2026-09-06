@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 import { ClientModuleNav } from '../clientPreview/ClientModuleNav';
 import { clearAttempts, loadAttempts, saveAttempt } from './attemptStore';
 import {
@@ -29,6 +29,7 @@ import { TaskTwoAssessment } from './task2/TaskTwoAssessment';
 import { TaskThreeAssessment } from './task3/TaskThreeAssessment';
 import { TaskFourAssessment } from './task4/TaskFourAssessment';
 import { TaskFiveAssessment } from './task5/TaskFiveAssessment';
+import { AssessmentTutorPlaceholder } from './AssessmentTutorPlaceholder';
 import {
   createIntervalMeasurementQuestion,
   toStudentAssessmentQuestion,
@@ -72,54 +73,18 @@ function allowedChannelLabels(
     .join(', ');
 }
 
-function defaultCalipersFor(
-  scenario: EgmScenario,
-  intervalId: IntervalId,
-): CaliperPlacement {
-  const firstBeat = scenario.beats[0];
-  const secondBeat = scenario.beats[1] ?? firstBeat;
-  if (!firstBeat) {
-    return {
-      start: { timeMs: 0, channelId: scenario.channels[0]?.id ?? 'surface-ii' },
-      end: { timeMs: 0, channelId: scenario.channels[0]?.id ?? 'surface-ii' },
-    };
-  }
-
-  switch (intervalId) {
-    case 'PA':
-      return {
-        start: { timeMs: firstBeat.pOnsetMs ?? firstBeat.ventricularOnsetMs, channelId: 'surface-ii' },
-        end: { timeMs: firstBeat.atrialHisMs ?? firstBeat.ventricularOnsetMs, channelId: 'hbe-distal' },
-      };
-    case 'AH':
-      return {
-        start: { timeMs: firstBeat.atrialHisMs ?? firstBeat.ventricularOnsetMs, channelId: 'hbe-distal' },
-        end: { timeMs: firstBeat.hisOnsetMs ?? firstBeat.ventricularOnsetMs, channelId: 'hbe-distal' },
-      };
-    case 'HV':
-      return {
-        start: { timeMs: firstBeat.hisOnsetMs ?? firstBeat.ventricularOnsetMs, channelId: 'hbe-distal' },
-        end: { timeMs: firstBeat.ventricularOnsetMs, channelId: 'hbe-distal' },
-      };
-    case 'PR':
-      return {
-        start: { timeMs: firstBeat.pOnsetMs ?? firstBeat.ventricularOnsetMs, channelId: 'surface-ii' },
-        end: { timeMs: firstBeat.ventricularOnsetMs, channelId: 'surface-ii' },
-      };
-    case 'RR':
-      return {
-        start: { timeMs: firstBeat.ventricularOnsetMs, channelId: 'surface-ii' },
-        end: { timeMs: secondBeat?.ventricularOnsetMs ?? firstBeat.ventricularOnsetMs, channelId: 'surface-ii' },
-      };
-    case 'VA':
-      return {
-        start: { timeMs: firstBeat.ventricularOnsetMs, channelId: 'rva' },
-        end: {
-          timeMs: firstBeat.retrogradeAtrialOnsetMs ?? firstBeat.ventricularOnsetMs,
-          channelId: 'hbe-distal',
-        },
-      };
-  }
+export function initialCalipersFor(scenario: EgmScenario): CaliperPlacement {
+  const channelId = scenario.channels[0]?.id ?? 'surface-ii';
+  return Object.freeze({
+    start: Object.freeze({
+      timeMs: Math.round(scenario.durationMs * 0.16),
+      channelId,
+    }),
+    end: Object.freeze({
+      timeMs: Math.round(scenario.durationMs * 0.34),
+      channelId,
+    }),
+  });
 }
 
 const taskLinks: ReadonlyArray<{ readonly id: AssessmentTask; readonly label: string }> = Object.freeze([
@@ -158,12 +123,20 @@ export function AssessmentApp() {
     );
   }
 
-  if (selectedTask === '1') return <TaskOneAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
-  if (selectedTask === '2') return <TaskTwoAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
-  if (selectedTask === '3') return <TaskThreeAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
-  if (selectedTask === '4') return <TaskFourAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
-  if (selectedTask === '5') return <TaskFiveAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
-  return <IntervalAssessmentApp assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  let assessmentContent: ReactNode;
+  if (selectedTask === '1') assessmentContent = <TaskOneAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  else if (selectedTask === '2') assessmentContent = <TaskTwoAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  else if (selectedTask === '3') assessmentContent = <TaskThreeAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  else if (selectedTask === '4') assessmentContent = <TaskFourAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  else if (selectedTask === '5') assessmentContent = <TaskFiveAssessment assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+  else assessmentContent = <IntervalAssessmentApp assessmentView={assessmentView} assessmentMode={assessmentMode} />;
+
+  return (
+    <>
+      {assessmentContent}
+      <AssessmentTutorPlaceholder />
+    </>
+  );
 }
 
 interface IntervalAssessmentAppProps {
@@ -185,6 +158,7 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
   const [classification, setClassification] = useState<IntervalClassification | ''>('');
   const [running, setRunning] = useState(true);
   const [playheadMs, setPlayheadMs] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(0.5);
   const [attempts, setAttempts] = useState<readonly StoredAttempt[]>(() => loadAttempts());
   const [latestAttempt, setLatestAttempt] = useState<StoredAttempt | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState('');
@@ -288,7 +262,7 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
 
   const calipers = caliperOverride?.key === caliperStateKey
     ? caliperOverride.placement
-    : defaultCalipersFor(scenario, activeIntervalId);
+    : initialCalipersFor(scenario);
 
   const studentQuestion = useMemo(() => {
     if (!selectedInterval) return undefined;
@@ -306,13 +280,13 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
     let frame = 0;
     function animate(timestamp: number): void {
       if (animationStartRef.current === null) animationStartRef.current = timestamp;
-      const elapsed = timestamp - animationStartRef.current;
+      const elapsed = (timestamp - animationStartRef.current) * playbackRate;
       setPlayheadMs(elapsed % scenario.durationMs);
       frame = requestAnimationFrame(animate);
     }
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [running, scenario.durationMs]);
+  }, [playbackRate, running, scenario.durationMs]);
 
   function resetCurrentResponse(): void {
     setCaliperOverride(null);
@@ -657,6 +631,8 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
                 calipers={calipers}
                 running={running}
                 playheadMs={playheadMs}
+                playbackRate={playbackRate}
+                onPlaybackRateChange={setPlaybackRate}
                 onCalipersChange={(placement) => {
                   if (sessionLocked || (timedAssessment && !sessionStarted)) return;
                   setCaliperOverride({

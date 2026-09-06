@@ -1,19 +1,29 @@
 import { useMemo, useState } from 'react';
 import { askTutor } from './tutorClient';
+import { tutorActionLabel } from './tutorActions';
+import type { TutorActionV1 } from './tutorActions';
 import type { TutorEvidenceV1, TutorResponseV1 } from './types';
 import './TutorPanel.css';
 
 interface TutorPanelProps {
   readonly evidence: TutorEvidenceV1;
+  readonly onAction: (action: TutorActionV1) => void;
 }
 
 const exampleQuestions = Object.freeze([
   'What is happening in the tissue right now?',
   'Why might propagation stop near a lesion?',
-  'What should I look for in the pseudo-ECG?',
+  'Show me a planar wave and explain what to watch for.',
 ]);
 
-export function TutorPanel({ evidence }: TutorPanelProps) {
+const scenarioLabels = Object.freeze({
+  'manual-pacing': 'Manual pacing',
+  'planar-wave': 'Planar wave',
+  'focal-rhythm': 'Focal rhythm',
+  'obstacle-reentry': 'Obstacle propagation',
+} as const);
+
+export function TutorPanel({ evidence, onAction }: TutorPanelProps) {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<TutorResponseV1 | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +31,8 @@ export function TutorPanel({ evidence }: TutorPanelProps) {
 
   const evidenceLabel = useMemo(() => {
     const activity = evidence.tissue.state.replaceAll('-', ' ');
-    return `${evidence.scenario} · ${activity} · ${evidence.lesionCount} lesion${evidence.lesionCount === 1 ? '' : 's'}`;
+    const scenario = scenarioLabels[evidence.scenario];
+    return `${scenario} · ${activity} · ${evidence.lesionCount} lesion${evidence.lesionCount === 1 ? '' : 's'}`;
   }, [evidence]);
 
   async function submitQuestion(nextQuestion = question): Promise<void> {
@@ -44,17 +55,17 @@ export function TutorPanel({ evidence }: TutorPanelProps) {
   }
 
   return (
-    <section className="panel tutor-panel" aria-label="Ask EP tutor">
+    <section className="panel tutor-panel" aria-label="EP tutor">
       <div className="tutor-panel-heading">
         <div>
-          <span className="panel-kicker">AI TUTOR · READ ONLY</span>
-          <h2>Ask EP</h2>
+          <span className="panel-kicker">EP TUTOR</span>
+          <h2>Ask the EP tutor</h2>
         </div>
         <span className="tutor-evidence-label">{evidenceLabel}</span>
       </div>
 
       <p className="tutor-boundary">
-        The tutor receives a structured summary of the current simulation. It cannot modify the solver, pacing, lesions or assessment scores.
+        Ask about the current simulation. The tutor can also suggest start, pause, reset or a built-in scenario. Suggested actions only run when you choose to run them.
       </p>
 
       <div className="tutor-question-row">
@@ -76,7 +87,7 @@ export function TutorPanel({ evidence }: TutorPanelProps) {
           disabled={loading || question.trim().length === 0}
           onClick={() => void submitQuestion()}
         >
-          {loading ? 'Thinking…' : 'Ask tutor'}
+          {loading ? 'Answering…' : 'Ask tutor'}
         </button>
       </div>
 
@@ -92,7 +103,7 @@ export function TutorPanel({ evidence }: TutorPanelProps) {
         <div className="tutor-error" role="alert">
           <strong>Tutor unavailable</strong>
           <span>{error}</span>
-          <small>The simulator remains fully functional because AI is isolated from the numerical engine.</small>
+          <small>The simulator will continue to work normally.</small>
         </div>
       )}
 
@@ -100,9 +111,21 @@ export function TutorPanel({ evidence }: TutorPanelProps) {
         <div className="tutor-response" aria-live="polite">
           <p>{response.answer}</p>
 
+          {response.proposedActions.map((action) => (
+            <div className="tutor-tool-proposal" key={`${action.type}-${action.scenario ?? 'none'}`}>
+              <div>
+                <strong>Suggested action</strong>
+                <span>{tutorActionLabel(action)}</span>
+              </div>
+              <button className="primary" type="button" onClick={() => onAction(action)}>
+                Run action
+              </button>
+            </div>
+          ))}
+
           {response.evidenceUsed.length > 0 && (
             <div>
-              <strong>Evidence used</strong>
+              <strong>Simulation data used</strong>
               <ul>{response.evidenceUsed.map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
           )}

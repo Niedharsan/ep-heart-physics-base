@@ -32,6 +32,7 @@ import {
 } from './store';
 import { taskFiveTraceCatalog } from './traceCatalog';
 import { TaskFiveTraceStrip } from './TaskFiveTraceStrip';
+import { VtLocalizationPractice } from './VtLocalizationPractice';
 
 const caseHeadings: Readonly<Record<TaskFiveCaseId, string>> = Object.freeze({
   'vt-rvot': 'Wide-complex tachycardia · case 1',
@@ -284,6 +285,8 @@ export function TaskFiveAssessment({
           );
         })}
       </section>
+
+      {assessmentMode === 'practice' && <VtLocalizationPractice instructor={instructor} />}
 
       <footer className="assessment-footer task-five-footer">
         <div>

@@ -37,6 +37,7 @@ describe('RunningEgmStrip', () => {
     expect(markup).toContain('LIVE RECORDING');
     expect(markup).toContain('Freeze');
     expect(markup).toContain('Replay');
+    expect(markup).toContain('Enlarge tracing');
     expect(markup).toContain('1 mV');
     expect(markup).toContain('signal-surface');
     expect(markup).toContain('signal-intracardiac');

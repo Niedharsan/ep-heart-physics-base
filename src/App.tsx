@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildTutorEvidence } from './ai/buildTutorEvidence';
 import { TutorPanel } from './ai/TutorPanel';
+import type { TutorActionV1 } from './ai/tutorActions';
 import type {
   CurrentStimulus,
   EngineSnapshot,
@@ -8,7 +9,6 @@ import type {
   WorkerCommand,
   WorkerEvent,
 } from './engine/core/types';
-import { ClientModuleNav } from './clientPreview/ClientModuleNav';
 import { alievPanfilovPresets } from './engine/models/AlievPanfilov';
 import { EcgCanvas } from './ui/EcgCanvas';
 import {
@@ -71,8 +71,8 @@ export default function App() {
     const labels: Record<ScenarioId, string> = {
       'manual-pacing': 'Manual pacing',
       'planar-wave': 'Planar wave',
-      'focal-rhythm': 'Automatic focal rhythm',
-      'obstacle-reentry': 'Obstacle / re-entry scaffold',
+      'focal-rhythm': 'Focal rhythm',
+      'obstacle-reentry': 'Obstacle propagation',
     };
     return labels[scenario];
   }, [scenario]);
@@ -237,15 +237,39 @@ export default function App() {
     }
   }
 
+  function executeTutorAction(action: TutorActionV1): void {
+    if (action.type === 'start') {
+      if (!running) {
+        send({ type: 'start' });
+        setRunning(true);
+      }
+      return;
+    }
+
+    if (action.type === 'pause') {
+      if (running) {
+        send({ type: 'pause' });
+        setRunning(false);
+      }
+      return;
+    }
+
+    if (action.type === 'reset') {
+      reset();
+      return;
+    }
+
+    setScenario(action.scenario);
+    reset(action.scenario, true);
+  }
+
   return (
     <main className="app-shell simulator-shell">
-      <ClientModuleNav current="simulator" />
-
       <header className="topbar">
         <div className="topbar-copy">
           <p className="eyebrow">EP HEART · TISSUE SIMULATOR</p>
           <h1>Cardiac tissue simulator</h1>
-          <p className="subtitle">Place pacing sites, trigger propagation and compare the signal-derived pseudo-ECG.</p>
+          <p className="subtitle">Place pacing sites, trigger wave propagation and observe the resulting pseudo-ECG.</p>
         </div>
         <div
           className={`status-pill ${running ? 'running' : ''} ${tissueActivity.visibleActiveCellCount > 0 ? 'active-wave' : ''}`}
@@ -274,9 +298,9 @@ export default function App() {
               }}
             >
               <option value="manual-pacing">Manual pacing</option>
-              <option value="focal-rhythm">Automatic focal rhythm</option>
+              <option value="focal-rhythm">Focal rhythm</option>
               <option value="planar-wave">Planar wave</option>
-              <option value="obstacle-reentry">Obstacle / re-entry scaffold</option>
+              <option value="obstacle-reentry">Obstacle propagation</option>
             </select>
           </label>
 
@@ -440,7 +464,7 @@ export default function App() {
         </article>
 
         <aside className="panel metrics-panel">
-          <span className="panel-kicker">LIVE ENGINE</span>
+          <span className="panel-kicker">SIMULATION STATE</span>
           <dl>
             <div><dt>Model time</dt><dd>{snapshot?.time.toFixed(1) ?? '0.0'}</dd></div>
             <div><dt>Tissue state</dt><dd>{tissueActivity.label}</dd></div>
@@ -452,8 +476,8 @@ export default function App() {
             <div><dt>Lesions</dt><dd>{snapshot?.lesions.length ?? 0}</dd></div>
           </dl>
           <div className="notice">
-            <strong>Scientific boundary</strong>
-            <p>This is a homogeneous 2D excitable-tissue prototype. Manual pacing uses finite-duration current, but this is not anatomical whole-heart propagation.</p>
+            <strong>Model scope</strong>
+            <p>This is a homogeneous 2D excitable-tissue model. Manual pacing uses finite-duration current pulses; it does not represent anatomical whole-heart propagation.</p>
           </div>
         </aside>
       </section>
@@ -461,18 +485,18 @@ export default function App() {
       <section className="panel ecg-panel">
         <div className="panel-heading">
           <div>
-            <span className="panel-kicker">SIGNAL-DERIVED OUTPUT</span>
-            <h2>Pseudo-ECG lead</h2>
+            <span className="panel-kicker">DERIVED SIGNAL</span>
+            <h2>Pseudo-ECG</h2>
           </div>
-          <p>No prerecorded beat template.</p>
+          <p>Derived from the simulated tissue state.</p>
         </div>
         <EcgCanvas samples={ecgSamples} />
       </section>
 
-      <TutorPanel evidence={tutorEvidence} />
+      <TutorPanel evidence={tutorEvidence} onAction={executeTutorAction} />
 
       <footer>
-        Manual multi-site pacing uses simultaneous finite-duration current pulses. Anatomical geometry, fibres and regional conduction remain later phases.
+        Model scope: homogeneous 2D tissue without anatomical geometry, fibre orientation or regional conduction.
       </footer>
     </main>
   );

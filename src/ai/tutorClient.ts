@@ -1,3 +1,4 @@
+import { isTutorActionV1 } from './tutorActions';
 import type { TutorRequestV1, TutorResponseV1 } from './types';
 
 const defaultTutorEndpoint = '/api/tutor';
@@ -11,7 +12,10 @@ export function isTutorResponseV1(value: unknown): value is TutorResponseV1 {
   const candidate = value as Partial<TutorResponseV1>;
   return typeof candidate.answer === 'string'
     && isStringArray(candidate.evidenceUsed)
-    && isStringArray(candidate.limitations);
+    && isStringArray(candidate.limitations)
+    && Array.isArray(candidate.proposedActions)
+    && candidate.proposedActions.length <= 1
+    && candidate.proposedActions.every(isTutorActionV1);
 }
 
 export async function askTutor(

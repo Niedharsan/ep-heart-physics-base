@@ -27,6 +27,17 @@
   gap: 8px;
 }
 
+.running-egm-speed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #a9bcc2;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.running-egm-speed input { width: 78px; accent-color: #54d7b0; cursor: pointer; }
+
 .running-egm-status {
   min-width: 0;
   color: #82939c;
@@ -199,6 +210,64 @@
   line-height: 1.35;
 }
 
+.running-egm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 5, 8, 0.88);
+  backdrop-filter: blur(8px);
+}
+
+.running-egm-modal-panel {
+  width: min(1500px, 96vw);
+  max-height: 94vh;
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid rgba(99, 225, 181, 0.42);
+  border-radius: 18px;
+  background: #050d12;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.62);
+}
+
+.running-egm-modal-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.running-egm-modal-heading span {
+  color: #54e1aa;
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+}
+
+.running-egm-modal-heading h2 {
+  margin: 4px 0 0;
+  color: #eef9f5;
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+}
+
+.running-egm-modal-heading button {
+  border-color: rgba(116, 160, 176, 0.42);
+  background: #111d24;
+  color: #e8f5f1;
+}
+
+.running-egm-expanded-strip .running-egm-svg {
+  min-width: 1050px;
+  max-height: calc(94vh - 150px);
+}
+
+.running-egm-expanded-strip figcaption {
+  font-size: 0.82rem;
+}
+
 .task-two-grid {
   grid-template-columns: minmax(0, 1fr) !important;
 }
@@ -231,8 +300,25 @@
     flex-wrap: wrap;
   }
 
+  .running-egm-speed { width: 100%; justify-content: flex-end; }
+  .running-egm-speed input { flex: 1; max-width: 150px; }
+
   .task-two-ecg-row {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .running-egm-modal-backdrop {
+    padding: 8px;
+  }
+
+  .running-egm-modal-panel {
+    width: 100%;
+    max-height: 98vh;
+    padding: 12px;
+  }
+
+  .running-egm-expanded-strip {
+    overflow-x: auto;
   }
 }
 

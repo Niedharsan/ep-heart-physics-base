@@ -14,18 +14,18 @@ describe('client preview integration', () => {
     expect(resolveClientPreviewRoute({ pathname: '/nested/', search: '' })).toBe('home');
   });
 
-  it('resolves simulator and assessment query routes deterministically', () => {
-    expect(resolveClientPreviewRoute({ pathname: '/', search: '?mode=simulator' })).toBe('simulator');
+  it('resolves the retired simulator route to assessments', () => {
+    expect(resolveClientPreviewRoute({ pathname: '/', search: '?mode=simulator' })).toBe('assessment');
     expect(resolveClientPreviewRoute({ pathname: '/', search: '?mode=assessment' })).toBe('assessment');
   });
 
-  it('keeps compatible path aliases for direct module links', () => {
-    expect(resolveClientPreviewRoute({ pathname: '/simulator', search: '' })).toBe('simulator');
+  it('keeps the assessment path alias for direct module links', () => {
     expect(resolveClientPreviewRoute({ pathname: '/assessment/', search: '' })).toBe('assessment');
+    expect(resolveClientPreviewRoute({ pathname: '/simulator', search: '' })).toBe('assessment');
   });
 
   it('publishes only working modules as available', () => {
-    expect(clientModules.map((module) => module.id)).toEqual(['simulator', 'assessment']);
+    expect(clientModules.map((module) => module.id)).toEqual(['assessment']);
     expect(clientModules.every((module) => module.status === 'Available')).toBe(true);
     expect(clientModules.every((module) => module.href.startsWith('/?mode='))).toBe(true);
   });
@@ -42,8 +42,7 @@ describe('client preview integration', () => {
 
   it('renders the compact landing page without obsolete preview copy', () => {
     const markup = renderToStaticMarkup(createElement(ClientPreviewHome));
-    expect(markup).toContain('Learn EP through simulation and interpretation');
-    expect(markup).toContain('Launch simulator');
+    expect(markup).toContain('Learn EP through measurement and interpretation');
     expect(markup).toContain('Open assessments');
     expect(markup).not.toContain('Login-free preview');
     expect(markup).not.toContain('One place to review every available module');

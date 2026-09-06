@@ -13,6 +13,7 @@ interface EgmCaliperCanvasProps {
   readonly running: boolean;
   readonly playheadMs: number;
   readonly onCalipersChange: (placement: CaliperPlacement) => void;
+  readonly allowExpand?: boolean;
 }
 
 type DragHandle = 'start' | 'end' | null;
@@ -52,9 +53,25 @@ export function EgmCaliperCanvas({
   running,
   playheadMs,
   onCalipersChange,
+  allowExpand = true,
 }: EgmCaliperCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [dragHandle, setDragHandle] = useState<DragHandle>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setExpanded(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [expanded]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -236,7 +253,7 @@ export function EgmCaliperCanvas({
     setDragHandle(null);
   }
 
-  return (
+  const canvas = (
     <canvas
       ref={canvasRef}
       className="egm-canvas"
@@ -246,5 +263,40 @@ export function EgmCaliperCanvas({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     />
+  );
+
+  return (
+    <div className="egm-caliper-shell">
+      {allowExpand && (
+        <div className="egm-caliper-toolbar">
+          <span>Click and drag either caliper handle</span>
+          <button type="button" onClick={() => setExpanded(true)}>Enlarge tracing</button>
+        </div>
+      )}
+      {canvas}
+      {expanded && (
+        <div className="egm-caliper-modal-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setExpanded(false);
+        }}>
+          <section className="egm-caliper-modal-panel" role="dialog" aria-modal="true" aria-label="Expanded electrogram">
+            <div className="egm-caliper-modal-heading">
+              <div>
+                <span className="assessment-panel-kicker">EXPANDED EGM</span>
+                <strong>{scenario.title}</strong>
+              </div>
+              <button type="button" onClick={() => setExpanded(false)}>Close</button>
+            </div>
+            <EgmCaliperCanvas
+              scenario={scenario}
+              calipers={calipers}
+              running={running}
+              playheadMs={playheadMs}
+              onCalipersChange={onCalipersChange}
+              allowExpand={false}
+            />
+          </section>
+        </div>
+      )}
+    </div>
   );
 }

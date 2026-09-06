@@ -21,6 +21,7 @@ import type { PatternResponse, TaskTwoResponses, TaskTwoScore } from './marking'
 import { loadTaskTwoAttempts, saveTaskTwoAttempt } from './store';
 import { taskTwoTraceCatalog } from './traceCatalog';
 import { TraceStrip } from './TraceStrip';
+import { CatheterPlacementExercise } from '../CatheterPlacementExercise';
 
 const emptyPattern = (): PatternResponse => ({ diagnosis: '', explanation: '' });
 const emptyResponses = (): TaskTwoResponses => ({
@@ -49,7 +50,9 @@ export function TaskTwoAssessment({
     loadAssessmentResult<TaskTwoScore>(assessmentMode, '2')
   ));
   const [attempts, setAttempts] = useState(() => loadTaskTwoAttempts());
-  const showTraceAnnotations = instructor || (assessmentMode === 'practice' && result !== null);
+  // Keep all diagnostic labels and interval overlays out of learner traces.
+  // They remain available in instructor view and in the answer key below.
+  const showTraceAnnotations = instructor;
   useEffect(() => {
     saveAssessmentDraft(assessmentMode, '2', responses);
   }, [assessmentMode, responses]);
@@ -98,6 +101,7 @@ export function TaskTwoAssessment({
         <a href={buildAssessmentHref('4', instructor, assessmentMode)}>Task 4 · Intracardiac manoeuvres</a>
         <a href={buildAssessmentHref('5', instructor, assessmentMode)}>Task 5 · VT & para-Hisian pacing</a>
       </nav>
+      <CatheterPlacementExercise instructor={instructor} />
       {result && (
         <section className="task-two-scorebar" aria-live="polite">
           <strong>{result.score}/22</strong>

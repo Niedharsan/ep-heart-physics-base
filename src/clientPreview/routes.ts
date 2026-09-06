@@ -1,6 +1,6 @@
 import { appHref } from '../appHref';
 
-export type ClientPreviewRoute = 'home' | 'simulator' | 'assessment';
+export type ClientPreviewRoute = 'home' | 'assessment';
 
 export interface ClientLocation {
   readonly pathname: string;
@@ -19,22 +19,9 @@ export interface ClientModuleDefinition {
 
 export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
   Object.freeze({
-    id: 'simulator',
-    title: '2D tissue simulator',
-    summary: 'Explore wave propagation in a 2D cardiac tissue model using pacing, lesions and a derived pseudo-ECG.',
-    href: appHref('mode=simulator'),
-    status: 'Available',
-    capabilities: Object.freeze([
-      'Manual multi-site pacing',
-      'Planar, focal and obstacle-propagation scenarios',
-      'Activation-wave and voltage-map displays',
-    ]),
-    limitation: 'Educational/research prototype; not anatomical whole-heart propagation.',
-  }),
-  Object.freeze({
     id: 'assessment',
     title: 'EP assessment workspace',
-    summary: 'Review channel-aware EGM measurements and complete Tasks 1-5, including VT ECG and para-Hisian pacing assessment, without an account.',
+    summary: 'Review channel-aware EGM measurements plus complete Tasks 1-5, including VT ECG and para-Hisian pacing assessment, without an account.',
     href: appHref('mode=assessment'),
     status: 'Available',
     capabilities: Object.freeze([
@@ -44,7 +31,7 @@ export const clientModules: readonly ClientModuleDefinition[] = Object.freeze([
       'Task 3 atrial tachycardia, AH-threshold, cannon-wave, adenosine and AVNRT assessment',
       'Task 4 AVRT activation, VAAV/VAV response and pacing-manoeuvre interpretation',
       'Task 5 ventricular-tachycardia ECG and para-Hisian pacing interpretation',
-      'Local attempt history and structured feedback',
+      'Local attempt history and structured client feedback packages',
     ]),
     limitation: 'Synthetic educational traces; not patient data or a diagnostic device.',
   }),
@@ -59,7 +46,6 @@ export function resolveClientPreviewRoute(location: ClientLocation): ClientPrevi
   const normalizedPath = location.pathname.replace(/\/+$/, '');
   const mode = new URLSearchParams(location.search).get('mode');
 
-  if (normalizedPath.endsWith('/assessment') || mode === 'assessment') return 'assessment';
-  if (normalizedPath.endsWith('/simulator') || mode === 'simulator') return 'simulator';
+  if (normalizedPath.endsWith('/assessment') || mode === 'assessment' || mode === 'simulator' || normalizedPath.endsWith('/simulator')) return 'assessment';
   return 'home';
 }

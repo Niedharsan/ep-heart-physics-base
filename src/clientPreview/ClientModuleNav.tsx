@@ -12,7 +12,6 @@ const navigationItems: ReadonlyArray<{
   readonly search: string;
 }> = Object.freeze([
   Object.freeze({ id: 'home', label: 'Overview', search: '' }),
-  Object.freeze({ id: 'simulator', label: 'Simulator', search: 'mode=simulator' }),
   Object.freeze({ id: 'assessment', label: 'Assessments', search: 'mode=assessment' }),
 ]);
 

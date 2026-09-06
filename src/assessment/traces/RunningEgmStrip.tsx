@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type {
   ClinicalTraceAnnotation,
@@ -15,6 +15,7 @@ export interface RunningEgmStripProps {
   readonly compact?: boolean;
   readonly className?: string;
   readonly svgClassName?: string;
+  readonly allowExpand?: boolean;
 }
 
 interface RenderedChannel {
@@ -37,9 +38,12 @@ export function RunningEgmStrip({
   compact = false,
   className = '',
   svgClassName = '',
+  allowExpand = true,
 }: RunningEgmStripProps) {
   const [running, setRunning] = useState(autoPlay);
   const [replayKey, setReplayKey] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const reactId = safeId(useId());
   const prefix = `running-egm-${safeId(definition.id)}-${reactId}`;
   const smallGridId = `${prefix}-small-grid`;
@@ -77,9 +81,23 @@ export function RunningEgmStrip({
 
   const scrollStyle = {
     '--running-egm-shift': `-${plotWidth}px`,
-    animationDuration: `${definition.durationMs}ms`,
+    animationDuration: `${definition.durationMs / playbackRate}ms`,
     animationPlayState: running ? 'running' : 'paused',
   } as CSSProperties;
+
+  useEffect(() => {
+    if (!expanded) return;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setExpanded(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [expanded]);
 
   function annotationY(annotation: ClinicalTraceAnnotation): number {
     const channelIndex = Math.max(
@@ -126,6 +144,23 @@ export function RunningEgmStrip({
           <span>10 mm/mV</span>
         </div>
         <div className="running-egm-actions">
+          <label className="running-egm-speed" title="Slow down or speed up the tracing">
+            <span>Speed {playbackRate.toFixed(2)}×</span>
+            <input
+              type="range"
+              min="0.25"
+              max="1.5"
+              step="0.05"
+              value={playbackRate}
+              onChange={(event) => setPlaybackRate(Number(event.target.value))}
+              aria-label="EGM playback speed"
+            />
+          </label>
+          {allowExpand && (
+            <button type="button" onClick={() => setExpanded(true)} aria-label={`Enlarge ${definition.title}`}>
+              Enlarge tracing
+            </button>
+          )}
           <button type="button" onClick={() => setRunning((current) => !current)}>
             {running ? 'Freeze' : 'Run'}
           </button>
@@ -234,6 +269,39 @@ export function RunningEgmStrip({
         {definition.teachingLabel}
         {visibleAnnotations.length > 0 ? ' Teaching overlays visible.' : ''}
       </figcaption>
+
+      {expanded && (
+        <div
+          className="running-egm-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Enlarged tracing: ${definition.title}`}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) setExpanded(false);
+          }}
+        >
+          <div className="running-egm-modal-panel">
+            <div className="running-egm-modal-heading">
+              <div>
+                <span>ENLARGED ECG / EGM</span>
+                <h2>{definition.title}</h2>
+              </div>
+              <button type="button" onClick={() => setExpanded(false)} autoFocus>
+                Close
+              </button>
+            </div>
+            <RunningEgmStrip
+              definition={definition}
+              showAnnotations={showAnnotations}
+              annotationView={annotationView}
+              autoPlay={running}
+              compact={false}
+              className="running-egm-expanded-strip"
+              allowExpand={false}
+            />
+          </div>
+        </div>
+      )}
     </figure>
   );
 }

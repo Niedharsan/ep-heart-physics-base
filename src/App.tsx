@@ -9,7 +9,6 @@ import type {
   WorkerCommand,
   WorkerEvent,
 } from './engine/core/types';
-import { ClientModuleNav } from './clientPreview/ClientModuleNav';
 import { alievPanfilovPresets } from './engine/models/AlievPanfilov';
 import { EcgCanvas } from './ui/EcgCanvas';
 import {
@@ -266,8 +265,6 @@ export default function App() {
 
   return (
     <main className="app-shell simulator-shell">
-      <ClientModuleNav current="simulator" />
-
       <header className="topbar">
         <div className="topbar-copy">
           <p className="eyebrow">EP HEART · TISSUE SIMULATOR</p>

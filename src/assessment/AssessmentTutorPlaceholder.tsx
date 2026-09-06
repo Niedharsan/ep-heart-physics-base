@@ -11,9 +11,6 @@ export function AssessmentTutorPlaceholder({ unlocked = false }: AssessmentTutor
       <div>
         <span className="assessment-panel-kicker">AI TUTOR · ASSESSMENT MODE</span>
         <h2>Ask why</h2>
-        <p>
-          Ask about the reasoning after you submit a task. The tutor will explain the marked answer or process using the evidence from your attempt; it will not reveal answers before submission.
-        </p>
         {!unlocked && <p className="assessment-tutor-lock-note">Complete and submit this task to unlock explanations.</p>}
       </div>
       <div className="assessment-tutor-migration-controls">

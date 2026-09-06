@@ -13,6 +13,8 @@ interface EgmCaliperCanvasProps {
   readonly running: boolean;
   readonly playheadMs: number;
   readonly onCalipersChange: (placement: CaliperPlacement) => void;
+  readonly playbackRate?: number;
+  readonly onPlaybackRateChange?: (rate: number) => void;
   readonly allowExpand?: boolean;
 }
 
@@ -53,6 +55,8 @@ export function EgmCaliperCanvas({
   running,
   playheadMs,
   onCalipersChange,
+  playbackRate = 1,
+  onPlaybackRateChange,
   allowExpand = true,
 }: EgmCaliperCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -270,6 +274,12 @@ export function EgmCaliperCanvas({
       {allowExpand && (
         <div className="egm-caliper-toolbar">
           <span>Click and drag either caliper handle</span>
+          {onPlaybackRateChange && (
+            <label className="egm-caliper-speed">
+              <span>Speed {playbackRate.toFixed(2)}×</span>
+              <input type="range" min="0.25" max="1.5" step="0.05" value={playbackRate} onChange={(event) => onPlaybackRateChange(Number(event.target.value))} aria-label="EGM playback speed" />
+            </label>
+          )}
           <button type="button" onClick={() => setExpanded(true)}>Enlarge tracing</button>
         </div>
       )}

@@ -158,6 +158,7 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
   const [classification, setClassification] = useState<IntervalClassification | ''>('');
   const [running, setRunning] = useState(true);
   const [playheadMs, setPlayheadMs] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [attempts, setAttempts] = useState<readonly StoredAttempt[]>(() => loadAttempts());
   const [latestAttempt, setLatestAttempt] = useState<StoredAttempt | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState('');
@@ -279,13 +280,13 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
     let frame = 0;
     function animate(timestamp: number): void {
       if (animationStartRef.current === null) animationStartRef.current = timestamp;
-      const elapsed = timestamp - animationStartRef.current;
+      const elapsed = (timestamp - animationStartRef.current) * playbackRate;
       setPlayheadMs(elapsed % scenario.durationMs);
       frame = requestAnimationFrame(animate);
     }
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [running, scenario.durationMs]);
+  }, [playbackRate, running, scenario.durationMs]);
 
   function resetCurrentResponse(): void {
     setCaliperOverride(null);
@@ -630,6 +631,8 @@ function IntervalAssessmentApp({ assessmentView, assessmentMode }: IntervalAsses
                 calipers={calipers}
                 running={running}
                 playheadMs={playheadMs}
+                playbackRate={playbackRate}
+                onPlaybackRateChange={setPlaybackRate}
                 onCalipersChange={(placement) => {
                   if (sessionLocked || (timedAssessment && !sessionStarted)) return;
                   setCaliperOverride({

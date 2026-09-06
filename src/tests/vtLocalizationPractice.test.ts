@@ -46,7 +46,10 @@ describe('Class 6 VT localisation practice', () => {
   });
 
   it('marks each of the four localisation decisions independently', () => {
-    const expected = classSixVtLocalizationCases[0].answer;
+    const expectedCase = classSixVtLocalizationCases.find((item) => item.slidePage === 19);
+    if (!expectedCase) throw new Error('Class 6 page 19 case is required.');
+    const expected = expectedCase.answer;
+
     expect(markVtLocalizationResponse(expected, expected)).toEqual({
       score: 4,
       maximumScore: 4,

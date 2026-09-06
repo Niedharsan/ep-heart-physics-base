@@ -2,7 +2,7 @@ name: CI and GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/ai-tutor-tools]
   pull_request:
   workflow_dispatch:
 
@@ -30,12 +30,12 @@ jobs:
       - run: npm run test
       - run: npm run build:pages
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/ai-tutor-tools')
         with:
           path: dist
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/ai-tutor-tools')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

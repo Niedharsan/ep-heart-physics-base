@@ -37,9 +37,14 @@ function currentAssessmentTask(): string | null {
   return new URLSearchParams(window.location.search).get('task');
 }
 
+function isNewLocalizationTask(task: string | null): task is '6' | '7' | '8' {
+  return task === '6' || task === '7' || task === '8';
+}
+
 export function ClientModuleNav({ current }: ClientModuleNavProps) {
   const [speed, setSpeed] = useState(0.5);
   const selectedAssessmentTask = current === 'assessment' ? currentAssessmentTask() : null;
+  const localizationTaskSelected = isNewLocalizationTask(selectedAssessmentTask);
   function updateSpeed(event: ChangeEvent<HTMLInputElement>): void {
     const next = Number(event.target.value);
     setSpeed(next);
@@ -52,16 +57,19 @@ export function ClientModuleNav({ current }: ClientModuleNavProps) {
         <strong>EP Heart</strong>
       </a>
       <div className="client-module-links">
-        {navigationItems.map((item) => (
-          <a
-            key={item.id}
-            className={item.id === current && selectedAssessmentTask === null ? 'active' : undefined}
-            href={appHref(item.search)}
-            aria-current={item.id === current && selectedAssessmentTask === null ? 'page' : undefined}
-          >
-            {item.label}
-          </a>
-        ))}
+        {navigationItems.map((item) => {
+          const active = item.id === current && !(item.id === 'assessment' && localizationTaskSelected);
+          return (
+            <a
+              key={item.id}
+              className={active ? 'active' : undefined}
+              href={appHref(item.search)}
+              aria-current={active ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          );
+        })}
         {current === 'assessment' && (['6', '7', '8'] as const).map((task) => (
           <a
             key={task}

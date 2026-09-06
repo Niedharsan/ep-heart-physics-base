@@ -2,6 +2,10 @@ export type VtMorphology = 'RBBB' | 'LBBB';
 export type VtVerticalOrigin = 'Superior' | 'Inferior';
 export type VtSeptalLateral = 'Septal' | 'Lateral';
 export type VtOutflowClassification = 'RVOT' | 'LVOT' | 'Other';
+export type VtLocalizationTaskId = '6' | '7' | '8';
+
+export const VT_LOCALIZATION_TASK_MAXIMUM_SCORE = 4 as const;
+export const CLASS_SIX_ADDITIONAL_MAXIMUM_SCORE = 12 as const;
 
 export interface VtLocalizationResponse {
   readonly morphology: VtMorphology | '';
@@ -12,6 +16,7 @@ export interface VtLocalizationResponse {
 
 export interface VtLocalizationCase {
   readonly id: 'class6-page19' | 'class6-page20' | 'class6-page21';
+  readonly assessmentTask: VtLocalizationTaskId;
   readonly slidePage: 19 | 20 | 21;
   readonly title: string;
   readonly answer: Readonly<Required<VtLocalizationResponse>>;
@@ -22,7 +27,7 @@ export interface VtLocalizationCase {
 
 export interface VtLocalizationMark {
   readonly score: number;
-  readonly maximumScore: 4;
+  readonly maximumScore: typeof VT_LOCALIZATION_TASK_MAXIMUM_SCORE;
   readonly fields: Readonly<{
     morphology: boolean;
     verticalOrigin: boolean;
@@ -50,8 +55,9 @@ export const classSixVtLocalizationTeachingRules = Object.freeze([
 export const classSixVtLocalizationCases: readonly VtLocalizationCase[] = Object.freeze([
   Object.freeze({
     id: 'class6-page19',
+    assessmentTask: '6',
     slidePage: 19,
-    title: 'Class 6 ECG practice · case 1',
+    title: 'VT/PVC localisation · case 1',
     answer: Object.freeze({
       morphology: 'RBBB',
       verticalOrigin: 'Inferior',
@@ -69,8 +75,9 @@ export const classSixVtLocalizationCases: readonly VtLocalizationCase[] = Object
   }),
   Object.freeze({
     id: 'class6-page20',
+    assessmentTask: '7',
     slidePage: 20,
-    title: 'Class 6 ECG practice · case 2',
+    title: 'VT/PVC localisation · case 2',
     answer: Object.freeze({
       morphology: 'RBBB',
       verticalOrigin: 'Superior',
@@ -88,8 +95,9 @@ export const classSixVtLocalizationCases: readonly VtLocalizationCase[] = Object
   }),
   Object.freeze({
     id: 'class6-page21',
+    assessmentTask: '8',
     slidePage: 21,
-    title: 'Class 6 ECG practice · case 3',
+    title: 'VT/PVC localisation · case 3',
     answer: Object.freeze({
       morphology: 'LBBB',
       verticalOrigin: 'Superior',
@@ -107,6 +115,12 @@ export const classSixVtLocalizationCases: readonly VtLocalizationCase[] = Object
   }),
 ] as const);
 
+export function findVtLocalizationCase(task: VtLocalizationTaskId): VtLocalizationCase {
+  const item = classSixVtLocalizationCases.find((candidate) => candidate.assessmentTask === task);
+  if (!item) throw new Error(`Missing Class 6 localisation case for Task ${task}.`);
+  return item;
+}
+
 export function markVtLocalizationResponse(
   response: VtLocalizationResponse,
   expected: Readonly<Required<VtLocalizationResponse>>,
@@ -119,5 +133,5 @@ export function markVtLocalizationResponse(
   });
 
   const score = Object.values(fields).filter(Boolean).length;
-  return Object.freeze({ score, maximumScore: 4, fields });
+  return Object.freeze({ score, maximumScore: VT_LOCALIZATION_TASK_MAXIMUM_SCORE, fields });
 }

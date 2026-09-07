@@ -2,42 +2,37 @@
 
 Browser-based cardiac electrophysiology simulation and learning platform built with TypeScript, React and Web Workers.
 
-**Live demo:** https://niedharsan.github.io/ep-heart-physics/
+**Live demo:** https://niedharsan.github.io/ep-heart-physics-base/
 
-The GitHub Pages demo hosts the browser application. The Gemini tutor requires the server-side `/api/tutor` function (or a configured external tutor endpoint) because the API key is never exposed to the frontend.
+> **AI status:** the Gemini 2.5 Flash simulator tutor is implemented and tested on `feat/ai-tutor-tools` in [PR #12](https://github.com/Niedharsan/ep-heart-physics-base/pull/12), stacked on the read-only tutor work in [PR #11](https://github.com/Niedharsan/ep-heart-physics-base/pull/11). The public GitHub Pages build includes the tutor interface, but GitHub Pages does not host the server-side `/api/tutor` function, so visitors cannot invoke Gemini or consume API credits there. Assessment pages also include a post-submission **Ask why** panel; that assessment-tutor panel is currently a UI boundary and is not yet connected to Gemini.
 
 ## What it does
 
-EP Heart Physics combines a deterministic 2D cardiac-tissue simulation with interactive pacing, lesion experiments, signal interpretation, structured electrophysiology assessment and an AI-assisted EP tutor.
+EP Heart Physics combines a deterministic 2D cardiac-tissue simulation with interactive pacing and lesion experiments, live ECG/EGM interpretation, structured electrophysiology assessments and an evidence-grounded AI tutor for the simulator.
 
 The simulator is not driven by prerecorded animations. Tissue state evolves through a reduced Aliev–Panfilov reaction–diffusion model, and displayed signals are derived from the evolving simulation state.
 
 ## AI-assisted EP tutor
 
-The tutor uses **Gemini 2.5 Flash through a server-side REST API** to explain the current simulation and, when useful, suggest a small set of simulator actions.
+The simulator tutor uses **Gemini 2.5 Flash through a server-side REST API** to explain the current simulation and, when useful, suggest one supported simulator action.
 
-The AI layer is deliberately separated from the scientific engine:
+The AI layer is separated from the scientific engine:
 
-- the browser converts the live simulator state into a compact, typed evidence object rather than sending raw voltage or tissue arrays;
-- Gemini receives the learner's question together with that structured simulation data;
-- the API requires a structured JSON response containing the answer, simulation evidence used, limitations and at most one proposed action;
-- proposed actions are restricted to **start**, **pause**, **reset** or **load an existing scenario**;
-- the browser validates the proposed action again before exposing it to the user;
-- no action runs automatically — the learner must explicitly run it;
-- the AI cannot alter solver parameters, create lesions, choose arbitrary stimulation coordinates, modify assessment scoring or directly write to simulation state;
-- `GEMINI_API_KEY` remains server-side and is never exposed to the Vite frontend.
-
-This creates a controlled tool-use workflow in which the language model handles explanation and high-level guidance while numerical simulation and scientific state transitions remain deterministic and testable.
-
-### AI architecture
+- the browser sends a compact typed summary of the current simulator state rather than raw voltage or tissue arrays;
+- Gemini receives the learner's question together with that structured evidence;
+- responses use a structured JSON contract containing the answer, evidence used, limitations and at most one proposed action;
+- proposed actions are limited to **start**, **pause**, **reset** or **load an existing scenario**;
+- the browser validates a proposed action before showing it to the learner;
+- no action runs automatically;
+- the AI cannot alter solver parameters, create lesions, choose arbitrary stimulation coordinates, change assessment scoring or write directly to simulation state;
+- `GEMINI_API_KEY` remains server-side.
 
 ```text
 Learner question
       │
       ▼
-React EP tutor
+React EP tutor + typed simulation evidence
       │
-      ├── compact typed simulation evidence
       ▼
 server-side /api/tutor
       │
@@ -48,19 +43,12 @@ Gemini 2.5 Flash
 structured answer + optional validated action
       │
       ▼
-user approval
-      │
-      ▼
-existing simulator control path
+user approval → existing simulator control path
 
 Web Worker → reaction–diffusion solver → simulation state
-             ▲
-             └── never controlled directly by the model
 ```
 
-The AI integration demonstrates API integration, structured model I/O, evidence grounding, tool whitelisting, human-in-the-loop execution and separation between probabilistic AI reasoning and deterministic scientific computation. It is intentionally a focused single-assistant design rather than a multi-agent system.
-
-### Simulation
+## Simulation
 
 - reduced Aliev–Panfilov excitable-tissue model
 - explicit 2D five-point diffusion with stability constraints
@@ -74,9 +62,25 @@ The AI integration demonstrates API integration, structured model I/O, evidence 
 - pseudo-ECG / intracardiac-style signal derivation
 - deterministic, versioned scenarios
 
-### Verification
+## Learning and assessment
 
-The repository includes scientific and numerical verification work covering:
+The educational layer includes:
+
+- interval measurement and basic EP-study tasks
+- sinus-node, refractoriness and AV-block interpretation
+- tachycardia and AH-change interpretation
+- intracardiac manoeuvres
+- VT and para-Hisian pacing
+- VT/PVC localisation tasks
+- live synthetic ECG/EGM traces with freeze, replay, speed control, enlargement and measurement tools
+- deterministic marking, timed sessions and practice/instructor views
+- a post-submission **Ask why** assessment-tutor panel, currently present as UI but not yet connected to Gemini
+
+The current Task 3 assessment contains six deterministic synthetic ECG/EGM cases covering tachycardia localisation, AH change, cannon waves, adenosine and AVNRT, for a total of 23 marks.
+
+## Verification
+
+The repository includes scientific and numerical verification covering:
 
 - equation and parameter checks
 - reference-solver comparison
@@ -90,20 +94,7 @@ The AI layer is also covered by deterministic tests for response validation and 
 
 Detailed reports are available in [`docs/`](docs/).
 
-### Learning and assessment
-
-The browser application also includes a separate educational layer with:
-
-- simulator and assessment routes
-- structured EP interpretation tasks
-- versioned scenario and measurement definitions
-- deterministic session control
-- domain-approved rubric requirements for scored free-text tasks
-- live clinical-trace assessment support where configured
-
-The numerical engine, learning content, assessment logic and AI tutor are deliberately separated so educational or AI features cannot silently alter the physics model.
-
-## Core architecture
+## Architecture
 
 ```text
 React UI / assessment experience
@@ -122,18 +113,18 @@ reaction–diffusion solver
 field rendering   derived signals
 ```
 
-The engine is framework-independent and runs outside the React render loop. Simulation, signal sampling and UI publication operate on separate clocks.
+The numerical engine, learning content, assessment logic and AI layer are separated so educational or AI features cannot silently alter the physics model.
 
 ## Run locally
 
-Install dependencies and run the deterministic frontend with:
+Run the deterministic frontend with:
 
 ```bash
 npm install
 npm run dev
 ```
 
-To run the EP tutor locally, create an ignored `.env.local` containing:
+To run the simulator tutor locally on the AI branch, create an ignored `.env.local` containing:
 
 ```text
 GEMINI_API_KEY=your_key_here

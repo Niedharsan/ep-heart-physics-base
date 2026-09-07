@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { appHref } from '../../appHref';
+import { ClientModuleNav } from '../../clientPreview/ClientModuleNav';
 import type { AssessmentView } from '../assessmentView';
 import { AssessmentSessionBoundary } from '../AssessmentSessionBoundary';
 import {
@@ -85,6 +86,7 @@ export function TaskTwoAssessment({
   return (
     <AssessmentSessionBoundary controller={session}>
       <main className="assessment-shell">
+      <ClientModuleNav current="assessment" />
       <header className="assessment-header">
         <div>
           <span className="assessment-eyebrow">TASK 2 · 22 MARKS</span>

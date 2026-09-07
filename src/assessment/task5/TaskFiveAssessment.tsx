@@ -32,7 +32,7 @@ import {
 } from './store';
 import { taskFiveTraceCatalog } from './traceCatalog';
 import { TaskFiveTraceStrip } from './TaskFiveTraceStrip';
-import { VtLocalizationPractice } from './VtLocalizationPractice';
+import { VtLocalizationPractice } from './VtLocalizationPracticePanel';
 
 const caseHeadings: Readonly<Record<TaskFiveCaseId, string>> = Object.freeze({
   'vt-rvot': 'Wide-complex tachycardia · case 1',

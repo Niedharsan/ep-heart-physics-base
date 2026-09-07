@@ -1,4 +1,5 @@
 import { AssessmentApp } from './assessment/AssessmentApp';
+import { AssessmentTutorPlaceholder } from './assessment/AssessmentTutorPlaceholder';
 import { VtLocalizationTaskAssessment } from './assessment/VtLocalizationTaskAssessment';
 import type { VtLocalizationTaskId } from './assessment/task5/vtLocalizationPractice';
 import { ClientPreviewHome } from './clientPreview/ClientPreviewHome';
@@ -20,11 +21,14 @@ export function RootApplication() {
     if (isVtLocalizationTask(task) && assessmentMode !== 'exam') {
       const instructor = assessmentMode === 'practice' && params.get('view') === 'instructor';
       return (
+        <>
         <VtLocalizationTaskAssessment
           taskId={task}
           assessmentMode={assessmentMode}
           instructor={instructor}
         />
+        <AssessmentTutorPlaceholder />
+        </>
       );
     }
 

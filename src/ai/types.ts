@@ -1,5 +1,6 @@
 import type { ScenarioId } from '../engine/core/types';
 import type { TissueActivityState } from '../ui/TissueActivity';
+import type { TutorActionV1 } from './tutorActions';
 
 export interface TutorSignalSummaryV1 {
   readonly sampleCount: number;
@@ -52,4 +53,5 @@ export interface TutorResponseV1 {
   readonly answer: string;
   readonly evidenceUsed: readonly string[];
   readonly limitations: readonly string[];
+  readonly proposedActions: readonly TutorActionV1[];
 }

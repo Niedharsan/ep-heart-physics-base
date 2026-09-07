@@ -1,16 +1,44 @@
-const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
-const DEFAULT_MODEL = 'gpt-5-mini';
+import { classSixVtLocalizationTeachingRules } from '../src/assessment/task5/vtLocalizationPractice';
+
+const GEMINI_GENERATE_CONTENT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 const MAX_QUESTION_LENGTH = 1000;
+
+const ALLOWED_SCENARIOS = Object.freeze([
+  'manual-pacing',
+  'planar-wave',
+  'focal-rhythm',
+  'obstacle-reentry',
+] as const);
+
+const CLASS_SIX_VT_LOCALIZATION_TUTOR_GUIDANCE = [
+  'When the learner specifically asks about Class 6 VT/PVC ECG localisation, use the following course-specific teaching framework and identify it as the course framework rather than a complete clinical diagnostic algorithm.',
+  ...classSixVtLocalizationTeachingRules,
+].join(' ');
+
+type AllowedScenario = typeof ALLOWED_SCENARIOS[number];
 
 interface TutorRequestBody {
   readonly question?: unknown;
   readonly evidence?: unknown;
 }
 
-interface OpenAIResponseBody {
-  readonly output_text?: unknown;
-  readonly output?: readonly unknown[];
+interface GeminiResponseBody {
+  readonly candidates?: readonly {
+    readonly content?: { readonly parts?: readonly { readonly text?: unknown }[] };
+  }[];
   readonly error?: { readonly message?: unknown } | null;
+}
+
+type TutorAction =
+  | Readonly<{ type: 'start' | 'pause' | 'reset'; scenario: null }>
+  | Readonly<{ type: 'load_scenario'; scenario: AllowedScenario }>;
+
+export interface TutorResponseBody {
+  readonly answer: string;
+  readonly evidenceUsed: readonly string[];
+  readonly limitations: readonly string[];
+  readonly proposedActions: readonly TutorAction[];
 }
 
 function corsHeaders(request: Request): HeadersInit {
@@ -27,10 +55,7 @@ function corsHeaders(request: Request): HeadersInit {
 }
 
 function jsonResponse(request: Request, body: unknown, status = 200): Response {
-  return Response.json(body, {
-    status,
-    headers: corsHeaders(request),
-  });
+  return Response.json(body, { status, headers: corsHeaders(request) });
 }
 
 function isEvidenceV1(value: unknown): boolean {
@@ -42,38 +67,68 @@ function isEvidenceV1(value: unknown): boolean {
     && typeof candidate.tissue === 'object';
 }
 
-function readOutputText(payload: OpenAIResponseBody): string | null {
-  if (typeof payload.output_text === 'string' && payload.output_text.trim()) {
-    return payload.output_text;
+function readOutputText(payload: GeminiResponseBody): string | null {
+  const parts = payload.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return null;
+  const text = parts
+    .map((part) => typeof part.text === 'string' ? part.text : '')
+    .join('')
+    .trim();
+  return text.length > 0 ? text : null;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function isAllowedScenario(value: unknown): value is AllowedScenario {
+  return typeof value === 'string'
+    && ALLOWED_SCENARIOS.includes(value as AllowedScenario);
+}
+
+function isAllowedAction(value: unknown): value is TutorAction {
+  if (!value || typeof value !== 'object') return false;
+  const action = value as { type?: unknown; scenario?: unknown };
+  if (action.type === 'load_scenario') return isAllowedScenario(action.scenario);
+  if (action.type === 'start' || action.type === 'pause' || action.type === 'reset') {
+    return action.scenario === null;
+  }
+  return false;
+}
+
+export function parseTutorResponse(text: string): TutorResponseBody | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return null;
   }
 
-  if (!Array.isArray(payload.output)) return null;
+  if (!parsed || typeof parsed !== 'object') return null;
+  const response = parsed as Partial<TutorResponseBody>;
+  if (
+    typeof response.answer !== 'string'
+    || !isStringArray(response.evidenceUsed)
+    || !isStringArray(response.limitations)
+    || !Array.isArray(response.proposedActions)
+    || response.proposedActions.length > 1
+    || !response.proposedActions.every(isAllowedAction)
+  ) return null;
 
-  for (const item of payload.output) {
-    if (!item || typeof item !== 'object' || !('content' in item)) continue;
-    const content = (item as { content?: unknown }).content;
-    if (!Array.isArray(content)) continue;
-    for (const part of content) {
-      if (!part || typeof part !== 'object') continue;
-      const candidate = part as { type?: unknown; text?: unknown };
-      if (candidate.type === 'output_text' && typeof candidate.text === 'string') {
-        return candidate.text;
-      }
-    }
-  }
-
-  return null;
+  return {
+    answer: response.answer,
+    evidenceUsed: response.evidenceUsed,
+    limitations: response.limitations,
+    proposedActions: response.proposedActions,
+  };
 }
 
 export function OPTIONS(request: Request): Response {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders(request),
-  });
+  return new Response(null, { status: 204, headers: corsHeaders(request) });
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return jsonResponse(request, { error: 'EP tutor is not configured on this deployment.' }, 503);
   }
@@ -98,58 +153,75 @@ export async function POST(request: Request): Promise<Response> {
     return jsonResponse(request, { error: 'Tutor evidence does not match schema version 1.' }, 400);
   }
 
-  const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
-  const upstream = await fetch(OPENAI_RESPONSES_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      store: false,
-      instructions: [
-        'You are the educational EP tutor for a cardiac electrophysiology simulation.',
-        'Answer only from the structured simulator evidence and stable electrophysiology principles.',
-        'Never claim that this reduced 2D model is a patient-specific, diagnostic, clinically validated, or whole-heart simulation.',
-        'Do not invent measurements that are absent from the evidence.',
-        'If the evidence cannot support a conclusion, say so explicitly.',
-        'Keep the answer concise and useful to a learner.',
-      ].join(' '),
-      input: [{
-        role: 'user',
-        content: [{
-          type: 'input_text',
-          text: `Question:\n${question}\n\nStructured simulator evidence (JSON):\n${JSON.stringify(body.evidence)}`,
+  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  const upstream = await fetch(
+    `${GEMINI_GENERATE_CONTENT_BASE_URL}/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{
+            text: [
+              'You are the educational EP tutor for a cardiac electrophysiology simulation.',
+              'Answer only from the structured simulator evidence, the explicitly supplied course framework, and stable electrophysiology principles.',
+              'Never claim that this reduced 2D model is a patient-specific, diagnostic, clinically validated, or whole-heart simulation.',
+              'Do not invent measurements that are absent from the evidence.',
+              'If the evidence cannot support a conclusion, say so explicitly.',
+              CLASS_SIX_VT_LOCALIZATION_TUTOR_GUIDANCE,
+              'You may propose at most one simulator action, and only when it directly helps answer the learner request.',
+              'Allowed actions are start, pause, reset, or load_scenario using one of the four built-in scenarios.',
+              'Never propose stimulation coordinates, lesions, numerical parameter changes, solver settings, assessment scoring, or any other action.',
+              'The user must approve a proposal before the browser executes it.',
+              'Keep the answer concise and useful to a learner.',
+            ].join(' '),
+          }],
+        },
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `Question:\n${question}\n\nStructured simulator evidence (JSON):\n${JSON.stringify(body.evidence)}`,
+          }],
         }],
-      }],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'ep_tutor_response',
-          strict: true,
-          schema: {
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: {
             type: 'object',
-            additionalProperties: false,
             properties: {
               answer: { type: 'string' },
-              evidenceUsed: {
+              evidenceUsed: { type: 'array', items: { type: 'string' } },
+              limitations: { type: 'array', items: { type: 'string' } },
+              proposedActions: {
                 type: 'array',
-                items: { type: 'string' },
-              },
-              limitations: {
-                type: 'array',
-                items: { type: 'string' },
+                maxItems: 1,
+                items: {
+                  type: 'object',
+                  properties: {
+                    type: {
+                      type: 'string',
+                      enum: ['start', 'pause', 'reset', 'load_scenario'],
+                    },
+                    scenario: {
+                      type: 'string',
+                      nullable: true,
+                      enum: [...ALLOWED_SCENARIOS],
+                    },
+                  },
+                  required: ['type', 'scenario'],
+                },
               },
             },
-            required: ['answer', 'evidenceUsed', 'limitations'],
+            required: ['answer', 'evidenceUsed', 'limitations', 'proposedActions'],
           },
         },
-      },
-    }),
-  });
+      }),
+    },
+  );
 
-  const payload = await upstream.json().catch(() => null) as OpenAIResponseBody | null;
+  const payload = await upstream.json().catch(() => null) as GeminiResponseBody | null;
   if (!upstream.ok || !payload) {
     const upstreamMessage = payload?.error?.message;
     const message = typeof upstreamMessage === 'string'
@@ -163,9 +235,10 @@ export async function POST(request: Request): Promise<Response> {
     return jsonResponse(request, { error: 'AI provider returned no tutor response.' }, 502);
   }
 
-  try {
-    return jsonResponse(request, JSON.parse(outputText));
-  } catch {
+  const tutorResponse = parseTutorResponse(outputText);
+  if (!tutorResponse) {
     return jsonResponse(request, { error: 'AI provider returned invalid structured output.' }, 502);
   }
+
+  return jsonResponse(request, tutorResponse);
 }

@@ -107,6 +107,30 @@
   line-height: 1.45;
 }
 
+.tutor-tool-proposal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #456d43;
+  border-radius: 11px;
+  background: rgba(71, 103, 42, 0.18);
+}
+
+.tutor-tool-proposal > div {
+  margin: 0;
+}
+
+.tutor-tool-proposal span {
+  color: #d9e8ce;
+  font-size: 0.86rem;
+}
+
+.tutor-tool-proposal button {
+  white-space: nowrap;
+}
+
 .tutor-error {
   display: grid;
   gap: 4px;
@@ -127,4 +151,5 @@
 
   .tutor-question-row { display: grid; }
   .tutor-evidence-label { text-align: left; }
+  .tutor-tool-proposal { align-items: stretch; flex-direction: column; }
 }

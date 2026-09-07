@@ -3,10 +3,6 @@ import { appHref } from '../appHref';
 import { clientModules } from './routes';
 
 const moduleLabels = Object.freeze({
-  simulator: {
-    action: 'Open simulator',
-    eyebrow: 'SIMULATE',
-  },
   assessment: {
     action: 'Open assessments',
     eyebrow: 'PRACTISE',
@@ -21,14 +17,12 @@ export function ClientPreviewHome() {
       <section className="client-preview-hero">
         <div>
           <p className="client-preview-eyebrow">CARDIAC ELECTROPHYSIOLOGY LEARNING</p>
-          <h1>Learn EP through simulation and interpretation</h1>
+          <h1>Learn EP through measurement and interpretation</h1>
           <p className="client-preview-lead">
-            Explore tissue activation, measure intracardiac intervals and work through
-            structured electrophysiology assessments.
+            Measure intracardiac intervals and work through structured electrophysiology assessments.
           </p>
           <div className="client-preview-actions">
-            <a className="client-module-open primary" href={appHref('mode=simulator')}>Launch simulator</a>
-            <a className="client-module-open" href={appHref('mode=assessment')}>Open assessments</a>
+            <a className="client-module-open primary" href={appHref('mode=assessment')}>Open assessments</a>
           </div>
         </div>
         <div className="client-preview-hero-mark" aria-hidden="true">

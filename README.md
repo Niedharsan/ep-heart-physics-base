@@ -2,15 +2,55 @@
 
 Browser-based cardiac electrophysiology simulation and learning platform built with TypeScript, React and Web Workers.
 
-**Live demo:** https://niedharsan.github.io/ep-heart-physics/
+**Live demo:** https://niedharsan.github.io/ep-heart-physics-base/
+
+> **AI status:** the Gemini 2.5 Flash simulator tutor is implemented and tested on `feat/ai-tutor-tools` in [PR #12](https://github.com/Niedharsan/ep-heart-physics-base/pull/12), stacked on the read-only tutor work in [PR #11](https://github.com/Niedharsan/ep-heart-physics-base/pull/11). The public GitHub Pages build includes the tutor interface, but GitHub Pages does not host the server-side `/api/tutor` function, so visitors cannot invoke Gemini or consume API credits there. Assessment pages also include a post-submission **Ask why** panel; that assessment-tutor panel is currently a UI boundary and is not yet connected to Gemini.
 
 ## What it does
 
-EP Heart Physics combines a deterministic 2D cardiac-tissue simulation with interactive pacing, lesion experiments, signal interpretation and structured electrophysiology assessment.
+EP Heart Physics combines a deterministic 2D cardiac-tissue simulation with interactive pacing and lesion experiments, live ECG/EGM interpretation, structured electrophysiology assessments and an evidence-grounded AI tutor for the simulator.
 
 The simulator is not driven by prerecorded animations. Tissue state evolves through a reduced Aliev–Panfilov reaction–diffusion model, and displayed signals are derived from the evolving simulation state.
 
-### Simulation
+![Task 3 live ECG/EGM assessment](docs/images/task3-live-ecg-egm-assessment.webp)
+
+## AI-assisted EP tutor
+
+The simulator tutor uses **Gemini 2.5 Flash through a server-side REST API** to explain the current simulation and, when useful, suggest one supported simulator action.
+
+The AI layer is separated from the scientific engine:
+
+- the browser sends a compact typed summary of the current simulator state rather than raw voltage or tissue arrays;
+- Gemini receives the learner's question together with that structured evidence;
+- responses use a structured JSON contract containing the answer, evidence used, limitations and at most one proposed action;
+- proposed actions are limited to **start**, **pause**, **reset** or **load an existing scenario**;
+- the browser validates a proposed action before showing it to the learner;
+- no action runs automatically;
+- the AI cannot alter solver parameters, create lesions, choose arbitrary stimulation coordinates, change assessment scoring or write directly to simulation state;
+- `GEMINI_API_KEY` remains server-side.
+
+```text
+Learner question
+      │
+      ▼
+React EP tutor + typed simulation evidence
+      │
+      ▼
+server-side /api/tutor
+      │
+      ▼
+Gemini 2.5 Flash
+      │
+      ▼
+structured answer + optional validated action
+      │
+      ▼
+user approval → existing simulator control path
+
+Web Worker → reaction–diffusion solver → simulation state
+```
+
+## Simulation
 
 - reduced Aliev–Panfilov excitable-tissue model
 - explicit 2D five-point diffusion with stability constraints
@@ -24,9 +64,25 @@ The simulator is not driven by prerecorded animations. Tissue state evolves thro
 - pseudo-ECG / intracardiac-style signal derivation
 - deterministic, versioned scenarios
 
-### Verification
+## Learning and assessment
 
-The repository includes scientific and numerical verification work covering:
+The educational layer includes:
+
+- interval measurement and basic EP-study tasks
+- sinus-node, refractoriness and AV-block interpretation
+- tachycardia and AH-change interpretation
+- intracardiac manoeuvres
+- VT and para-Hisian pacing
+- VT/PVC localisation tasks
+- live synthetic ECG/EGM traces with freeze, replay, speed control, enlargement and measurement tools
+- deterministic marking, timed sessions and practice/instructor views
+- a post-submission **Ask why** assessment-tutor panel, currently present as UI but not yet connected to Gemini
+
+The current Task 3 assessment contains six deterministic synthetic ECG/EGM cases covering tachycardia localisation, AH change, cannon waves, adenosine and AVNRT, for a total of 23 marks.
+
+## Verification
+
+The repository includes scientific and numerical verification covering:
 
 - equation and parameter checks
 - reference-solver comparison
@@ -36,20 +92,9 @@ The repository includes scientific and numerical verification work covering:
 - refractory capture behaviour
 - runtime determinism and scenario versioning
 
+The AI layer is also covered by deterministic tests for response validation and allowed/blocked simulator actions. Live local smoke testing has been performed against Gemini 2.5 Flash without exposing the API key to the frontend.
+
 Detailed reports are available in [`docs/`](docs/).
-
-### Learning and assessment
-
-The browser application also includes a separate educational layer with:
-
-- simulator and assessment routes
-- structured EP interpretation tasks
-- versioned scenario and measurement definitions
-- deterministic session control
-- domain-approved rubric requirements for scored free-text tasks
-- live clinical-trace assessment support where configured
-
-The numerical engine, learning content and assessment logic are deliberately separated so educational features cannot silently alter the physics model.
 
 ## Architecture
 
@@ -70,13 +115,28 @@ reaction–diffusion solver
 field rendering   derived signals
 ```
 
-The engine is framework-independent and runs outside the React render loop. Simulation, signal sampling and UI publication operate on separate clocks.
+The numerical engine, learning content, assessment logic and AI layer are separated so educational or AI features cannot silently alter the physics model.
 
 ## Run locally
+
+Run the deterministic frontend with:
 
 ```bash
 npm install
 npm run dev
+```
+
+To run the simulator tutor locally on the AI branch, create an ignored `.env.local` containing:
+
+```text
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Then run the frontend and server function together with:
+
+```bash
+npx vercel dev
 ```
 
 Run the complete verification suite with:
@@ -93,6 +153,8 @@ This performs TypeScript checking, linting, tests and a production build.
 - React
 - Vite
 - Web Workers
+- Gemini 2.5 Flash / Google Generative Language REST API
+- typed JSON model contracts and validated tool proposals
 - Vitest
 - GitHub Actions
 - GitHub Pages

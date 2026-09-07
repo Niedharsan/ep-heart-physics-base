@@ -12,6 +12,8 @@ EP Heart Physics combines a deterministic 2D cardiac-tissue simulation with inte
 
 The simulator is not driven by prerecorded animations. Tissue state evolves through a reduced Aliev–Panfilov reaction–diffusion model, and displayed signals are derived from the evolving simulation state.
 
+![Task 3 live ECG/EGM assessment](docs/images/task3-live-ecg-egm-assessment.webp)
+
 ## AI-assisted EP tutor
 
 The simulator tutor uses **Gemini 2.5 Flash through a server-side REST API** to explain the current simulation and, when useful, suggest one supported simulator action.

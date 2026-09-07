@@ -4,7 +4,7 @@ Browser-based cardiac electrophysiology simulation and learning platform built w
 
 **Live demo:** https://niedharsan.github.io/ep-heart-physics-base/
 
-> **AI status:** the Gemini 2.5 Flash simulator tutor is implemented and tested on `feat/ai-tutor-tools` in [PR #12](https://github.com/Niedharsan/ep-heart-physics-base/pull/12), stacked on the read-only tutor work in [PR #11](https://github.com/Niedharsan/ep-heart-physics-base/pull/11). The public GitHub Pages build includes the tutor interface, but GitHub Pages does not host the server-side `/api/tutor` function, so visitors cannot invoke Gemini or consume API credits there. Assessment pages also include a post-submission **Ask why** panel; that assessment-tutor panel is currently a UI boundary and is not yet connected to Gemini.
+> **AI status:** the Gemini 2.5 Flash simulator tutor is implemented, tested and merged into `main`. The public GitHub Pages build includes the tutor interface, but GitHub Pages does not host the server-side `/api/tutor` function, so visitors cannot invoke Gemini or consume API credits there. Assessment pages also include a post-submission **Ask why** panel; that assessment-tutor panel is currently a UI boundary and is not yet connected to Gemini.
 
 ## What it does
 
@@ -126,7 +126,7 @@ npm install
 npm run dev
 ```
 
-To run the simulator tutor locally on the AI branch, create an ignored `.env.local` containing:
+To run the simulator tutor locally, create an ignored `.env.local` containing:
 
 ```text
 GEMINI_API_KEY=your_key_here

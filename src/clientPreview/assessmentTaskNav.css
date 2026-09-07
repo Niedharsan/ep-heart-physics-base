@@ -1,0 +1,89 @@
+.client-module-nav {
+  display: block;
+}
+
+.client-module-primary-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 40px;
+}
+
+.client-assessment-task-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ep-border);
+}
+
+.client-assessment-task-nav a {
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: var(--ep-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.client-assessment-task-nav a:hover {
+  color: var(--ep-text);
+  background: #141b24;
+}
+
+.client-assessment-task-nav a.active {
+  color: var(--ep-accent);
+  background: rgba(84, 214, 179, 0.10);
+}
+
+/* ClientModuleNav is now the single task navigator on assessment pages. */
+.assessment-task-nav {
+  display: none !important;
+}
+
+/* The interval trainer previously repeated Tasks 1-5 vertically in its sidebar. */
+.assessment-shell-redesign .assessment-sidebar > .assessment-sidebar-section:first-child {
+  display: none;
+}
+
+.vt-localization-live-trace {
+  margin: 12px 0 18px;
+}
+
+.vt-localization-live-trace .running-egm-strip {
+  margin: 0;
+}
+
+.vt-localization-live-trace .running-egm-svg {
+  min-height: 620px;
+}
+
+/* The old unscored Class 6 practice extension is superseded by scored Tasks 6-8. */
+.task-five-shell .vt-localization-practice {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .client-module-primary-row {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .global-egm-speed {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .client-assessment-task-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 3px;
+  }
+
+  .vt-localization-live-trace .running-egm-svg {
+    min-height: 520px;
+  }
+}

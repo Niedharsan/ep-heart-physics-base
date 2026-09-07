@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type {
   ClinicalTraceAnnotation,
@@ -15,6 +15,7 @@ export interface RunningEgmStripProps {
   readonly compact?: boolean;
   readonly className?: string;
   readonly svgClassName?: string;
+  readonly allowExpand?: boolean;
 }
 
 interface RenderedChannel {
@@ -37,9 +38,14 @@ export function RunningEgmStrip({
   compact = false,
   className = '',
   svgClassName = '',
+  allowExpand = true,
 }: RunningEgmStripProps) {
   const [running, setRunning] = useState(autoPlay);
   const [replayKey, setReplayKey] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(0.5);
+  const [measuring, setMeasuring] = useState(false);
+  const [calipers, setCalipers] = useState([0.2, 0.6]);
   const reactId = safeId(useId());
   const prefix = `running-egm-${safeId(definition.id)}-${reactId}`;
   const smallGridId = `${prefix}-small-grid`;
@@ -77,9 +83,32 @@ export function RunningEgmStrip({
 
   const scrollStyle = {
     '--running-egm-shift': `-${plotWidth}px`,
-    animationDuration: `${definition.durationMs}ms`,
+    animationDuration: `${definition.durationMs / playbackRate}ms`,
     animationPlayState: running ? 'running' : 'paused',
   } as CSSProperties;
+
+  useEffect(() => {
+    if (!expanded) return;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setExpanded(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [expanded]);
+
+  useEffect(() => {
+    const syncRate = (event: Event): void => {
+      const rate = (event as CustomEvent<number>).detail;
+      if (Number.isFinite(rate)) setPlaybackRate(rate);
+    };
+    window.addEventListener('ep-heart-playback-rate', syncRate);
+    return () => window.removeEventListener('ep-heart-playback-rate', syncRate);
+  }, []);
 
   function annotationY(annotation: ClinicalTraceAnnotation): number {
     const channelIndex = Math.max(
@@ -90,7 +119,7 @@ export function RunningEgmStrip({
   }
 
   function renderAnnotations(offsetX: number) {
-    return visibleAnnotations.map((annotation) => {
+    return visibleAnnotations.map((annotation, index) => {
       const x = offsetX + (annotation.timeMs / definition.durationMs) * plotWidth;
       const endX = annotation.endTimeMs === undefined
         ? undefined
@@ -101,14 +130,14 @@ export function RunningEgmStrip({
           {endX === undefined ? (
             <>
               <line x1={x} y1={y + 4} x2={x} y2={y + rowHeight - 14} />
-              <text x={x + 5} y={y}>{annotation.label}</text>
+              <text x={x + 5} y={y}>{index + 1}</text>
             </>
           ) : (
             <>
               <line x1={x} y1={y + 10} x2={endX} y2={y + 10} />
               <line x1={x} y1={y + 4} x2={x} y2={y + 16} />
               <line x1={endX} y1={y + 4} x2={endX} y2={y + 16} />
-              <text x={(x + endX) / 2} y={y + 2} textAnchor="middle">{annotation.label}</text>
+              <text x={(x + endX) / 2} y={y + 2} textAnchor="middle">{index + 1}</text>
             </>
           )}
         </g>
@@ -117,7 +146,7 @@ export function RunningEgmStrip({
   }
 
   return (
-    <figure className={`running-egm-strip ${className}`.trim()} data-running-egm={definition.id}>
+    <figure className={`running-egm-strip ${compact ? 'running-egm-strip-compact' : ''} ${className}`.trim()} data-running-egm={definition.id}>
       <div className="running-egm-toolbar">
         <div className="running-egm-status">
           <span className={`running-egm-live-dot ${running ? 'active' : ''}`} aria-hidden="true" />
@@ -126,13 +155,35 @@ export function RunningEgmStrip({
           <span>10 mm/mV</span>
         </div>
         <div className="running-egm-actions">
-          <button type="button" onClick={() => setRunning((current) => !current)}>
+          <button type="button" aria-pressed={measuring} onClick={() => {
+            setMeasuring(!measuring);
+            setRunning(false);
+          }}>{measuring ? 'Hide calipers' : 'Measure'}</button>
+          <label className="running-egm-speed" title="Slow down or speed up the tracing">
+            <span>Speed {playbackRate.toFixed(2)}×</span>
+            <input
+              type="range"
+              min="0.25"
+              max="1.5"
+              step="0.05"
+              value={playbackRate}
+              onChange={(event) => setPlaybackRate(Number(event.target.value))}
+              aria-label="EGM playback speed"
+            />
+          </label>
+          {allowExpand && (
+            <button type="button" onClick={() => setExpanded(true)} aria-label={`Enlarge ${definition.title}`}>
+              Enlarge tracing
+            </button>
+          )}
+          <button type="button" onClick={() => { setMeasuring(false); setRunning((current) => !current); }}>
             {running ? 'Freeze' : 'Run'}
           </button>
           <button
             type="button"
             onClick={() => {
               setReplayKey((current) => current + 1);
+              setMeasuring(false);
               setRunning(true);
             }}
           >
@@ -141,9 +192,11 @@ export function RunningEgmStrip({
         </div>
       </div>
 
+      <div className="running-egm-measurement-area">
       <svg
         className={`running-egm-svg ${svgClassName}`.trim()}
         viewBox={`0 0 ${labelWidth + plotWidth} ${height}`}
+        preserveAspectRatio="none"
         role="img"
         aria-labelledby={`${titleId} ${descriptionId}`}
       >
@@ -229,11 +282,75 @@ export function RunningEgmStrip({
           </text>
         </g>
       </svg>
+      {measuring && <div className="running-egm-calipers" style={{ left: `${100 * labelWidth / (labelWidth + plotWidth)}%` }}>
+        {calipers.map((position, index) => <button
+          key={index}
+          type="button"
+          className={`running-egm-caliper caliper-${index}`}
+          style={{ left: `${position * 100}%` }}
+          aria-label={`${index === 0 ? 'Start' : 'End'} caliper`}
+          onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); }}
+          onPointerMove={(event) => {
+            if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+            const bounds = event.currentTarget.parentElement!.getBoundingClientRect();
+            const next = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+            setCalipers((current) => current.map((value, i) => i === index ? next : value));
+          }}
+          onPointerUp={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            event.preventDefault();
+            const delta = (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? 10 : 1) / definition.durationMs;
+            setCalipers((current) => current.map((value, i) => i === index ? Math.max(0, Math.min(1, value + delta)) : value));
+          }}
+        ><span>{index === 0 ? 'Start' : 'End'}</span></button>)}
+      </div>}
+      </div>
+      {measuring && <div className="running-egm-measurement-readout">
+        <strong>{Math.round(Math.abs(calipers[1]! - calipers[0]!) * definition.durationMs)} ms</strong>
+        <span>Drag the handles or use arrow keys. Shift + arrow moves 10 ms.</span>
+      </div>}
 
       <figcaption>
         {definition.teachingLabel}
         {visibleAnnotations.length > 0 ? ' Teaching overlays visible.' : ''}
       </figcaption>
+      {visibleAnnotations.length > 0 && <ol className="running-egm-answer-notes" aria-label="Tracing explanations">
+        {visibleAnnotations.map((annotation) => <li key={annotation.id}>{annotation.label}</li>)}
+      </ol>}
+
+      {expanded && (
+        <div
+          className="running-egm-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Enlarged tracing: ${definition.title}`}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) setExpanded(false);
+          }}
+        >
+          <div className="running-egm-modal-panel">
+            <div className="running-egm-modal-heading">
+              <div>
+                <span>ENLARGED ECG / EGM</span>
+                <h2>{definition.title}</h2>
+              </div>
+              <button type="button" onClick={() => setExpanded(false)} autoFocus>
+                Close
+              </button>
+            </div>
+            <RunningEgmStrip
+              definition={definition}
+              showAnnotations={showAnnotations}
+              annotationView={annotationView}
+              autoPlay={running}
+              compact={false}
+              className="running-egm-expanded-strip"
+              allowExpand={false}
+            />
+          </div>
+        </div>
+      )}
     </figure>
   );
 }
